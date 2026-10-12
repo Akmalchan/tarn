@@ -12,6 +12,7 @@ import {
   paintedGhostClock,
   resumeClock,
 } from '../app/first-paint';
+import {rememberedTiles} from '../app/tile-memory';
 import {
   applyCommand,
   type GhostRequest,
@@ -190,10 +191,64 @@ export class TarnBackdrop extends LitElement {
       new CustomEvent('tarn-revealed', {
         bubbles: true,
         composed: true,
-        detail: {inPlace: false},
+        detail: {inPlace: false, live: false},
       }),
     );
     await wait(REVEAL_MS);
+    this.settled(false);
+  }
+
+  /**
+   * Frosts the scene behind widgets (see glass.ts): `rects` holds x, y,
+   * width and height per widget, in viewport CSS pixels.
+   */
+  setTiles(rects: number[], strength: number, radius: number): void {
+    this.tiles = {rects, strength, radius};
+    this.sendTiles();
+  }
+
+  private tiles: {rects: number[]; strength: number; radius: number} | null =
+    null;
+
+  /**
+   * Sends the tiles to the renderer. While the scene settles from slightly
+   * enlarged, the canvas is scaled around the center, so the frost is drawn
+   * at the inverse scale to land exactly behind the widgets.
+   */
+  private sendTiles(): void {
+    if (!this.tiles) return;
+    const {rects, strength, radius} = this.tiles;
+    const canvas = this.renderRoot.querySelector('canvas');
+    const transform = canvas ? getComputedStyle(canvas).transform : 'none';
+    const scale = transform.startsWith('matrix(')
+      ? Number.parseFloat(transform.slice(7))
+      : 1;
+    if (!(scale > 0) || Math.abs(scale - 1) < 1e-4) {
+      this.send({type: 'tiles', rects, strength, radius});
+      return;
+    }
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const scaled = rects.map((value, i) => {
+      if (i % 4 === 0) return cx + (value - cx) / scale;
+      if (i % 4 === 1) return cy + (value - cy) / scale;
+      return value / scale;
+    });
+    this.send({type: 'tiles', rects: scaled, strength, radius: radius / scale});
+  }
+
+  /**
+   * The scene is fully in place, settle finished: widgets and their frost
+   * appear now. `live` is false when only the still gradient shows.
+   */
+  private settled(live: boolean): void {
+    this.dispatchEvent(
+      new CustomEvent('tarn-settled', {
+        bubbles: true,
+        composed: true,
+        detail: {live},
+      }),
+    );
   }
 
   override updated(changed: PropertyValues<this>): void {
@@ -249,13 +304,14 @@ export class TarnBackdrop extends LitElement {
       new CustomEvent('tarn-revealed', {
         bubbles: true,
         composed: true,
-        detail: {inPlace},
+        detail: {inPlace, live: true},
       }),
     );
     await wait(duration);
     await nextFrame();
     canvas.style.transition = '';
     this.setAttribute('ready', '');
+    this.settled(true);
   }
 
   private async startRenderer(
@@ -306,6 +362,17 @@ export class TarnBackdrop extends LitElement {
         onUnavailable: () => this.markUnavailable(),
         onClock: (clock, at, running, quality) =>
           (this.clockState = {clock, at, running, quality}),
+      });
+    }
+    // A reload frosts the widgets' places from the first live frame, as the
+    // ghost frame did, so they never blink (app/tile-memory.ts).
+    const tiles = ghostClock !== undefined ? rememberedTiles() : null;
+    if (tiles?.rects.length) {
+      this.send({
+        type: 'tiles',
+        rects: tiles.rects,
+        strength: 1,
+        radius: tiles.radius,
       });
     }
   }

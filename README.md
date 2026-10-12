@@ -62,6 +62,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organized.
 What users love and hate about new tab pages, and what that means for Tarn:
 [docs/research/2026-10-new-tab-research.md](docs/research/2026-10-new-tab-research.md).
 
+How heavy Tarn is next to Chrome's new tab and 7 popular extensions,
+measured: [docs/research/2026-10-new-tab-performance.md](docs/research/2026-10-new-tab-performance.md).
+
 ## License
 
 [Apache 2.0](LICENSE)

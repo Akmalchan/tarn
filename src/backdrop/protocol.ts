@@ -11,7 +11,8 @@ export type RendererCommand =
   | {type: 'resize'; width: number; height: number}
   | {type: 'scene'; id: string}
   | {type: 'visible'; visible: boolean}
-  | {type: 'reducedMotion'; reduced: boolean};
+  | {type: 'reducedMotion'; reduced: boolean}
+  | {type: 'tiles'; rects: number[]; strength: number; radius: number};
 
 export interface WorkerInit {
   type: 'init';
@@ -55,6 +56,9 @@ export function applyCommand(
       break;
     case 'reducedMotion':
       renderer.setReducedMotion(command.reduced);
+      break;
+    case 'tiles':
+      renderer.setTiles(command.rects, command.strength, command.radius);
       break;
   }
 }
