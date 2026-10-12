@@ -13,9 +13,18 @@ import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
 export type TabIcon = 'chrome' | 'none';
 export const TAB_ICONS: readonly TabIcon[] = ['chrome', 'none'];
 
-/** The clock above the widgets: centered, or hidden. */
-export type ClockStyle = 'center' | 'none';
-export const CLOCK_STYLES: readonly ClockStyle[] = ['center', 'none'];
+/**
+ * The clock above the widgets, picked by face. 'center' is the classic thin
+ * clock with the date (its id predates the other faces, so stored settings
+ * keep working); 'none' hides it.
+ */
+export type ClockStyle = 'center' | 'bold' | 'minimal' | 'none';
+export const CLOCK_STYLES: readonly ClockStyle[] = [
+  'center',
+  'bold',
+  'minimal',
+  'none',
+];
 
 export type WidgetKind = 'favorites' | 'notes' | 'focus';
 export const WIDGET_KINDS: readonly WidgetKind[] = [
