@@ -36,6 +36,11 @@ const SETTLE_SCALE = 1.035;
  * never washed in gray. The scene's own fade above stays REVEAL_MS.
  */
 const DARKEN_MS = 250;
+/**
+ * When the clock and widgets start fading in: halfway through the scene's
+ * fade, so they arrive with it instead of after it (fully in by ~0.7s).
+ */
+const WIDGETS_AT_MS = REVEAL_MS / 2;
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 /**
  * How often a visible tab saves its moment for the next page: the clock, and
@@ -319,9 +324,9 @@ export class TarnBackdrop extends LitElement {
         detail: {inPlace, live: true},
       }),
     );
-    // Widgets may come in once the scene is fully faded in; the last part of
-    // the settle is a slow drift, and the frost follows it (followSettle).
-    const shown = Math.min(duration, REVEAL_MS);
+    // Widgets come in halfway through the scene's fade; for the rest of the
+    // settle the frost follows the scene's scale every frame (followSettle).
+    const shown = Math.min(duration, WIDGETS_AT_MS);
     await wait(shown);
     if (duration > shown) this.followSettle(duration - shown);
     this.settled(true);

@@ -312,7 +312,7 @@ export class TarnApp extends LitElement {
   /**
    * A reload continues the page exactly: the clock and widgets draw at once
    * over the ghost frame, which already shows their frost. A new tab fades
-   * them in quickly once the scene has fully faded in.
+   * them in quickly, starting halfway through the scene's own fade.
    */
   private readonly resumed = arrival() === 'resume';
 
