@@ -67,8 +67,10 @@ Settings (home)
 - **Filled icons**, drawn for Tarn in `src/ui/glyphs.ts`: one solid shape
   with details cut out, readable at 17px in a 28px tile. Never outline
   icons, never emoji.
-- **The wordmark** heads the home page (`src/ui/wordmark.ts`, from the brand
-  SVG). Sub-pages show "‹ Settings" and a large title instead.
+- **A large "Settings" title** heads the home page. Chrome's side panel
+  header already shows the extension's name and icon (it can't be changed),
+  so the panel never repeats the wordmark or "Tarn". Sub-pages show
+  "‹ Settings" and their own large title.
 - Rows are at least 46px tall; text is the system font.
 
 ## Adding a setting
@@ -96,5 +98,7 @@ setting, and Advanced stays out of sight.
 - **"Developer" section:** the name scares off normal users. It's
   "Advanced".
 - **A close button:** the side panel already has one.
+- **The wordmark in the panel:** it sat right under Chrome's own "Tarn"
+  header and read twice.
 - **A clock on/off switch:** the clock is picked by face, and "None" is one
   of the faces.
