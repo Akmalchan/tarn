@@ -141,3 +141,20 @@ export function sceneStill(scene: Scene): string {
 export function sceneById(id: string): Scene {
   return SCENES.find(s => s.id === id) ?? tarn;
 }
+
+/**
+ * Whether a scene is light or dark, from its base color's luminance: light
+ * scenes get dark text and a stronger frost on widgets.
+ */
+export function sceneTone(scene: Scene): 'light' | 'dark' {
+  const n = Number.parseInt(scene.base.slice(1), 16);
+  const channel = (v: number) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance =
+    0.2126 * channel((n >> 16) & 255) +
+    0.7152 * channel((n >> 8) & 255) +
+    0.0722 * channel(n & 255);
+  return luminance > 0.35 ? 'light' : 'dark';
+}

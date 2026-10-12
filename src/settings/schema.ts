@@ -4,6 +4,7 @@
  */
 
 import {DEFAULT_SCENE_ID, SCENES} from '../backdrop/scenes';
+import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
 
 /**
  * The icon in the tab. 'chrome' shows Chrome's own new-tab icon; 'none'
@@ -12,18 +13,44 @@ import {DEFAULT_SCENE_ID, SCENES} from '../backdrop/scenes';
 export type TabIcon = 'chrome' | 'none';
 export const TAB_ICONS: readonly TabIcon[] = ['chrome', 'none'];
 
+/** The clock above the widgets: centered, or hidden. */
+export type ClockStyle = 'center' | 'none';
+export const CLOCK_STYLES: readonly ClockStyle[] = ['center', 'none'];
+
+export type WidgetKind = 'favorites' | 'notes' | 'focus';
+export const WIDGET_KINDS: readonly WidgetKind[] = [
+  'favorites',
+  'notes',
+  'focus',
+];
+
+/** One widget on the page. Its content lives in local storage by `id`. */
+export interface WidgetEntry {
+  readonly id: string;
+  readonly kind: WidgetKind;
+  readonly size: WidgetSize;
+}
+
+/** More than a page needs; keeps a corrupted list from growing forever. */
+export const MAX_WIDGETS = 24;
+
 /** Everything the user can change. Small and serializable; synced across devices. */
 export interface Settings {
   /** Whether new tabs show Tarn, or hand off to the browser's own page. */
   readonly enabled: boolean;
   readonly scene: string;
   readonly tabIcon: TabIcon;
+  readonly clock: ClockStyle;
+  /** In the user's order. Empty by default: a calm page is the default. */
+  readonly widgets: readonly WidgetEntry[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   scene: DEFAULT_SCENE_ID,
   tabIcon: 'chrome',
+  clock: 'center',
+  widgets: [],
 };
 
 /**
@@ -43,7 +70,50 @@ export function normalizeSettings(raw: unknown): Settings {
   const tabIcon = TAB_ICONS.includes(value.tabIcon as TabIcon)
     ? (value.tabIcon as TabIcon)
     : DEFAULT_SETTINGS.tabIcon;
-  return {enabled, scene, tabIcon};
+  const clock = CLOCK_STYLES.includes(value.clock as ClockStyle)
+    ? (value.clock as ClockStyle)
+    : DEFAULT_SETTINGS.clock;
+  return {
+    enabled,
+    scene,
+    tabIcon,
+    clock,
+    widgets: normalizeWidgets(value.widgets),
+  };
+}
+
+/** Keeps valid entries in order; drops broken ones and duplicate ids. */
+function normalizeWidgets(raw: unknown): WidgetEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const widgets: WidgetEntry[] = [];
+  for (const item of raw) {
+    if (!isRecord(item)) continue;
+    const {id, kind, size} = item;
+    if (
+      typeof id !== 'string' ||
+      !/^[a-z0-9-]{1,40}$/.test(id) ||
+      seen.has(id) ||
+      !WIDGET_KINDS.includes(kind as WidgetKind)
+    ) {
+      continue;
+    }
+    seen.add(id);
+    widgets.push({
+      id,
+      kind: kind as WidgetKind,
+      size: WIDGET_SIZES.includes(size as WidgetSize)
+        ? (size as WidgetSize)
+        : 'm',
+    });
+    if (widgets.length === MAX_WIDGETS) break;
+  }
+  return widgets;
+}
+
+/** A new widget's id: its kind plus a short random suffix. */
+export function newWidgetId(kind: WidgetKind): string {
+  return `${kind}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

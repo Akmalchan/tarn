@@ -9,11 +9,19 @@ import {canHandOff} from '../app/handoff';
 import {answerPanelPresence} from '../app/side-panel';
 import {SCENES, sceneStill} from '../backdrop/scenes';
 import {setTarnEnabled} from '../settings/enabled';
+import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
 import {
+  CLOCK_STYLES,
   DEFAULT_SETTINGS,
+  MAX_WIDGETS,
   TAB_ICONS,
+  WIDGET_KINDS,
+  newWidgetId,
+  type ClockStyle,
   type Settings,
   type TabIcon,
+  type WidgetEntry,
+  type WidgetKind,
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import '../ui/tarn-switch';
@@ -26,12 +34,14 @@ import '../ui/tarn-switch';
 export class TarnPanel extends LitElement {
   static override properties = {
     settings: {state: true},
+    samples: {state: true},
   };
 
   static override styles = css`
+    /* The page itself never scrolls (global.css); the panel scrolls here. */
     :host {
       display: block;
-      min-height: 100vh;
+      height: 100%;
       padding: 18px 16px 28px;
       background: linear-gradient(180deg, #0b1b2c 0%, #05080f 60%);
       overflow-y: auto;
@@ -199,6 +209,97 @@ export class TarnPanel extends LitElement {
       outline-offset: 1px;
     }
 
+    .widgets {
+      display: grid;
+      gap: 8px;
+    }
+
+    .widget {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgb(255 255 255 / 0.05);
+      border: 1px solid var(--glass-border);
+    }
+
+    .widget .tools {
+      display: flex;
+      gap: 2px;
+    }
+
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      font: inherit;
+      font-size: 14px;
+      color: var(--text-dim);
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .icon-button:hover:not(:disabled) {
+      color: var(--text);
+      background: var(--glass-active);
+    }
+
+    .icon-button:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    .icon-button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 1px;
+    }
+
+    .widget .segmented {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+
+    .add {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .add button {
+      padding: 7px 12px;
+      font: inherit;
+      font-size: 13px;
+      color: var(--text);
+      background: rgb(255 255 255 / 0.08);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .add button:hover:not(:disabled) {
+      background: rgb(255 255 255 / 0.14);
+    }
+
+    .add button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 1px;
+    }
+
+    .empty {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text-dim);
+      border-radius: 14px;
+      border: 1px dashed var(--glass-border);
+    }
+
     footer {
       margin-top: 30px;
       font-size: 12px;
@@ -208,16 +309,22 @@ export class TarnPanel extends LitElement {
   `;
 
   declare settings: Settings;
+  /** Test layouts, loaded only in dev builds (release builds drop the code). */
+  declare samples: typeof import('../widgets/samples') | null;
   private unwatch: () => void = () => {};
 
   constructor() {
     super();
     this.settings = DEFAULT_SETTINGS;
+    this.samples = null;
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
     answerPanelPresence();
+    if (import.meta.env.DEV) {
+      void import('../widgets/samples').then(m => (this.samples = m));
+    }
     void loadSettings().then(s => (this.settings = s));
     this.unwatch = watchSettings(s => (this.settings = s));
   }
@@ -263,6 +370,13 @@ export class TarnPanel extends LitElement {
         </div>
       </section>
 
+      ${this.renderHome()}
+      ${
+        this.samples
+          ? this.samples.testLayouts(widgets => this.applyPatch({widgets}))
+          : nothing
+      }
+
       <section aria-labelledby="general">
         <h2 id="general">General</h2>
         <div class="row">
@@ -282,8 +396,152 @@ export class TarnPanel extends LitElement {
         ${import.meta.env.FIREFOX ? nothing : this.renderTabIcon()}
       </section>
 
-      <footer>Widgets, search and more are on the way.</footer>
+      <footer>Search and more widgets are on the way.</footer>
     `;
+  }
+
+  private renderHome() {
+    const {clock, widgets} = this.settings;
+    return html`
+      <section aria-labelledby="home">
+        <h2 id="home">Home</h2>
+        <div class="row">
+          <div class="label" id="clock-label">Clock</div>
+          <div
+            class="segmented"
+            role="radiogroup"
+            aria-labelledby="clock-label"
+          >
+            ${CLOCK_STYLES.map(
+              style => html`
+                <button
+                  role="radio"
+                  aria-checked=${style === clock}
+                  @click=${() => this.setClock(style)}
+                >
+                  ${style === 'center' ? 'Show' : 'Hide'}
+                </button>
+              `,
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="widgets">
+        <h2 id="widgets">Widgets</h2>
+        <div class="widgets">
+          ${
+            widgets.length
+              ? widgets.map((widget, i) => this.renderWidget(widget, i))
+              : html`<div class="empty">
+                  No widgets. The page stays calm: just the background and the
+                  clock.
+                </div>`
+          }
+        </div>
+        <div class="add">
+          ${WIDGET_KINDS.map(
+            kind => html`
+              <button
+                ?disabled=${widgets.length >= MAX_WIDGETS}
+                @click=${() => this.addWidget(kind)}
+              >
+                + ${KIND_NAMES[kind]}
+              </button>
+            `,
+          )}
+        </div>
+      </section>
+    `;
+  }
+
+  private renderWidget(widget: WidgetEntry, index: number) {
+    const count = this.settings.widgets.length;
+    const name = KIND_NAMES[widget.kind];
+    return html`
+      <div class="widget">
+        <div class="label">${name}</div>
+        <div class="tools">
+          <button
+            class="icon-button"
+            aria-label="Move ${name} earlier"
+            ?disabled=${index === 0}
+            @click=${() => this.moveWidget(index, -1)}
+          >
+            ↑
+          </button>
+          <button
+            class="icon-button"
+            aria-label="Move ${name} later"
+            ?disabled=${index === count - 1}
+            @click=${() => this.moveWidget(index, 1)}
+          >
+            ↓
+          </button>
+          <button
+            class="icon-button"
+            aria-label="Remove ${name}"
+            @click=${() => this.removeWidget(index)}
+          >
+            ×
+          </button>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="${name} size">
+          ${WIDGET_SIZES.map(
+            size => html`
+              <button
+                role="radio"
+                aria-checked=${size === widget.size}
+                @click=${() => this.resizeWidget(index, size)}
+              >
+                ${SIZE_NAMES[size]}
+              </button>
+            `,
+          )}
+        </div>
+      </div>
+    `;
+  }
+
+  private setClock(clock: ClockStyle): void {
+    this.applyPatch({clock});
+  }
+
+  private addWidget(kind: WidgetKind): void {
+    const widget: WidgetEntry = {
+      id: newWidgetId(kind),
+      kind,
+      size: DEFAULT_SIZE[kind],
+    };
+    this.applyPatch({widgets: [...this.settings.widgets, widget]});
+  }
+
+  private removeWidget(index: number): void {
+    this.applyPatch({
+      widgets: this.settings.widgets.filter((_, i) => i !== index),
+    });
+  }
+
+  private moveWidget(index: number, by: -1 | 1): void {
+    const widgets = [...this.settings.widgets];
+    const [moved] = widgets.splice(index, 1);
+    if (!moved) return;
+    widgets.splice(index + by, 0, moved);
+    this.applyPatch({widgets});
+  }
+
+  private resizeWidget(index: number, size: WidgetSize): void {
+    this.applyPatch({
+      widgets: this.settings.widgets.map((w, i) =>
+        i === index ? {...w, size} : w,
+      ),
+    });
+  }
+
+  /** Shows the change at once, then saves it; open tabs follow live. */
+  private applyPatch(patch: Partial<Settings>): void {
+    this.settings = {...this.settings, ...patch};
+    void saveSettings(patch);
   }
 
   private renderTabIcon() {
@@ -334,6 +592,25 @@ export class TarnPanel extends LitElement {
     this.settings = await setTarnEnabled(event.detail);
   };
 }
+
+const KIND_NAMES: Record<WidgetKind, string> = {
+  favorites: 'Favorites',
+  notes: 'Notes',
+  focus: 'Focus timer',
+};
+
+const SIZE_NAMES: Record<WidgetSize, string> = {
+  s: 'Small',
+  m: 'Medium',
+  l: 'Large',
+  xl: 'Extra large',
+};
+
+const DEFAULT_SIZE: Record<WidgetKind, WidgetSize> = {
+  favorites: 'l',
+  notes: 'm',
+  focus: 's',
+};
 
 customElements.define('tarn-panel', TarnPanel);
 

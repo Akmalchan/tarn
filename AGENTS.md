@@ -68,8 +68,19 @@ How a page arrives on screen matters more than how fast it does
   ghost's moment. Measured over 24 reloads (4 scenes, dev and prod): mean
   frame-to-frame change 0.3-2.1 / 255, the same as normal motion (was up to
   146 with a flat color, up to 98 with a CSS-background ghost).
-- Nothing contentful may paint before the scene; render controls only after
-  the backdrop's `tarn-revealed` event.
+- **Clock and widgets on reload:** the app module is render-blocking
+  (`blocking="render"`, restored after Vite by a plugin in `wxt.config.ts`).
+  Its work is synchronous, so the first frame already holds the clock and
+  widgets over the ghost. Everything that frame needs is read synchronously
+  from localStorage mirrors: the layout (`app/mirror.ts`), each widget's
+  content (`widgets/data.ts`), site icons (`widgets/site-icon.ts`) and tile
+  positions for the frost (`app/tile-memory.ts`). Measured over 4 scenes:
+  worst reload frame change 0.3-3.6 / 255, all of it the ghost's lower
+  resolution; widgets don't change at all (was 4-8 with a one-frame blink).
+- On a new tab, nothing contentful paints before the scene: the clock,
+  widgets and controls fade in together with it, from `tarn-revealed`. While
+  the scene settles from 1.035x, the backdrop draws the frost at the inverse
+  scale every frame, so it stays exactly behind the widgets.
 - Before the page exists, the browser's pre-paint color is outside any
   extension's control in Chrome (tested 2026-10-11: chrome://theme is blocked,
   CSS system colors don't reflect it, a transparent page shows white). An
@@ -80,6 +91,29 @@ How a page arrives on screen matters more than how fast it does
 - Future background sources (user photo, video) follow the same rules: keep
   originals in IndexedDB, ease in on open, ghost on reload, never block first
   paint on async storage.
+
+## Widgets
+
+Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
+
+- `layout/bands.ts` places widgets (pure function, ~12 µs for 9 widgets,
+  ~42 µs for 30; columns are always 2, 4 or 6);
+  `widgets/tarn-board.ts` positions tiles with transforms and animates moves
+  with FLIP (transform and opacity only).
+- Nothing runs while idle: the board recalculates only when widgets change
+  or the window crosses one of 5 column widths (`matchMedia`); the clock
+  ticks once a minute, the focus timer once a second only while running;
+  hidden tabs do neither. Measured idle with 9 widgets: 0 layouts, 0-15 style
+  recalculations per 8 s, page main thread ~0.5% busy (same as no widgets).
+- **Frosted glass is drawn by the scene** (`backdrop/glass.ts`): the frame
+  renders to a texture, mipmaps give soft copies, and a final pass shows them
+  inside the tiles' rounded rectangles. CSS `backdrop-filter` re-blurs the
+  moving canvas every frame (measured ~2% -> ~8% compositor). With no
+  widgets the renderer draws straight to the screen as before. Never fade a
+  tile container with opacity; it would break CSS glass in the still
+  fallback.
+- Widget content lives in `storage.local` (`widget.<id>`), apart from synced
+  settings; removing a widget keeps its content.
 
 ## Rendering performance
 

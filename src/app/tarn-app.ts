@@ -6,17 +6,27 @@
 import {LitElement, css, html, nothing} from 'lit';
 import {browser} from 'wxt/browser';
 import '../backdrop/tarn-backdrop';
+import type {TarnBackdrop} from '../backdrop/tarn-backdrop';
 import './tarn-settings-button';
-import {SCENES} from '../backdrop/scenes';
+import '../widgets/tarn-board';
+import '../widgets/tarn-clock';
+import type {TarnBoard, TilesDetail} from '../widgets/tarn-board';
+import {SCENES, sceneById, sceneTone} from '../backdrop/scenes';
 import {
   DEFAULT_SETTINGS,
   normalizeSettings,
   type Settings,
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
-import {refreshFavicon, rememberedScene} from './first-paint';
-import {handOffToBrowserNewTab} from './handoff';
-import {mirrorSettings} from './mirror';
+import {
+  arrival,
+  isRememberedOff,
+  refreshFavicon,
+  rememberedScene,
+} from './first-paint';
+import {canHandOff, handOffToBrowserNewTab} from './handoff';
+import {mirrorSettings, rememberedHome} from './mirror';
+import {rememberTiles} from './tile-memory';
 
 const IDLE_HIDE_MS = 2500;
 
@@ -26,12 +36,81 @@ export class TarnApp extends LitElement {
     settings: {state: true},
     controlsVisible: {state: true},
     revealed: {state: true},
+    handingOff: {state: true},
   };
 
   static override styles = css`
     :host {
       display: block;
       height: 100%;
+
+      /* Widget and clock colors on dark scenes. */
+      --ink: rgb(244 247 251);
+      --ink-dim: rgb(244 247 251 / 0.66);
+      --ink-faint: rgb(244 247 251 / 0.4);
+      --tile-line: rgb(255 255 255 / 0.14);
+      --tile-fill: rgb(255 255 255 / 0.03);
+      --tile-fill-solid: rgb(255 255 255 / 0.1);
+      --tile-highlight: rgb(255 255 255 / 0.08);
+      --chip: rgb(255 255 255 / 0.14);
+      --chip-hover: rgb(255 255 255 / 0.22);
+      --chip-strong: rgb(30 34 44 / 0.85);
+      /* Keeps white text readable over bright patches (Ember's orange). */
+      --ink-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
+    }
+
+    /* Light scenes (Bloom): dark text, brighter frost. */
+    :host([tone='light']) {
+      --ink: rgb(22 26 38);
+      --ink-dim: rgb(22 26 38 / 0.64);
+      --ink-faint: rgb(22 26 38 / 0.4);
+      --tile-line: rgb(255 255 255 / 0.55);
+      --tile-fill: rgb(255 255 255 / 0.06);
+      --tile-fill-solid: rgb(255 255 255 / 0.45);
+      --tile-highlight: rgb(255 255 255 / 0.5);
+      --chip: rgb(255 255 255 / 0.45);
+      --chip-hover: rgb(255 255 255 / 0.65);
+      --chip-strong: rgb(255 255 255 / 0.9);
+      --focus-ring: rgb(22 26 38 / 0.6);
+      --ink-shadow: none;
+    }
+
+    /* The clock and widgets: one group a little above the middle. Free space
+       splits 2 : 3 above and below; a crowded page scrolls instead. */
+    .page {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 24px;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    .page::before {
+      content: '';
+      flex: 2 1 40px;
+    }
+
+    .page::after {
+      content: '';
+      flex: 3 1 96px;
+    }
+
+    .group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 56px;
+    }
+
+    tarn-clock {
+      animation: controls-in 600ms ease-out both;
+    }
+
+    .group[data-in-place] tarn-clock {
+      animation: none;
     }
 
     /* Controls arrive after the scene, never before it: nothing but the
@@ -108,7 +187,13 @@ export class TarnApp extends LitElement {
 
   declare settings: Settings;
   declare controlsVisible: boolean;
-  declare revealed: {inPlace: boolean} | null;
+  /**
+   * Set when the scene appears: `inPlace` on a reload, `live` unless only
+   * the still gradient could be shown (no WebGL).
+   */
+  declare revealed: {inPlace: boolean; live: boolean} | null;
+  /** Tarn is switched off: render nothing while the browser's page loads. */
+  declare handingOff: boolean;
 
   private idleTimer = 0;
   private schemeQuery = matchMedia('(prefers-color-scheme: dark)');
@@ -120,14 +205,21 @@ export class TarnApp extends LitElement {
     // later, so opening a tab never flashes the default scene first.
     this.settings = normalizeSettings({
       ...DEFAULT_SETTINGS,
+      ...rememberedHome(),
       scene: rememberedScene(),
     });
     this.controlsVisible = false;
     this.revealed = null;
+    this.handingOff = canHandOff && isRememberedOff();
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
+    if (this.handingOff) {
+      // Switched off: show nothing and swap in the browser's own page. If
+      // that fails, show Tarn after all.
+      void handOffToBrowserNewTab().then(ok => (this.handingOff = ok));
+    }
     void loadSettings().then(settings => {
       this.applySettings(settings);
       // The first-paint mirror can be stale (e.g. switched off on another
@@ -151,6 +243,7 @@ export class TarnApp extends LitElement {
   }
 
   override render() {
+    if (this.handingOff) return nothing;
     const current = this.settings.scene;
     return html`
       <tarn-backdrop
@@ -158,6 +251,7 @@ export class TarnApp extends LitElement {
         .scene=${current}
         @tarn-revealed=${this.onRevealed}
       ></tarn-backdrop>
+      ${this.revealed || this.resumed ? this.renderPage() : nothing}
       ${
         this.revealed
           ? html`<div class="controls" ?data-in-place=${this.revealed.inPlace}>
@@ -185,12 +279,70 @@ export class TarnApp extends LitElement {
     `;
   }
 
+  private renderPage() {
+    const {clock, widgets} = this.settings;
+    return html`
+      <div class="page" @scroll=${this.onScroll}>
+        <div class="group" ?data-in-place=${this.resumed}>
+          ${clock === 'none' ? nothing : html`<tarn-clock></tarn-clock>`}
+          ${
+            widgets.length
+              ? html`<tarn-board
+                  .widgets=${widgets}
+                  ?instant=${this.resumed}
+                  glass=${this.liveScene ? 'shader' : 'css'}
+                  @tarn-tiles=${this.onTiles}
+                ></tarn-board>`
+              : nothing
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  override willUpdate(): void {
+    this.setAttribute('tone', sceneTone(sceneById(this.settings.scene)));
+  }
+
+  /**
+   * A reload continues the page exactly: the clock and widgets draw at once
+   * over the ghost frame, which already shows their frost. A new tab fades
+   * them in together with the scene, never before it.
+   */
+  private readonly resumed = arrival() === 'resume';
+
+  /** Whether the live scene (and its shader glass) is on screen. */
+  private get liveScene(): boolean {
+    return this.revealed ? this.revealed.live : this.resumed;
+  }
+
+  /** Widgets moved: the backdrop frosts the scene behind them. */
+  private onTiles = (event: CustomEvent<TilesDetail>) => {
+    const {rects, strength, radius} = event.detail;
+    const backdrop =
+      this.renderRoot.querySelector<TarnBackdrop>('tarn-backdrop');
+    const live = this.liveScene;
+    backdrop?.setTiles(live ? rects : [], strength, radius);
+    if (live && (strength === 1 || !rects.length)) rememberTiles(rects, radius);
+  };
+
+  private scrollFrame = 0;
+  private onScroll = () => {
+    if (this.scrollFrame) return;
+    this.scrollFrame = requestAnimationFrame(() => {
+      this.scrollFrame = 0;
+      this.renderRoot.querySelector<TarnBoard>('tarn-board')?.report();
+    });
+  };
+
   /** The tab icon's tint depends on light or dark mode. */
   private onSchemeChange = () => {
     void refreshFavicon(this.settings.tabIcon);
   };
 
-  private onRevealed = (event: CustomEvent<{inPlace: boolean}>) => {
+  private onRevealed = (
+    event: CustomEvent<{inPlace: boolean; live: boolean}>,
+  ) => {
     if (!this.revealed) keepTarnWarm();
     this.revealed = event.detail;
   };
