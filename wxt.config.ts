@@ -1,6 +1,16 @@
 import {defineConfig} from 'wxt';
 import type {Plugin} from 'vite';
 
+/** White-mark icons for the dev build (docs/brand/BRAND.md, "Mark"). */
+const DEV_ICON_DIR = 'docs/brand/assets/png/extension-dev';
+const DEV_ICONS: Record<string, string> = {
+  'action/16.png': 'action-16.png',
+  'action/32.png': 'action-32.png',
+  'icon/48.png': 'icon-48.png',
+  'icon/96.png': 'icon-96.png',
+  'icon/128.png': 'icon-128.png',
+};
+
 /**
  * Vite rewrites the new tab's module script and drops its
  * `blocking="render"`; this puts it back, so the first frame of a page
@@ -30,8 +40,10 @@ export default defineConfig({
   outDir: 'dist',
   manifestVersion: 3,
   vite: () => ({plugins: [renderBlockingNewTab()]}),
-  manifest: ({browser}) => ({
-    name: 'Tarn',
+  // The dev build installs beside the real one, so it gets its own name and
+  // the white mark (hooks below) to tell the two apart at a glance.
+  manifest: ({browser, mode}) => ({
+    name: mode === 'development' ? 'Tarn Dev' : 'Tarn',
     description: 'A still, clear start to every tab.',
     // `offscreen` keeps the first-paint mirror in sync (see background.ts).
     // `favicon` shows Chrome's own new-tab icon in the tab, and later lets
@@ -42,4 +54,15 @@ export default defineConfig({
     // extension. Firefox only lets extensions toggle themes, so not there.
     optional_permissions: browser === 'firefox' ? [] : ['management'],
   }),
+  hooks: {
+    'build:publicAssets': (wxt, files) => {
+      if (wxt.config.mode !== 'development') return;
+      for (const file of files) {
+        const dev = DEV_ICONS[file.relativeDest];
+        if (dev && 'absoluteSrc' in file) {
+          file.absoluteSrc = `${wxt.config.root}/${DEV_ICON_DIR}/${dev}`;
+        }
+      }
+    },
+  },
 });
