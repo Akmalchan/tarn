@@ -20,7 +20,7 @@ const MARGIN = 24;
 const PITCH = CELL + GAP;
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const MOVE_MS = 460;
-/** Tiles fade in with the scene (tarn-backdrop's REVEAL_MS). */
+/** Tiles fade in quickly as the scene appears (the scene itself takes longer). */
 const APPEAR_MS = 450;
 
 /**

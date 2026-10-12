@@ -25,14 +25,11 @@ import {DEFAULT_SCENE_ID, sceneById, sceneStill} from './scenes';
 
 /** Scene-to-scene crossfade. */
 const FADE_MS = 400;
-/**
- * Opening a new tab: the scene eases in from the browser's color (the clock,
- * widgets and controls fade in alongside, over the same time)...
- */
-const REVEAL_MS = 450;
-/** ...while settling from slightly enlarged, like a quick breath out. */
-const SETTLE_MS = 650;
-const SETTLE_SCALE = 1.02;
+/** Opening a new tab: the scene eases in from the browser's color... */
+const REVEAL_MS = 700;
+/** ...while settling from slightly enlarged, like a breath out. */
+const SETTLE_MS = 1100;
+const SETTLE_SCALE = 1.035;
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 /**
  * How often a visible tab saves its moment for the next page: the clock, and
