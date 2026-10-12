@@ -50,6 +50,12 @@ describe('normalizeSettings', () => {
     ).toEqual({...DEFAULT_SETTINGS, scene: 'wave'});
   });
 
+  it('keeps every clock face', () => {
+    for (const clock of ['center', 'bold', 'minimal', 'none'] as const) {
+      expect(normalizeSettings({clock}).clock).toBe(clock);
+    }
+  });
+
   it('drops broken widgets and keeps the rest in order', () => {
     const {widgets} = normalizeSettings({
       widgets: [
