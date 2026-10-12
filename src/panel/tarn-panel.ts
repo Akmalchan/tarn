@@ -29,7 +29,6 @@ import {
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
-import {wordmark} from '../ui/wordmark';
 
 /**
  * The pages of the panel. Home shows what most people change; each section
@@ -138,12 +137,6 @@ export class TarnPanel extends LitElement {
     .top {
       display: grid;
       gap: 12px;
-    }
-
-    .wordmark svg {
-      display: block;
-      height: 23px;
-      width: auto;
     }
 
     .back {
@@ -723,7 +716,7 @@ export class TarnPanel extends LitElement {
           <div class="top">
             ${
               this.page === 'home'
-                ? html`<span class="wordmark">${wordmark()}</span>`
+                ? html`<h1>${PAGE_TITLES.home}</h1>`
                 : html`<button class="back" @click=${() => this.go('home')}>
                       ${glyph('back')}Settings
                     </button>
