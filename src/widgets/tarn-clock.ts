@@ -3,16 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {LitElement, css, html} from 'lit';
+import {LitElement, css, html, nothing} from 'lit';
+import type {ClockStyle} from '../settings/schema';
 
 /**
  * The big clock and date above the widgets. One size on every screen; only
  * a phone-narrow window gets a smaller one. It updates once a minute, on the
- * minute, and not at all while the tab is hidden.
+ * minute, and not at all while the tab is hidden. `face` picks the style:
+ * classic (thin, with the date), bold, or minimal (time only).
  */
 export class TarnClock extends LitElement {
   static override properties = {
     now: {state: true},
+    face: {type: String, reflect: true},
   };
 
   static override styles = css`
@@ -34,6 +37,11 @@ export class TarnClock extends LitElement {
       font-variant-numeric: tabular-nums;
     }
 
+    :host([face='bold']) time {
+      font-weight: 600;
+      letter-spacing: -0.05em;
+    }
+
     .date {
       margin-top: 12px;
       font-size: 19px;
@@ -52,11 +60,13 @@ export class TarnClock extends LitElement {
   `;
 
   declare now: Date;
+  declare face: Exclude<ClockStyle, 'none'>;
   private timer = 0;
 
   constructor() {
     super();
     this.now = new Date();
+    this.face = 'center';
   }
 
   override connectedCallback(): void {
@@ -82,7 +92,7 @@ export class TarnClock extends LitElement {
     });
     return html`
       <time datetime=${this.now.toISOString()}>${time}</time>
-      <div class="date">${date}</div>
+      ${this.face === 'minimal' ? nothing : html`<div class="date">${date}</div>`}
     `;
   }
 
