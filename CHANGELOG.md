@@ -1,0 +1,37 @@
+# Changelog
+
+All notable changes are listed here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions
+follow [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+
+- Foundation: WXT build for Chromium and Firefox, Lit, strict TypeScript,
+  ESLint, Prettier, Vitest and CI.
+- WebGL2 background renderer that runs in a worker, caps at 30fps, pauses
+  when hidden and respects reduced motion.
+- Four scenes: Tarn, Ember, Bloom and Wave.
+- Settings synced through browser storage.
+- Toolbar button with an on/off switch that hands new tabs back to the
+  browser's own page.
+- Settings gear (bottom right, faint until approached) that opens Tarn in the browser's side panel,
+  with a live background picker and the on/off switch.
+- Warm start: an offscreen document keeps first-paint data in sync and
+  Tarn's process warm, cutting new-tab first paint after idle from ~85 ms
+  to ~52 ms (Chrome's own floor).
+- Fast noise texture baked from the exact shader noise for gently-used
+  noise (Ember, Bloom); Tarn keeps exact computed noise. Adaptive quality
+  governor lowers resolution and frame rate on weak devices.
+- Smooth arrival: new tabs start on the browser's default new-tab color and
+  the scene eases in; reloads continue the animation in place, bridged by a
+  canvas ghost frame, with no visible change and no split frames.
+- Chrome's own mono new-tab icon in the tab (favicon API, lightened in dark
+  mode); Tarn's icon never appears in the tab, even mid-reload. Settings >
+  Tab icon: Chrome (default) or None, which never changes at all.
+- Robustness: still-gradient fallback when WebGL is unavailable or slow,
+  serialized settings writes, off-main-thread ghost encoding, clock wrap for
+  long-lived tabs, self-healing warm process.
+- Take-over page that switches off other new-tab extensions (optional
+  `management` permission) and restores them when Tarn is turned off.
