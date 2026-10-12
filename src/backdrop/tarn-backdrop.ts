@@ -30,6 +30,12 @@ const REVEAL_MS = 700;
 /** ...while settling from slightly enlarged, like a breath out. */
 const SETTLE_MS = 1100;
 const SETTLE_SCALE = 1.035;
+/**
+ * As the scene starts to appear, the color under it turns from the browser's
+ * gray to the scene's own dark base this fast, so the half-faded scene is
+ * never washed in gray. The scene's own fade above stays REVEAL_MS.
+ */
+const DARKEN_MS = 250;
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 /**
  * How often a visible tab saves its moment for the next page: the clock, and
@@ -75,7 +81,8 @@ export class TarnBackdrop extends LitElement {
       contain: strict;
     }
     /* Transparent until revealed: the page's first-frame color shows. */
-    :host([ready]) {
+    :host([ready]),
+    :host([based]) {
       background-color: var(--backdrop-base);
     }
     /* The scene as a still gradient, under the canvas: shown when WebGL is
@@ -238,8 +245,8 @@ export class TarnBackdrop extends LitElement {
   }
 
   /**
-   * The scene is fully in place, settle finished: widgets and their frost
-   * appear now. `live` is false when only the still gradient shows.
+   * The scene is fully faded in: widgets and their frost appear now. `live`
+   * is false when only the still gradient shows.
    */
   private settled(live: boolean): void {
     this.dispatchEvent(
@@ -292,6 +299,11 @@ export class TarnBackdrop extends LitElement {
       duration = SETTLE_MS;
       canvas.style.transition = `opacity ${REVEAL_MS}ms ${EASE_OUT}, transform ${SETTLE_MS}ms ${EASE_OUT}`;
     }
+    if (!inPlace) {
+      // Out of the browser's gray quickly; the scene still fades in gently.
+      this.style.transition = `background-color ${DARKEN_MS}ms ease-out`;
+      this.setAttribute('based', '');
+    }
     canvas.style.opacity = '1';
     canvas.style.transform = 'none';
     if (inPlace) {
@@ -307,11 +319,27 @@ export class TarnBackdrop extends LitElement {
         detail: {inPlace, live: true},
       }),
     );
-    await wait(duration);
+    // Widgets may come in once the scene is fully faded in; the last part of
+    // the settle is a slow drift, and the frost follows it (followSettle).
+    const shown = Math.min(duration, REVEAL_MS);
+    await wait(shown);
+    if (duration > shown) this.followSettle(duration - shown);
+    this.settled(true);
+    await wait(duration - shown);
     await nextFrame();
     canvas.style.transition = '';
+    this.style.transition = '';
     this.setAttribute('ready', '');
-    this.settled(true);
+  }
+
+  /** Keeps the frost exactly behind the widgets while the scene settles. */
+  private followSettle(duration: number): void {
+    const end = performance.now() + duration + 50;
+    const step = () => {
+      this.sendTiles();
+      if (performance.now() < end) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   }
 
   private async startRenderer(
