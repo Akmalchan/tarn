@@ -20,8 +20,8 @@ const MARGIN = 24;
 const PITCH = CELL + GAP;
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const MOVE_MS = 460;
-/** Tiles fade in quickly, after the scene is fully visible. */
-const APPEAR_MS = 350;
+/** Tiles fade in quickly, together with the scene's first frame. */
+const APPEAR_MS = 200;
 
 /**
  * Where the widgets' rounded rectangles are, for the background to frost
