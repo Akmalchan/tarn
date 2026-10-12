@@ -3,13 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {isRememberedOff} from '../../app/first-paint';
-import {handOffToBrowserNewTab} from '../../app/handoff';
+// Loaded render-blocking (index.html): the first frame already contains the
+// clock and widgets, so a reload never shows the ghost frame without them.
+// The app itself hands off to the browser's page when Tarn is switched off.
 import '../../styles/global.css';
-
-async function start(): Promise<void> {
-  if (isRememberedOff() && (await handOffToBrowserNewTab())) return;
-  await import('../../app/tarn-app');
-}
-
-void start();
+import '../../app/tarn-app';

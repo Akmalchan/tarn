@@ -1,0 +1,109 @@
+/**
+ * Copyright 2026 The Tarn Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {LitElement, css, html} from 'lit';
+
+/**
+ * The big clock and date above the widgets. One size on every screen; only
+ * a phone-narrow window gets a smaller one. It updates once a minute, on the
+ * minute, and not at all while the tab is hidden.
+ */
+export class TarnClock extends LitElement {
+  static override properties = {
+    now: {state: true},
+  };
+
+  static override styles = css`
+    :host {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      color: var(--ink);
+      text-shadow: var(--ink-shadow);
+      user-select: none;
+    }
+
+    time {
+      font-size: 112px;
+      font-weight: 200;
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date {
+      margin-top: 12px;
+      font-size: 19px;
+      font-weight: 450;
+      color: var(--ink-dim);
+    }
+
+    @media (max-width: 480px) {
+      time {
+        font-size: 72px;
+      }
+      .date {
+        font-size: 16px;
+      }
+    }
+  `;
+
+  declare now: Date;
+  private timer = 0;
+
+  constructor() {
+    super();
+    this.now = new Date();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    document.addEventListener('visibilitychange', this.onVisibility);
+    this.tick();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    document.removeEventListener('visibilitychange', this.onVisibility);
+    clearTimeout(this.timer);
+  }
+
+  override render() {
+    const time = this.now
+      .toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+      .replace(/\s?[AP]M$/i, '');
+    const date = this.now.toLocaleDateString([], {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+    return html`
+      <time datetime=${this.now.toISOString()}>${time}</time>
+      <div class="date">${date}</div>
+    `;
+  }
+
+  private tick = () => {
+    clearTimeout(this.timer);
+    this.now = new Date();
+    if (document.visibilityState !== 'visible') return;
+    const untilNextMinute = 60_000 - (Date.now() % 60_000) + 20;
+    this.timer = window.setTimeout(this.tick, untilNextMinute);
+  };
+
+  private onVisibility = () => {
+    if (document.visibilityState === 'visible') this.tick();
+    else clearTimeout(this.timer);
+  };
+}
+
+customElements.define('tarn-clock', TarnClock);
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'tarn-clock': TarnClock;
+  }
+}

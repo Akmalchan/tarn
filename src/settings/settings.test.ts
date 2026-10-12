@@ -17,15 +17,63 @@ describe('normalizeSettings', () => {
   );
 
   it('keeps valid values', () => {
+    const widgets = [
+      {id: 'notes-a1', kind: 'notes', size: 'l'},
+      {id: 'focus-b2', kind: 'focus', size: 's'},
+    ];
     expect(
-      normalizeSettings({enabled: false, scene: 'wave', tabIcon: 'none'}),
-    ).toEqual({enabled: false, scene: 'wave', tabIcon: 'none'});
+      normalizeSettings({
+        enabled: false,
+        scene: 'wave',
+        tabIcon: 'none',
+        clock: 'none',
+        widgets,
+      }),
+    ).toEqual({
+      enabled: false,
+      scene: 'wave',
+      tabIcon: 'none',
+      clock: 'none',
+      widgets,
+    });
   });
 
   it('fixes each field independently', () => {
     expect(
-      normalizeSettings({enabled: 'no', scene: 'wave', tabIcon: 'tarn'}),
-    ).toEqual({enabled: true, scene: 'wave', tabIcon: 'chrome'});
+      normalizeSettings({
+        enabled: 'no',
+        scene: 'wave',
+        tabIcon: 'tarn',
+        clock: 'left',
+        widgets: 'many',
+      }),
+    ).toEqual({...DEFAULT_SETTINGS, scene: 'wave'});
+  });
+
+  it('drops broken widgets and keeps the rest in order', () => {
+    const {widgets} = normalizeSettings({
+      widgets: [
+        {id: 'notes-1', kind: 'notes', size: 'xl'},
+        {id: 'notes-1', kind: 'notes', size: 's'},
+        {id: 'Bad Id!', kind: 'notes', size: 's'},
+        {id: 'x-2', kind: 'stocks', size: 's'},
+        null,
+        {id: 'focus-3', kind: 'focus', size: 'huge'},
+      ],
+    });
+    expect(widgets).toEqual([
+      {id: 'notes-1', kind: 'notes', size: 'xl'},
+      {id: 'focus-3', kind: 'focus', size: 'm'},
+    ]);
+  });
+
+  it('caps the widget list', () => {
+    const widgets = Array.from({length: 40}, (_, i) => ({
+      id: `notes-${i}`,
+      kind: 'notes',
+      size: 's',
+    }));
+    expect(normalizeSettings({widgets}).widgets).toHaveLength(24);
   });
 });
 
@@ -40,9 +88,9 @@ describe('settings store', () => {
     await saveSettings({scene: 'ember'});
     await saveSettings({enabled: false});
     expect(await loadSettings()).toEqual({
+      ...DEFAULT_SETTINGS,
       enabled: false,
       scene: 'ember',
-      tabIcon: 'chrome',
     });
   });
 
@@ -51,9 +99,8 @@ describe('settings store', () => {
     const stop = watchSettings(listener);
     await saveSettings({scene: 'bloom'});
     expect(listener).toHaveBeenCalledWith({
-      enabled: true,
+      ...DEFAULT_SETTINGS,
       scene: 'bloom',
-      tabIcon: 'chrome',
     });
     stop();
   });
@@ -69,6 +116,7 @@ describe('concurrent saves', () => {
       saveSettings({enabled: false}),
     ]);
     expect(await loadSettings()).toEqual({
+      ...DEFAULT_SETTINGS,
       enabled: false,
       scene: 'ember',
       tabIcon: 'none',

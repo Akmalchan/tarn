@@ -4,9 +4,11 @@
  */
 
 import {toBase64} from '../app/codec';
+import {GLASS_FRAGMENT, GLASS_VERTEX, MAX_TILES} from './glass';
 import {createNoiseTexture} from './noise-texture';
 import {QualityGovernor, initialQualityLevel} from './quality';
 import {VERTEX_SHADER, fragmentSource} from './scenes/glsl';
+import {sceneTone} from './scenes';
 import type {Hex, Scene} from './scenes/types';
 
 export type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
@@ -75,6 +77,29 @@ interface CompiledScene {
   colors: Float32Array;
 }
 
+interface GlassProgram {
+  program: WebGLProgram;
+  uFrame: WebGLUniformLocation | null;
+  uResolution: WebGLUniformLocation | null;
+  uScale: WebGLUniformLocation | null;
+  uTiles: WebGLUniformLocation | null;
+  uTileCount: WebGLUniformLocation | null;
+  uRadius: WebGLUniformLocation | null;
+  uStrength: WebGLUniformLocation | null;
+  uFrost: WebGLUniformLocation | null;
+}
+
+/** The offscreen frame the glass pass reads, with its mipmaps. */
+interface FrameTarget {
+  framebuffer: WebGLFramebuffer;
+  texture: WebGLTexture;
+  width: number;
+  height: number;
+}
+
+/** Texture unit for the glass pass; unit 0 holds the noise texture. */
+const FRAME_UNIT = 1;
+
 const requestFrame: (cb: FrameRequestCallback) => number =
   typeof requestAnimationFrame === 'function'
     ? cb => requestAnimationFrame(cb)
@@ -116,6 +141,13 @@ export class Renderer {
   /** No drawing until the real size is known: never show a 300x150 frame. */
   private sized = false;
   private firstFrameDrawn = false;
+  /** Widget rectangles to frost, in CSS pixels: x, y, width, height. */
+  private tiles = new Float32Array(MAX_TILES * 4);
+  private tileCount = 0;
+  private glassStrength = 0;
+  private glassRadius = 24;
+  private glass: GlassProgram | null = null;
+  private frame: FrameTarget | null = null;
 
   /**
    * @param startClock Animation time to start from, e.g. where the previous
@@ -136,6 +168,8 @@ export class Renderer {
       this.stopLoop();
       this.gl = null;
       this.compiled.clear();
+      this.glass = null;
+      this.frame = null;
     });
     canvas.addEventListener('webglcontextrestored', () => {
       this.initContext();
@@ -164,6 +198,20 @@ export class Renderer {
       this.clock %= TIME_PERIOD_S;
     }
     this.refresh();
+  }
+
+  /**
+   * Frosts the scene behind widgets. `rects` holds x, y, width, height per
+   * widget in CSS pixels; `strength` (0..1) follows the widgets' fade.
+   * Redraws at once, so the frost moves with widgets as they animate.
+   */
+  setTiles(rects: readonly number[], strength: number, radius: number): void {
+    this.tileCount = Math.min(MAX_TILES, Math.floor(rects.length / 4));
+    this.tiles.fill(0);
+    this.tiles.set(rects.slice(0, this.tileCount * 4));
+    this.glassStrength = Math.min(1, Math.max(0, strength));
+    this.glassRadius = radius;
+    if (this.visible && this.sized) this.draw();
   }
 
   setReducedMotion(reduced: boolean): void {
@@ -218,8 +266,15 @@ export class Renderer {
     const gl = this.gl;
     if (gl) {
       for (const c of this.compiled.values()) gl.deleteProgram(c.program);
+      if (this.glass) gl.deleteProgram(this.glass.program);
+      if (this.frame) {
+        gl.deleteFramebuffer(this.frame.framebuffer);
+        gl.deleteTexture(this.frame.texture);
+      }
     }
     this.compiled.clear();
+    this.glass = null;
+    this.frame = null;
     this.gl = null;
   }
 
@@ -307,16 +362,120 @@ export class Renderer {
     const compiled = this.compile(gl, this.scene);
     if (!compiled) return;
 
-    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    const {width, height} = this.canvas;
+    const target =
+      this.tileCount > 0 && this.glassStrength > 0
+        ? this.frameTarget(gl, width, height)
+        : null;
+    const glass = target ? this.glassProgram(gl) : null;
+
+    // With widgets on screen the scene goes to a texture first; otherwise
+    // straight to the canvas, exactly as before.
+    gl.bindFramebuffer(gl.FRAMEBUFFER, glass ? target!.framebuffer : null);
+    gl.viewport(0, 0, width, height);
     gl.useProgram(compiled.program);
-    gl.uniform2f(compiled.uResolution, this.canvas.width, this.canvas.height);
+    gl.uniform2f(compiled.uResolution, width, height);
     gl.uniform1f(compiled.uTime, this.clock * this.scene.speed);
     gl.uniform3fv(compiled.uColors, compiled.colors);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (glass && target) this.drawGlass(gl, glass, target);
     if (!this.firstFrameDrawn) {
       this.firstFrameDrawn = true;
       this.events.onFirstFrame?.();
     }
+  }
+
+  private drawGlass(
+    gl: WebGL2RenderingContext,
+    glass: GlassProgram,
+    target: FrameTarget,
+  ): void {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.activeTexture(gl.TEXTURE0 + FRAME_UNIT);
+    gl.bindTexture(gl.TEXTURE_2D, target.texture);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.useProgram(glass.program);
+    gl.uniform2f(glass.uResolution, target.width, target.height);
+    gl.uniform1f(glass.uScale, target.width / this.cssWidth);
+    gl.uniform4fv(glass.uTiles, this.tiles);
+    gl.uniform1i(glass.uTileCount, this.tileCount);
+    gl.uniform1f(glass.uRadius, this.glassRadius);
+    gl.uniform1f(glass.uStrength, this.glassStrength);
+    gl.uniform1f(glass.uFrost, sceneTone(this.scene) === 'light' ? 0.28 : 0.09);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.activeTexture(gl.TEXTURE0);
+  }
+
+  /** The texture the scene renders into when widgets need frosting. */
+  private frameTarget(
+    gl: WebGL2RenderingContext,
+    width: number,
+    height: number,
+  ): FrameTarget | null {
+    const current = this.frame;
+    if (current && current.width === width && current.height === height) {
+      return current;
+    }
+    if (current) {
+      gl.deleteFramebuffer(current.framebuffer);
+      gl.deleteTexture(current.texture);
+      this.frame = null;
+    }
+    const texture = gl.createTexture();
+    const framebuffer = gl.createFramebuffer();
+    if (!texture || !framebuffer) return null;
+    const levels = Math.floor(Math.log2(Math.max(width, height))) + 1;
+    gl.activeTexture(gl.TEXTURE0 + FRAME_UNIT);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texStorage2D(gl.TEXTURE_2D, levels, gl.RGBA8, width, height);
+    gl.texParameteri(
+      gl.TEXTURE_2D,
+      gl.TEXTURE_MIN_FILTER,
+      gl.LINEAR_MIPMAP_LINEAR,
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      texture,
+      0,
+    );
+    const complete =
+      gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    if (!complete) {
+      gl.deleteFramebuffer(framebuffer);
+      gl.deleteTexture(texture);
+      return null;
+    }
+    this.frame = {framebuffer, texture, width, height};
+    return this.frame;
+  }
+
+  private glassProgram(gl: WebGL2RenderingContext): GlassProgram | null {
+    if (this.glass) return this.glass;
+    const program = linkProgram(gl, GLASS_VERTEX, GLASS_FRAGMENT);
+    if (!program) return null;
+    const u = (name: string) => gl.getUniformLocation(program, name);
+    this.glass = {
+      program,
+      uFrame: u('uFrame'),
+      uResolution: u('uResolution'),
+      uScale: u('uScale'),
+      uTiles: u('uTiles'),
+      uTileCount: u('uTileCount'),
+      uRadius: u('uRadius'),
+      uStrength: u('uStrength'),
+      uFrost: u('uFrost'),
+    };
+    gl.useProgram(program);
+    gl.uniform1i(this.glass.uFrame, FRAME_UNIT);
+    return this.glass;
   }
 
   private compile(
