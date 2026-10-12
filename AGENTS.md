@@ -5,8 +5,10 @@ Goal: ultra clean and calm by default, deeply customizable for power users.
 
 Read CONTRIBUTING.md for structure and principles, and
 `docs/research/2026-10-new-tab-research.md` before adding any feature: it
-records what users want and hate, and Tarn's five product promises. The
-essentials:
+records what users want and hate, and Tarn's five product promises. Read
+`docs/brand/BRAND.md` before any visual, naming, icon or store-listing work:
+there is no logo, the `ta` mark is only for square slots, and it lists what
+was already rejected. The essentials:
 
 ## Stack (decided, don't change without discussion)
 
