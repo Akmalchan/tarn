@@ -54,8 +54,11 @@ How a page arrives on screen matters more than how fast it does
   until the first frame. Tarn's first frame is the browser's _default_ new-tab
   color (CSS `--tarn-start`: Chrome #ffffff / #3c3c3c, Firefox #f9f9fb /
   #2b2a33), then the live scene eases in over ~0.7s while settling from
-  1.035x. Controls (gear, switcher) fade in after the scene appears; the
-  clock and widgets after it has settled (see below). Tried and rejected on
+  1.035x. Under it, the page color goes from the browser's gray to the
+  scene's dark base in 0.25s, so the half-faded scene is never washed in
+  gray (measured, dark mode: gray gone by ~0.15s instead of ~0.35s).
+  Controls (gear, switcher) fade in after the scene appears; the clock and
+  widgets once it has fully faded in (see below). Tried and rejected on
   2026-10-12: a faster scene (0.45s, settle 0.65s) felt flashy, and widgets
   fading in during the scene's own fade looked bad.
 - **Reloading:** the animation continues from the exact moment the old page
@@ -81,8 +84,9 @@ How a page arrives on screen matters more than how fast it does
   worst reload frame change 0.3-3.6 / 255, all of it the ghost's lower
   resolution; widgets don't change at all (was 4-8 with a one-frame blink).
 - On a new tab, nothing contentful paints before the scene: controls appear
-  after `tarn-revealed`, the clock and widgets after `tarn-settled` (the
-  scene's settling transform is done, so the frost lines up).
+  after `tarn-revealed`, the clock and widgets after `tarn-settled`, which
+  fires once the scene has fully faded in (0.7s). The frost follows the rest
+  of the settle every frame (`followSettle`), so it stays behind the tiles.
 - Before the page exists, the browser's pre-paint color is outside any
   extension's control in Chrome (tested 2026-10-11: chrome://theme is blocked,
   CSS system colors don't reflect it, a transparent page shows white). An

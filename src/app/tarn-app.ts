@@ -107,7 +107,7 @@ export class TarnApp extends LitElement {
     }
 
     tarn-clock {
-      animation: controls-in 600ms ease-out both;
+      animation: controls-in 350ms ease-out both;
     }
 
     .group[data-in-place] tarn-clock {
@@ -289,7 +289,7 @@ export class TarnApp extends LitElement {
     return html`
       <div class="page" @scroll=${this.onScroll}>
         <div class="group" ?data-in-place=${this.resumed}>
-          ${clock === 'none' ? nothing : html`<tarn-clock></tarn-clock>`}
+          ${clock === 'none' ? nothing : html`<tarn-clock face=${clock}></tarn-clock>`}
           ${
             widgets.length
               ? html`<tarn-board
@@ -312,7 +312,7 @@ export class TarnApp extends LitElement {
   /**
    * A reload continues the page exactly: the clock and widgets draw at once
    * over the ghost frame, which already shows their frost. A new tab fades
-   * them in once the scene has eased in and settled.
+   * them in quickly once the scene has fully faded in.
    */
   private readonly resumed = arrival() === 'resume';
 
