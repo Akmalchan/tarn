@@ -53,8 +53,9 @@ How a page arrives on screen matters more than how fast it does
 - **Opening a tab:** the browser fills the tab with its own new-tab color
   until the first frame. Tarn's first frame is the browser's _default_ new-tab
   color (CSS `--tarn-start`: Chrome #ffffff / #3c3c3c, Firefox #f9f9fb /
-  #2b2a33), then the live scene eases in over ~0.7s while settling from
-  1.035x. Controls (gear, switcher) fade in only after the scene.
+  #2b2a33), then the live scene eases in over 0.45s while settling from
+  1.02x over 0.65s (was 0.7s and 1.1s from 1.035x: smooth but slow). The
+  clock, widgets and controls fade in alongside it, never before it.
 - **Reloading:** the animation continues from the exact moment the old page
   showed. A page cannot hold its first paint for async work (tested: a
   `blocking="render"` module with top-level await does not delay it), so
@@ -79,7 +80,7 @@ How a page arrives on screen matters more than how fast it does
   resolution; widgets don't change at all (was 4-8 with a one-frame blink).
 - On a new tab, nothing contentful paints before the scene: the clock,
   widgets and controls fade in together with it, from `tarn-revealed`. While
-  the scene settles from 1.035x, the backdrop draws the frost at the inverse
+  the scene settles from 1.02x, the backdrop draws the frost at the inverse
   scale every frame, so it stays exactly behind the widgets.
 - Before the page exists, the browser's pre-paint color is outside any
   extension's control in Chrome (tested 2026-10-11: chrome://theme is blocked,

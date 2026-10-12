@@ -106,7 +106,7 @@ export class TarnApp extends LitElement {
     }
 
     tarn-clock {
-      animation: controls-in 600ms ease-out both;
+      animation: controls-in 450ms ease-out both;
     }
 
     .group[data-in-place] tarn-clock {
@@ -116,7 +116,7 @@ export class TarnApp extends LitElement {
     /* Controls arrive after the scene, never before it: nothing but the
        background ever draws first. On reload they are simply there. */
     .controls {
-      animation: controls-in 500ms ease-out both;
+      animation: controls-in 450ms ease-out both;
     }
 
     .controls[data-in-place] {
