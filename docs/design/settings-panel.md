@@ -7,6 +7,8 @@ panel lives in the browser's side panel next to the new tab
 Decided with the owner on 2026-10-12, after comparing tabs against a list in
 a live prototype: [Tarn Settings Panel](https://claude.ai/artifact/6mQoz7iAkLC3wiomqzW1Yn).
 
+![The panel: home and Widgets in light, home and Advanced in dark](settings-panel-preview.png)
+
 ## The shape: a list that goes deeper
 
 One scrolling list, like the system settings on a phone. The first screen
