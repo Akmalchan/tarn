@@ -36,6 +36,7 @@ export class TarnApp extends LitElement {
     settings: {state: true},
     controlsVisible: {state: true},
     revealed: {state: true},
+    settled: {state: true},
     handingOff: {state: true},
   };
 
@@ -106,7 +107,7 @@ export class TarnApp extends LitElement {
     }
 
     tarn-clock {
-      animation: controls-in 450ms ease-out both;
+      animation: controls-in 600ms ease-out both;
     }
 
     .group[data-in-place] tarn-clock {
@@ -116,7 +117,7 @@ export class TarnApp extends LitElement {
     /* Controls arrive after the scene, never before it: nothing but the
        background ever draws first. On reload they are simply there. */
     .controls {
-      animation: controls-in 450ms ease-out both;
+      animation: controls-in 500ms ease-out both;
     }
 
     .controls[data-in-place] {
@@ -192,6 +193,8 @@ export class TarnApp extends LitElement {
    * the still gradient could be shown (no WebGL).
    */
   declare revealed: {inPlace: boolean; live: boolean} | null;
+  /** Set once the scene has settled; `live` is false for the still fallback. */
+  declare settled: {live: boolean} | null;
   /** Tarn is switched off: render nothing while the browser's page loads. */
   declare handingOff: boolean;
 
@@ -210,6 +213,7 @@ export class TarnApp extends LitElement {
     });
     this.controlsVisible = false;
     this.revealed = null;
+    this.settled = null;
     this.handingOff = canHandOff && isRememberedOff();
   }
 
@@ -250,8 +254,9 @@ export class TarnApp extends LitElement {
         remember
         .scene=${current}
         @tarn-revealed=${this.onRevealed}
+        @tarn-settled=${this.onSettled}
       ></tarn-backdrop>
-      ${this.revealed || this.resumed ? this.renderPage() : nothing}
+      ${this.settled || this.resumed ? this.renderPage() : nothing}
       ${
         this.revealed
           ? html`<div class="controls" ?data-in-place=${this.revealed.inPlace}>
@@ -307,13 +312,13 @@ export class TarnApp extends LitElement {
   /**
    * A reload continues the page exactly: the clock and widgets draw at once
    * over the ghost frame, which already shows their frost. A new tab fades
-   * them in together with the scene, never before it.
+   * them in once the scene has eased in and settled.
    */
   private readonly resumed = arrival() === 'resume';
 
   /** Whether the live scene (and its shader glass) is on screen. */
   private get liveScene(): boolean {
-    return this.revealed ? this.revealed.live : this.resumed;
+    return this.settled ? this.settled.live : this.resumed;
   }
 
   /** Widgets moved: the backdrop frosts the scene behind them. */
@@ -338,6 +343,10 @@ export class TarnApp extends LitElement {
   /** The tab icon's tint depends on light or dark mode. */
   private onSchemeChange = () => {
     void refreshFavicon(this.settings.tabIcon);
+  };
+
+  private onSettled = (event: CustomEvent<{live: boolean}>) => {
+    this.settled = event.detail;
   };
 
   private onRevealed = (

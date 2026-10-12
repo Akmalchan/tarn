@@ -195,6 +195,7 @@ export class TarnBackdrop extends LitElement {
       }),
     );
     await wait(REVEAL_MS);
+    this.settled(false);
   }
 
   /**
@@ -236,14 +237,18 @@ export class TarnBackdrop extends LitElement {
     this.send({type: 'tiles', rects: scaled, strength, radius: radius / scale});
   }
 
-  /** Keeps the frost aligned every frame until the settle has finished. */
-  private followSettle(duration: number): void {
-    const end = performance.now() + duration + 50;
-    const step = () => {
-      this.sendTiles();
-      if (performance.now() < end) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
+  /**
+   * The scene is fully in place, settle finished: widgets and their frost
+   * appear now. `live` is false when only the still gradient shows.
+   */
+  private settled(live: boolean): void {
+    this.dispatchEvent(
+      new CustomEvent('tarn-settled', {
+        bubbles: true,
+        composed: true,
+        detail: {live},
+      }),
+    );
   }
 
   override updated(changed: PropertyValues<this>): void {
@@ -289,7 +294,6 @@ export class TarnBackdrop extends LitElement {
     }
     canvas.style.opacity = '1';
     canvas.style.transform = 'none';
-    if (duration) this.followSettle(duration);
     if (inPlace) {
       // The worker's frame can reach the screen a frame or two after it
       // reports being drawn, so the ghost stays underneath a while longer;
@@ -307,6 +311,7 @@ export class TarnBackdrop extends LitElement {
     await nextFrame();
     canvas.style.transition = '';
     this.setAttribute('ready', '');
+    this.settled(true);
   }
 
   private async startRenderer(

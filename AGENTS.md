@@ -54,9 +54,10 @@ How a page arrives on screen matters more than how fast it does
   until the first frame. Tarn's first frame is the browser's _default_ new-tab
   color (CSS `--tarn-start`: Chrome #ffffff / #3c3c3c, Firefox #f9f9fb /
   #2b2a33), then the live scene eases in over ~0.7s while settling from
-  1.035x over 1.1s. Keep it that slow: a 0.45s / 0.65s version was tried
-  (2026-10-12) and felt flashy. The clock, widgets and controls start with
-  the scene, never before it, and fade in quicker (0.45s).
+  1.035x. Controls (gear, switcher) fade in after the scene appears; the
+  clock and widgets after it has settled (see below). Tried and rejected on
+  2026-10-12: a faster scene (0.45s, settle 0.65s) felt flashy, and widgets
+  fading in during the scene's own fade looked bad.
 - **Reloading:** the animation continues from the exact moment the old page
   showed. A page cannot hold its first paint for async work (tested: a
   `blocking="render"` module with top-level await does not delay it), so
@@ -79,10 +80,9 @@ How a page arrives on screen matters more than how fast it does
   positions for the frost (`app/tile-memory.ts`). Measured over 4 scenes:
   worst reload frame change 0.3-3.6 / 255, all of it the ghost's lower
   resolution; widgets don't change at all (was 4-8 with a one-frame blink).
-- On a new tab, nothing contentful paints before the scene: the clock,
-  widgets and controls fade in together with it, from `tarn-revealed`. While
-  the scene settles from 1.035x, the backdrop draws the frost at the inverse
-  scale every frame, so it stays exactly behind the widgets.
+- On a new tab, nothing contentful paints before the scene: controls appear
+  after `tarn-revealed`, the clock and widgets after `tarn-settled` (the
+  scene's settling transform is done, so the frost lines up).
 - Before the page exists, the browser's pre-paint color is outside any
   extension's control in Chrome (tested 2026-10-11: chrome://theme is blocked,
   CSS system colors don't reflect it, a transparent page shows white). An
