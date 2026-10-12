@@ -10,6 +10,8 @@ re-proposes it.
 
 - **The brand is the word.** Lowercase `tarn`, set in default Google Sans
   Flex. There is no logo.
+- **Black and white.** Pure `#000000` and `#FFFFFF` for every brand mark.
+  No near-black, no blue-grey, no brand hue.
 - **The mark exists only for square slots** (toolbar button, extensions page,
   store icon, avatars): `ta`, with the `a` cut in half by the frame.
 - **Light first.** Tarn follows the system theme. Light is the face; dark is
@@ -40,24 +42,24 @@ re-proposes it.
 
 The primary and usually only brand element.
 
-![wordmark](assets/png/tarn-wordmark-1200.png)
+![wordmark](assets/png/wordmark/tarn-wordmark-black-1200.png)
 
-| Spec     | Value                                                                          |
-| -------- | ------------------------------------------------------------------------------ |
-| Text     | `tarn`, lowercase                                                              |
-| Font     | Google Sans Flex, default design: `wdth 100`, `ROND 0`, `slnt 0`, `opsz 144`   |
-| Weight   | 500                                                                            |
-| Tracking | −0.03em between letters                                                        |
-| r–n gap  | +0.012em extra before the `n` (see below)                                      |
-| Files    | `assets/tarn-wordmark.svg` (Granite), `-white.svg`, `-mono.svg` (currentColor) |
+| Spec     | Value                                                                        |
+| -------- | ---------------------------------------------------------------------------- |
+| Text     | `tarn`, lowercase                                                            |
+| Font     | Google Sans Flex, default design: `wdth 100`, `ROND 0`, `slnt 0`, `opsz 144` |
+| Weight   | 500                                                                          |
+| Tracking | −0.03em between letters                                                      |
+| r–n gap  | +0.012em extra before the `n` (see below)                                    |
+| Files    | `assets/tarn-wordmark.svg` (black), `-white.svg`, `-mono.svg` (currentColor) |
 
 - **The r–n rule.** Squeezed together, `rn` reads as `m` and "tarn" becomes
   "tam". The extra gap before the `n` prevents that. Never tighten it, and
   never retype the wordmark as live text in a logo context; use the SVG.
 - **Clear space:** at least the height of the `a` on every side.
 - **Minimum size:** 48px wide on screen, 12mm in print.
-- **Color:** Granite on light backgrounds, white on dark ones, or one color
-  via the mono file (inline it in HTML so `currentColor` works; inside an
+- **Color:** pure black on light backgrounds, pure white on dark ones, or one
+  color via the mono file (inline it in HTML so `currentColor` works; inside an
   `<img>` it renders black).
 - **Don't:** recolor it with gradients or rainbows, add shadows, outline it,
   stretch it, set it in caps, or put a symbol in front of it as decoration.
@@ -67,7 +69,7 @@ The primary and usually only brand element.
 Tarn has **no logo**. The mark is a fallback for places that physically need
 a square image and can't show the word. If the word fits, use the word.
 
-![mark](assets/png/tarn-mark-512.png)
+![mark](assets/png/mark/tarn-mark-512.png)
 
 ### What it is
 
@@ -81,37 +83,39 @@ It's abstract, but it's still the word.
 All values are in the square's own units (128 × 128, y grows downward). They
 live as constants in [`build_logo.py`](build_logo.py).
 
-| Spec      | Value                                                                    |
-| --------- | ------------------------------------------------------------------------ |
-| Square    | 128 × 128, corner radius 30                                              |
-| Text      | `ta`                                                                     |
-| Font      | Google Sans Flex, `wght 600`, `wdth 100`, `ROND 0`, `slnt 0`, `opsz 144` |
-| Size      | 150 units                                                                |
-| Pen start | x = 34                                                                   |
-| Baseline  | y = 116 (the bottom of `t` and `a` sit 12 units above the edge)          |
-| Tracking  | −0.04em                                                                  |
-| Cut       | The square clips the `a` at about its middle. The `t` is never clipped.  |
+| Spec      | Value                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Square    | 128 × 128, corner radius 30                                                                                              |
+| Text      | `ta`                                                                                                                     |
+| Font      | Google Sans Flex, `wght 600`, `wdth 100`, `ROND 0`, `slnt 0`, `opsz 144`                                                 |
+| Size      | 150 units                                                                                                                |
+| Pen start | x = 34                                                                                                                   |
+| Baseline  | y = 116 (the bottom of `t` and `a` sit 12 units above the edge)                                                          |
+| Tracking  | −0.04em                                                                                                                  |
+| Cut       | The square clips the `a` at about its middle. The `t` is never clipped.                                                  |
+| Small     | For 16–32px, the same mark from `opsz 18` (`tarn-mark-small.svg`): its wider counters keep the `a` open at toolbar size. |
 
 ### When to use it
 
-| Slot                                           | Use the mark?                                                                     | File                                                                                    |
-| ---------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Chrome toolbar button (`action.default_icon`)  | Yes                                                                               | `png/tarn-mark-16.png`, `-32.png`                                                       |
-| `chrome://extensions` page                     | Yes                                                                               | `png/tarn-mark-48.png`                                                                  |
-| Chrome Web Store icon                          | Yes                                                                               | `png/tarn-store-icon-128.png` (96px art + 16px transparent padding, as Google requires) |
-| Social avatar, app-style icon, website favicon | Yes                                                                               | `tarn-mark.svg`, `png/tarn-mark-512.png`                                                |
-| The browser tab's icon                         | **No.** The tab shows Chrome's own icon on purpose (see `AGENTS.md`, Permissions) | —                                                                                       |
-| On the new tab page itself                     | **No.** The page belongs to the user; no branding on it                           | —                                                                                       |
-| Next to the wordmark                           | Only in store art and the README header                                           | —                                                                                       |
+| Slot                                          | Use the mark?                                                                                                                         | File                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Chrome toolbar button (`action.default_icon`) | Yes                                                                                                                                   | `png/extension/action-16.png`, `action-32.png` (small master), shipped as `public/action/16.png`, `32.png` |
+| `chrome://extensions` page and store listing  | Yes                                                                                                                                   | `png/extension/icon-48.png`, `-96.png`, `-128.png`, shipped as `public/icon/48.png`, `96.png`, `128.png`   |
+| Chrome Web Store icon upload                  | Yes                                                                                                                                   | `png/store/tarn-store-icon-128.png` (96px art + 16px transparent padding, as Google requires)              |
+| Social avatar                                 | Yes                                                                                                                                   | `png/social/tarn-avatar-800.png` (square corners; platforms crop it)                                       |
+| App-style icon, website favicon, large uses   | Yes                                                                                                                                   | `tarn-mark.svg`, `png/mark/tarn-mark-64…1024.png`                                                          |
+| The browser tab's icon                        | **No.** The tab shows Chrome's own icon on purpose; `public/icon/16.png` and `32.png` stay transparent (see `AGENTS.md`, Permissions) | —                                                                                                          |
+| On the new tab page itself                    | **No.** The page belongs to the user; no branding on it                                                                               | —                                                                                                          |
+| Next to the wordmark                          | Only in store art and the README header                                                                                               | —                                                                                                          |
 
 ### Colorways
 
-| File                  | Square                | Letters     | Use                                                   |
-| --------------------- | --------------------- | ----------- | ----------------------------------------------------- |
-| `tarn-mark.svg`       | Glacier `#1F6178`     | White       | Default everywhere. Works on light and dark toolbars. |
-| `tarn-mark-light.svg` | White + hairline edge | Granite     | Light documents, print                                |
-| `tarn-mark-dark.svg`  | Granite `#0F1C28`     | White       | Dark-only contexts                                    |
-| `tarn-mark-mono.svg`  | `currentColor`        | Knocked out | One-color uses; inline it                             |
+| File                  | Square                     | Letters     | Use                                              |
+| --------------------- | -------------------------- | ----------- | ------------------------------------------------ |
+| `tarn-mark.svg`       | Black `#000000`            | White       | The default, everywhere                          |
+| `tarn-mark-white.svg` | White + 14% black hairline | Black       | Dark backgrounds where a white tile reads better |
+| `tarn-mark-mono.svg`  | `currentColor`             | Knocked out | One-color uses; inline it                        |
+| `*-small.svg`         | Same three                 |             | The 16–32px master                               |
 
 ### Don't
 
@@ -147,27 +151,31 @@ live as constants in [`build_logo.py`](build_logo.py).
 
 ## Color
 
-The background scene carries the color. UI controls stay colorless frosted
-glass (see `--glass-*` tokens in `src/styles/global.css`).
+**The brand is black and white.** Pure `#000000` and pure `#FFFFFF` for the
+wordmark, the mark and brand surfaces (store art, README, social). No
+near-black, no blue-grey, no tints, and no brand hue.
 
-| Light (the face) | Hex       | Role                                   |
-| ---------------- | --------- | -------------------------------------- |
-| Snow             | `#FFFFFF` | Surfaces, text on dark                 |
-| Snowfield        | `#EEF2F5` | Light base                             |
-| Ice              | `#CFE3EC` | Light scene body                       |
-| Glacier          | `#1F6178` | The brand blue: the mark, links, focus |
-| Granite          | `#0F1C28` | Text and the wordmark on light         |
+| Brand | Hex       | Role                                            |
+| ----- | --------- | ----------------------------------------------- |
+| Black | `#000000` | The wordmark and mark on light; the dark ground |
+| White | `#FFFFFF` | The wordmark and mark on dark; the light ground |
 
-| Dark (the twin) | Hex       | Role                                                |
-| --------------- | --------- | --------------------------------------------------- |
-| Peat            | `#05080F` | Dark base, first paint                              |
-| Deepwater       | `#0D2740` | Dark scene body                                     |
-| Glacier         | `#1F6178` | Scene light                                         |
-| Meltwater       | `#A9CFE0` | Highlights                                          |
-| Alpenglow       | `#F2B8A0` | A rare warm accent. Use it sparingly or not at all. |
+The color lives in the **living background**, and only there. These scene
+colors never appear in a mark, a logo lockup or UI chrome:
 
-Never use Google's four brand colors (blue, red, yellow, green) together, or
-anything that reads as a modified Google mark.
+| Scene     | Hex       | Role                             |
+| --------- | --------- | -------------------------------- |
+| Snowfield | `#EEF2F5` | Light scene base                 |
+| Ice       | `#CFE3EC` | Light scene body                 |
+| Peat      | `#05080F` | Dark scene base, first paint     |
+| Deepwater | `#0D2740` | Dark scene body                  |
+| Glacier   | `#1F6178` | Scene light                      |
+| Meltwater | `#A9CFE0` | Highlights                       |
+| Alpenglow | `#F2B8A0` | A rare warm accent inside scenes |
+
+UI controls stay colorless frosted glass (`--glass-*` in
+`src/styles/global.css`). Never use Google's four brand colors (blue, red,
+yellow, green) together, or anything that reads as a modified Google mark.
 
 ## Backgrounds: the signature
 
@@ -201,13 +209,13 @@ ask for.
 
 ## Store and marketing
 
-| Asset                           | Size               | Content                                                                                          |
-| ------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
-| Icon                            | 128 × 128          | `png/tarn-store-icon-128.png`                                                                    |
-| Small promo tile (required)     | 440 × 280          | A still of the light scene with the white or Granite wordmark. Google advises little to no text. |
-| Marquee (needed to be featured) | 1400 × 560         | Same, wider                                                                                      |
-| Screenshots                     | 1280 × 800, 1 to 5 | Real new tabs: light, dark, settings                                                             |
-| Video                           | YouTube link       | 20 seconds of the scene moving, plus one ripple                                                  |
+| Asset                           | Size               | Content                                                                                        |
+| ------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------- |
+| Icon                            | 128 × 128          | `png/tarn-store-icon-128.png`                                                                  |
+| Small promo tile (required)     | 440 × 280          | A still of the light scene with the black or white wordmark. Google advises little to no text. |
+| Marquee (needed to be featured) | 1400 × 560         | Same, wider                                                                                    |
+| Screenshots                     | 1280 × 800, 1 to 5 | Real new tabs: light, dark, settings                                                           |
+| Video                           | YouTube link       | 20 seconds of the scene moving, plus one ripple                                                |
 
 - Lockup (store, README): mark + wordmark side by side, wordmark ink height
   about 70% of the mark, gap about 25% of the mark.
@@ -229,17 +237,22 @@ ask for.
 
 ```
 docs/brand/
-  BRAND.md                  this document
-  build_logo.py             regenerates every SVG from the constants above
+  BRAND.md                    this document
+  build_logo.py               regenerates every SVG from the constants above
   assets/
-    tarn-wordmark.svg       Granite
+    tarn-wordmark.svg         black
     tarn-wordmark-white.svg
-    tarn-wordmark-mono.svg  currentColor; inline it
-    tarn-mark.svg           Glacier square, white letters (default)
-    tarn-mark-light.svg
-    tarn-mark-dark.svg
-    tarn-mark-mono.svg      currentColor square, letters knocked out
-    png/                    16, 32, 48, 128, 512, store icon, wordmark 1200
+    tarn-wordmark-mono.svg    currentColor; inline it
+    tarn-mark.svg             black square, white letters (default)
+    tarn-mark-white.svg       white square, black letters, hairline edge
+    tarn-mark-mono.svg        currentColor square, letters knocked out
+    tarn-mark*-small.svg      the 16–32px master (opsz 18)
+    png/
+      extension/              action-16, action-32, icon-48, icon-96, icon-128
+      store/                  tarn-store-icon-128 (with the required padding)
+      mark/                   tarn-mark 64–1024, tarn-mark-white 512, 1024
+      wordmark/               black and white, 1200 wide, transparent
+      social/                 avatars 800 (black, white), link previews 1200×630
 ```
 
 To regenerate (only if the brand changes, with the owner's approval):
@@ -251,7 +264,9 @@ python3 -m venv .venv && .venv/bin/pip install fonttools uharfbuzz
 
 The script shapes text with HarfBuzz, so kerning matches what browsers draw,
 then outlines it with fontTools. Re-export the PNGs from the SVGs afterward at
-the sizes listed above.
+the sizes listed above (any SVG renderer; headless Chrome with a transparent
+background works), and copy the extension set into `public/action/` and
+`public/icon/`.
 
 ## Notes for AI agents
 
@@ -260,6 +275,7 @@ the sizes listed above.
 2. **Don't edit SVG path data by hand.** Change the constants in
    `build_logo.py` and regenerate, and only with the owner's approval.
 3. **Default Google Sans Flex only.** Never round, widen, slant or "tune" it.
+   **Pure black and white** for brand marks; scene colors stay in scenes.
 4. **No rainbow, prism, iridescence or AI-style glow.** Anywhere.
 5. **Light first, follow the system.** Every new visual needs a light version
    and a dark twin.
@@ -289,6 +305,8 @@ Everything below was shown to the owner on 2026-10-10 and 2026-10-11.
 | `ta / rn` outlined                            | Rejected                | Thin strokes vanish below 48px                                  |
 | `tarn` bleeding off the square                | Rejected                | Reads "tam"                                                     |
 | `t` or `ta` at a waterline with a reflection  | Rejected                | The `t` reads as a cross                                        |
+| Glacier-blue mark, blue-grey (Granite) ink    | Replaced 2026-10-12     | The owner: black and white, not grey-ish                        |
+| Small optical size (opsz 18) for 16–32px      | Adopted 2026-10-12      | Keeps the `a` open in the toolbar                               |
 | **`ta`, `a` cut in half**                     | **Adopted**             | The owner: "super sick". Bold at 16px, abstract, still the name |
 | Pearl iridescent scene                        | **Rejected**            | Washed out                                                      |
 | Dispersed-light prism scene (light and dark)  | **Rejected**            | The owner: forget prism entirely                                |

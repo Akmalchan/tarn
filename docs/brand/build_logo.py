@@ -23,10 +23,9 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
-# Brand colors (docs/brand/BRAND.md, "Color").
-GLACIER = '#1F6178'
-GRANITE = '#0F1C28'
-SNOW = '#FFFFFF'
+# Brand colors (docs/brand/BRAND.md, "Color"): pure black and white.
+BLACK = '#000000'
+WHITE = '#FFFFFF'
 
 # Shared type settings: default Google Sans Flex, never rounded or widened.
 BASE_AXES = {'wdth': 100, 'ROND': 0, 'slnt': 0, 'opsz': 144}
@@ -42,7 +41,12 @@ MARK = {
     'tracking': -0.04,  # em
     'square': 128,
     'radius': 30,
+    'opsz': 144,
 }
+
+# The small master, for 16-32px: the same mark drawn from the font's small
+# optical size, whose wider counters keep the "a" open at toolbar size.
+MARK_SMALL = {**MARK, 'opsz': 18}
 
 # The wordmark: lowercase "tarn", with a hair more space before the "n" so
 # "rn" never reads as "m".
@@ -58,12 +62,12 @@ WORDMARK = {
 HEADER = '<!-- Tarn brand asset. Built by docs/brand/build_logo.py; see docs/brand/BRAND.md. -->\n'
 
 
-def shape(font_path, text, weight):
+def shape(font_path, text, weight, opsz=144):
   """Returns [(glyph_name, x_advance, x_offset, y_offset)] in font units."""
   blob = hb.Blob.from_file_path(str(font_path))
   face = hb.Face(blob)
   font = hb.Font(face)
-  font.set_variations({**BASE_AXES, 'wght': weight})
+  font.set_variations({**BASE_AXES, 'opsz': opsz, 'wght': weight})
   buf = hb.Buffer()
   buf.add_str(text)
   buf.guess_segment_properties()
@@ -73,10 +77,10 @@ def shape(font_path, text, weight):
           for n, p in zip(names, buf.glyph_positions)]
 
 
-def instance(font_path, weight):
+def instance(font_path, weight, opsz=144):
   from fontTools.varLib.instancer import instantiateVariableFont
   font = TTFont(str(font_path))
-  return instantiateVariableFont(font, {**BASE_AXES, 'wght': weight})
+  return instantiateVariableFont(font, {**BASE_AXES, 'opsz': opsz, 'wght': weight})
 
 
 def outline(font, glyphs, size, x, baseline, tracking, extra=None):
@@ -104,28 +108,26 @@ def outline(font, glyphs, size, x, baseline, tracking, extra=None):
   return ' '.join(parts), bounds
 
 
-def build_mark(font_path, out):
-  m = MARK
-  font = instance(font_path, m['weight'])
-  glyphs = shape(font_path, m['text'], m['weight'])
+def build_mark(font_path, out, m=MARK, suffix=''):
+  font = instance(font_path, m['weight'], m['opsz'])
+  glyphs = shape(font_path, m['text'], m['weight'], m['opsz'])
   d, _ = outline(font, glyphs, m['size'], m['x'], m['baseline'], m['tracking'])
   s, r = m['square'], m['radius']
   square = f'<rect width="{s}" height="{s}" rx="{r}"/>'
 
   def svg(bg, fg, edge=False, title='Tarn'):
     border = (f'<rect x=".5" y=".5" width="{s - 1}" height="{s - 1}" rx="{r - .5}" '
-              f'fill="none" stroke="{GRANITE}" stroke-opacity=".12"/>') if edge else ''
+              f'fill="none" stroke="{BLACK}" stroke-opacity=".14"/>') if edge else ''
     return (f'{HEADER}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {s} {s}" '
             f'width="{s}" height="{s}" role="img" aria-label="{title}">'
             f'<defs><clipPath id="tarn-sq">{square}</clipPath></defs>'
             f'<g clip-path="url(#tarn-sq)"><rect width="{s}" height="{s}" fill="{bg}"/>'
             f'<path fill="{fg}" d="{d}"/></g>{border}</svg>\n')
 
-  (out / 'tarn-mark.svg').write_text(svg(GLACIER, SNOW))
-  (out / 'tarn-mark-light.svg').write_text(svg(SNOW, GRANITE, edge=True))
-  (out / 'tarn-mark-dark.svg').write_text(svg(GRANITE, SNOW))
+  (out / f'tarn-mark{suffix}.svg').write_text(svg(BLACK, WHITE))
+  (out / f'tarn-mark-white{suffix}.svg').write_text(svg(WHITE, BLACK, edge=True))
   # One color: the square in currentColor with the letters knocked out.
-  (out / 'tarn-mark-mono.svg').write_text(
+  (out / f'tarn-mark-mono{suffix}.svg').write_text(
       f'{HEADER}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {s} {s}" '
       f'width="{s}" height="{s}" role="img" aria-label="Tarn">'
       f'<defs><clipPath id="tarn-sq">{square}</clipPath>'
@@ -145,8 +147,8 @@ def build_wordmark(font_path, out):
   p = w['pad']
   vb = f'{x0 - p:.2f} {y0 - p:.2f} {x1 - x0 + 2 * p:.2f} {y1 - y0 + 2 * p:.2f}'
   width, height = x1 - x0 + 2 * p, y1 - y0 + 2 * p
-  for name, color in [('tarn-wordmark.svg', GRANITE),
-                      ('tarn-wordmark-white.svg', SNOW),
+  for name, color in [('tarn-wordmark.svg', BLACK),
+                      ('tarn-wordmark-white.svg', WHITE),
                       ('tarn-wordmark-mono.svg', 'currentColor')]:
     (out / name).write_text(
         f'{HEADER}<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}" '
@@ -162,6 +164,7 @@ def main():
   args = parser.parse_args()
   args.out.mkdir(parents=True, exist_ok=True)
   build_mark(args.font, args.out)
+  build_mark(args.font, args.out, MARK_SMALL, '-small')
   build_wordmark(args.font, args.out)
   print(f'Wrote SVGs to {args.out}')
 
