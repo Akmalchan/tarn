@@ -8,9 +8,11 @@ unless the brand itself changes. Everything that defines the marks lives in
 the constants below; docs/brand/BRAND.md explains each one.
 
 Setup (any Python 3.10+):
-    python3 -m venv .venv && .venv/bin/pip install fonttools uharfbuzz
+    python3 -m venv .venv && .venv/bin/pip install fonttools uharfbuzz brotli
 Font: Google Sans Flex variable TTF from Google Fonts (SIL OFL 1.1), e.g.
     https://github.com/google/fonts/tree/main/ofl/googlesansflex
+or the bundled subset converted to TTF (same outlines; needs `brotli`):
+    .venv/bin/python -c "from fontTools.ttLib import TTFont; f = TTFont('public/fonts/google-sans-flex-latin.woff2'); f.flavor = None; f.save('GoogleSansFlex.ttf')"
 Run:
     .venv/bin/python docs/brand/build_logo.py --font GoogleSansFlex.ttf
 """
@@ -48,18 +50,30 @@ MARK = {
 # optical size, whose wider counters keep the "a" open at toolbar size.
 MARK_SMALL = {**MARK, 'opsz': 18}
 
-# The wordmark: lowercase "tarn", with a hair more space before the "n" so
-# "rn" never reads as "m".
+# The wordmark: lowercase "tarn", drawn from the font's text optical size
+# with extra space before the "n", so "rn" never reads as "m" from a
+# distance. The display size (144) and a hair of gap read "tam" (measured
+# 2026-10-13; docs/brand/BRAND.md, "The r-n rule").
 WORDMARK = {
     'text': 'tarn',
     'weight': 500,
     'size': 100,
+    'opsz': 32,
     'tracking': -0.03,  # em, between every letter
-    'rn_gap': 0.012,  # em, added between "r" and "n" only
+    'rn_gap': 0.06,  # em, added between "r" and "n" only
     'pad': 0,  # extra space around the ink; clear space lives in BRAND.md
 }
 
 HEADER = '<!-- Tarn brand asset. Built by docs/brand/build_logo.py; see docs/brand/BRAND.md. -->\n'
+
+
+def axes(font_path, weight, opsz):
+  """The default design at this weight and optical size, limited to the axes
+  the font has (the bundled subset in public/fonts/ pins all but wght and
+  opsz to their defaults, so it draws the same outlines)."""
+  tags = {a.axisTag for a in TTFont(str(font_path))['fvar'].axes}
+  return {k: v for k, v in {**BASE_AXES, 'opsz': opsz, 'wght': weight}.items()
+          if k in tags}
 
 
 def shape(font_path, text, weight, opsz=144):
@@ -67,12 +81,14 @@ def shape(font_path, text, weight, opsz=144):
   blob = hb.Blob.from_file_path(str(font_path))
   face = hb.Face(blob)
   font = hb.Font(face)
-  font.set_variations({**BASE_AXES, 'opsz': opsz, 'wght': weight})
+  font.set_variations(axes(font_path, weight, opsz))
   buf = hb.Buffer()
   buf.add_str(text)
   buf.guess_segment_properties()
   hb.shape(font, buf, {'kern': True, 'liga': True})
-  names = [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
+  # Glyph ids, not HarfBuzz's names: the subset has no glyph names.
+  order = TTFont(str(font_path)).getGlyphOrder()
+  names = [order[i.codepoint] for i in buf.glyph_infos]
   return [(n, p.x_advance, p.x_offset, p.y_offset)
           for n, p in zip(names, buf.glyph_positions)]
 
@@ -80,7 +96,7 @@ def shape(font_path, text, weight, opsz=144):
 def instance(font_path, weight, opsz=144):
   from fontTools.varLib.instancer import instantiateVariableFont
   font = TTFont(str(font_path))
-  return instantiateVariableFont(font, {**BASE_AXES, 'opsz': opsz, 'wght': weight})
+  return instantiateVariableFont(font, axes(font_path, weight, opsz))
 
 
 def outline(font, glyphs, size, x, baseline, tracking, extra=None):
@@ -139,8 +155,8 @@ def build_mark(font_path, out, m=MARK, suffix=''):
 
 def build_wordmark(font_path, out):
   w = WORDMARK
-  font = instance(font_path, w['weight'])
-  glyphs = shape(font_path, w['text'], w['weight'])
+  font = instance(font_path, w['weight'], w['opsz'])
+  glyphs = shape(font_path, w['text'], w['weight'], w['opsz'])
   n_index = w['text'].index('n')
   d, (x0, y0, x1, y1) = outline(font, glyphs, w['size'], 0, 0, w['tracking'],
                                 extra={n_index: w['rn_gap']})
