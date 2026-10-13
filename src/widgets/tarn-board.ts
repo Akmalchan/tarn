@@ -14,7 +14,7 @@ import {
 import {repeat} from 'lit/directives/repeat.js';
 import {MAX_COLUMNS, columnsFor} from '../layout/bands';
 import type {WidgetEntry} from '../settings/schema';
-import {CELL, GAP, PITCH, moveTo, nearestIndex, placeTiles} from './geometry';
+import {CELL, GAP, PITCH, moveTo, nearestOrder, placeTiles} from './geometry';
 import {WIDGETS, renderWidget} from './registry';
 
 export {CELL, GAP} from './geometry';
@@ -27,6 +27,11 @@ const MOVE_MS = 460;
 const APPEAR_MS = 200;
 /** A press becomes a drag after the pointer moves this far (CSS px). */
 const DRAG_SLOP = 4;
+/**
+ * A held tile only changes slot when the new slot is clearly closer (CSS
+ * px), so the layout never flips back and forth between two slots.
+ */
+const STICKINESS = PITCH * 0.3;
 
 /**
  * Where the widgets' rounded rectangles are, for the background to frost
@@ -55,6 +60,9 @@ interface Drag {
   /** The tile's top-left on the board while dragged. */
   x: number;
   y: number;
+  /** The tile keeps the size it had when picked up, wherever it may land. */
+  width: number;
+  height: number;
   moved: boolean;
   frame: number;
 }
@@ -265,6 +273,8 @@ export class TarnBoard extends LitElement {
     const tiles = [...this.renderRoot.querySelectorAll<HTMLElement>('.tile')];
     const rects: number[] = [];
     for (const tile of tiles) {
+      // The held tile frosts what's under it itself (CSS, only while held).
+      if (tile.hasAttribute('data-dragging')) continue;
       const box = tile.getBoundingClientRect();
       rects.push(box.x, box.y, box.width, box.height);
     }
@@ -273,8 +283,14 @@ export class TarnBoard extends LitElement {
       this.instant || this.reduceMotion.matches
         ? 1
         : easeOut(Math.min(1, elapsed / APPEAR_MS));
+    // Nothing moved: no message, so the background doesn't redraw for it.
+    const key = rects.map(n => Math.round(n * 2)).join() + '|' + strength;
+    if (key === this.lastReport) return;
+    this.lastReport = key;
     this.dispatchTiles(rects, strength);
   };
+
+  private lastReport = '';
 
   override willUpdate(changed: PropertyValues<this>): void {
     // A saved order arrived: the preview has done its job.
@@ -314,15 +330,18 @@ export class TarnBoard extends LitElement {
         tile => tile.id,
         (tile, index) => {
           const widget = byId.get(tile.id)!;
-          const dragged = this.drag?.moved && this.drag.id === tile.id;
-          const x = dragged ? this.drag!.x : tile.x;
-          const y = dragged ? this.drag!.y : tile.y;
+          const held = this.drag?.moved && this.drag.id === tile.id;
+          const dragged = held ? this.drag! : null;
+          const x = dragged ? dragged.x : tile.x;
+          const y = dragged ? dragged.y : tile.y;
+          const w = dragged ? dragged.width : tile.width;
+          const h = dragged ? dragged.height : tile.height;
           const name = WIDGETS[widget.kind]?.name ?? widget.kind;
           return html`
             <div
               class="tile"
               data-id=${tile.id}
-              ?data-dragging=${dragged}
+              ?data-dragging=${held}
               tabindex=${this.editing ? '0' : '-1'}
               role=${this.editing ? 'button' : 'group'}
               aria-roledescription=${this.editing ? 'movable widget' : nothing}
@@ -331,7 +350,7 @@ export class TarnBoard extends LitElement {
                   ? `${name}, ${index + 1} of ${count}. Drag, or use the arrow keys, to move it.`
                   : name
               }
-              style="width:${tile.width}px;height:${tile.height}px;transform:translate(${x}px, ${y}px)"
+              style="width:${w}px;height:${h}px;transform:translate(${x}px, ${y}px)"
               @pointerdown=${this.onPointerDown}
               @keydown=${this.onTileKey}
             >
@@ -441,6 +460,8 @@ export class TarnBoard extends LitElement {
       startY: event.clientY,
       x: box.left - board.left,
       y: box.top - board.top,
+      width: tile.offsetWidth,
+      height: tile.offsetHeight,
       moved: false,
       frame: 0,
     };
@@ -486,12 +507,17 @@ export class TarnBoard extends LitElement {
     const drag = this.drag;
     const list = this.preview;
     if (!drag?.moved || !list) return;
-    const centerX = drag.x + drag.tile.offsetWidth / 2;
-    const centerY = drag.y + drag.tile.offsetHeight / 2;
-    const index = nearestIndex(list, drag.id, this.columns, centerX, centerY);
-    if (index !== list.findIndex(w => w.id === drag.id)) {
-      this.preview = moveTo(list, drag.id, index);
-    }
+    const centerX = drag.x + drag.width / 2;
+    const centerY = drag.y + drag.height / 2;
+    const next = nearestOrder(
+      list,
+      drag.id,
+      this.columns,
+      centerX,
+      centerY,
+      STICKINESS,
+    );
+    if (next.some((w, k) => w.id !== list[k]!.id)) this.preview = next;
   }
 
   private onPointerUp = (event: PointerEvent) => {

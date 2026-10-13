@@ -5,7 +5,14 @@
 
 import {describe, expect, it} from 'vitest';
 import type {LayoutItem, WidgetSize} from '../layout/bands';
-import {PITCH, moveTo, nearestIndex, placeTiles} from './geometry';
+import {
+  PITCH,
+  moveTo,
+  nearestIndex,
+  nearestOrder,
+  placeTiles,
+  swap,
+} from './geometry';
 
 const items = (...sizes: WidgetSize[]): LayoutItem[] =>
   sizes.map((size, i) => ({id: `w${i}`, size}));
@@ -70,5 +77,48 @@ describe('nearestIndex', () => {
         third.y + third.height / 2,
       ),
     ).toBe(2);
+  });
+
+  it('keeps its slot when the pointer is only a little closer to another', () => {
+    const list = items('l', 'l', 'l');
+    const {tiles} = placeTiles(list, 6);
+    const a = tiles[0]!;
+    const b = tiles[1]!;
+    // Just past halfway from slot 0 towards slot 1.
+    const x = a.x + a.width / 2 + (b.x - a.x) * 0.55;
+    const y = a.y + a.height / 2;
+    expect(nearestIndex(list, 'w0', 6, x, y, 0)).toBe(1);
+    expect(nearestIndex(list, 'w0', 6, x, y, PITCH * 0.3)).toBe(0);
+  });
+});
+
+describe('swap', () => {
+  it('trades two places and leaves the rest', () => {
+    const list = items('s', 'm', 'l');
+    expect(swap(list, 'w0', 'w2').map(i => i.id)).toEqual(['w2', 'w1', 'w0']);
+  });
+});
+
+describe('nearestOrder', () => {
+  it('lands the dragged widget in the slot under the pointer', () => {
+    const list = items('l', 'l', 'l');
+    const third = placeTiles(list, 6).tiles[2]!;
+    const order = nearestOrder(
+      list,
+      'w0',
+      6,
+      third.x + third.width / 2,
+      third.y + third.height / 2,
+    );
+    const landed = placeTiles(order, 6).tiles.find(t => t.id === 'w0')!;
+    expect(landed).toMatchObject({x: third.x, y: third.y});
+  });
+
+  it('keeps the order when nothing is clearly closer', () => {
+    const list = items('l', 's', 's', 'm');
+    const own = placeTiles(list, 6).tiles[0]!;
+    expect(
+      nearestOrder(list, 'w0', 6, own.x + 20, own.y + 20, PITCH * 0.3),
+    ).toEqual(list);
   });
 });

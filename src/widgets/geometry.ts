@@ -72,11 +72,67 @@ export function moveTo<T extends {id: string}>(
   return [...rest.slice(0, to), items[from]!, ...rest.slice(to)];
 }
 
+/** `items` with the two whose ids are `a` and `b` trading places. */
+export function swap<T extends {id: string}>(
+  items: readonly T[],
+  a: string,
+  b: string,
+): T[] {
+  const out = [...items];
+  const i = out.findIndex(item => item.id === a);
+  const j = out.findIndex(item => item.id === b);
+  if (i < 0 || j < 0) return out;
+  [out[i], out[j]] = [out[j]!, out[i]!];
+  return out;
+}
+
 /**
- * While a tile is dragged: the position in the order where dropping it
- * would put it nearest the pointer. Tries every position (a few dozen tiny
- * layouts at most) and keeps the one whose slot is closest to where the
- * dragged tile's center is now, in board coordinates.
+ * While a tile is dragged: the order that puts it nearest the pointer.
+ * Candidates are every position in the order and every swap with another
+ * widget (swaps reach spots that moving alone can't, measured: 51 -> 56-58
+ * spots in a 9-widget layout). Each candidate is laid out (a few dozen tiny
+ * layouts at most) and the one whose slot is closest to the dragged tile's
+ * center wins. The current order is kept unless another is closer by
+ * `stickiness` px, so the layout never flips back and forth.
+ */
+export function nearestOrder<T extends LayoutItem>(
+  items: readonly T[],
+  id: string,
+  columns: number,
+  centerX: number,
+  centerY: number,
+  stickiness = 0,
+): T[] {
+  const distance = (order: readonly T[]) => {
+    const tile = placeTiles(order, columns).tiles.find(t => t.id === id);
+    if (!tile) return Infinity;
+    return Math.hypot(
+      tile.x + tile.width / 2 - centerX,
+      tile.y + tile.height / 2 - centerY,
+    );
+  };
+  const candidates: T[][] = [];
+  for (let index = 0; index < items.length; index++) {
+    candidates.push(moveTo(items, id, index));
+  }
+  for (const other of items) {
+    if (other.id !== id) candidates.push(swap(items, id, other.id));
+  }
+  let best: T[] = [...items];
+  let bestDistance = Infinity;
+  for (const order of candidates) {
+    const d = distance(order);
+    if (d < bestDistance - 0.5) {
+      bestDistance = d;
+      best = order;
+    }
+  }
+  return bestDistance + stickiness < distance(items) ? best : [...items];
+}
+
+/**
+ * Like `nearestOrder`, but only moving the widget within the order: the
+ * index it would land at. Kept for callers that only need a position.
  */
 export function nearestIndex(
   items: readonly LayoutItem[],
@@ -84,21 +140,29 @@ export function nearestIndex(
   columns: number,
   centerX: number,
   centerY: number,
+  /** Keep the current slot unless another is closer by this much (px). */
+  stickiness = 0,
 ): number {
-  let best = items.findIndex(item => item.id === id);
-  let bestDistance = Infinity;
-  for (let index = 0; index < items.length; index++) {
+  const current = items.findIndex(item => item.id === id);
+  const distanceAt = (index: number) => {
     const tile = placeTiles(moveTo(items, id, index), columns).tiles.find(
       t => t.id === id,
     );
-    if (!tile) continue;
-    const dx = tile.x + tile.width / 2 - centerX;
-    const dy = tile.y + tile.height / 2 - centerY;
-    const distance = dx * dx + dy * dy;
-    if (distance < bestDistance - 1) {
+    if (!tile) return Infinity;
+    return Math.hypot(
+      tile.x + tile.width / 2 - centerX,
+      tile.y + tile.height / 2 - centerY,
+    );
+  };
+  let best = current;
+  let bestDistance = Infinity;
+  for (let index = 0; index < items.length; index++) {
+    const distance = distanceAt(index);
+    if (distance < bestDistance - 0.5) {
       bestDistance = distance;
       best = index;
     }
   }
-  return best;
+  if (best === current) return current;
+  return bestDistance + stickiness < distanceAt(current) ? best : current;
 }
