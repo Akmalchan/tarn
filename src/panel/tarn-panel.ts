@@ -1540,7 +1540,7 @@ function clockPreview(scene: Scene): ClockPreview {
 /** A "Show All" tile: a scene, blurred and faded, with a grid on it. */
 function showAll(scene: Scene) {
   return html`<span class="thumb more ${sceneTone(scene)}" aria-hidden="true">
-    <span class="veil" style="background: ${sceneStill(scene)}"></span>
+    <span class="veil" style="background: ${scenePreview(scene)}"></span>
     ${glyph('grid')}
   </span>`;
 }
