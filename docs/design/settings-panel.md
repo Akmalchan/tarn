@@ -19,10 +19,10 @@ browser's side panel has its own).
 ```
 Settings (home)
 ├── Search                         finds every setting, on any page
-├── Background                     a card: 3 scenes + a "Show All" tile
-│   └── Backgrounds                the current one large (with the clock),
-│                                  then every scene
-├── Clock                          a card: Classic, Bold, Minimal, None
+├── Background                     4 big tiles: 3 scenes + "Show All"
+│   └── Backgrounds                every scene
+├── Clock                          a card: Classic, Minimal, None + "Show All"
+│   └── Clock                      every face (Classic, Bold, Minimal, None)
 ├── Widgets ›                      on your tab (size, remove) + add
 ├── Advanced ›                     always last
 └── Signature                      wordmark, "for Google Chrome™", version,
@@ -40,10 +40,12 @@ Advanced
 
 1. **Home holds what most people change.** Today that's the background,
    the clock and widgets. Anything else goes one level down.
-2. **Show a few, then "Show All".** A picker is a card of four tiles, like
-   the wallpaper picker in macOS. When there are more choices than fit, the
-   fourth tile is "Show All" (a mosaic of the choices) and opens a page
-   with all of them (`HOME_SCENES` in the panel). The current choice is
+2. **Show a few, then "Show All".** A picker shows three choices and a
+   fourth tile, "Show All" (a mosaic of the choices), that opens a page
+   with all of them (`HOME_SCENES`, `HOME_FACES` in the panel). Backgrounds
+   are big 16:10 tiles on the page, the main tool; the clock is a card of
+   square tiles under them. Sub-pages are just the grid: no preview, the
+   tab next to the panel already shows the result. The current choice is
    always among the tiles. The first screen never grows just because the
    catalog does.
 3. **Pictures, not names.** Scenes and clock faces are picked from
@@ -80,9 +82,9 @@ Advanced
   ignored; see `SidePanelUtil::GetTitleText` in Chromium). So `short_name`
   is "Settings" ("Dev Settings" in dev, both within the 12-character
   limit), and the extension's `name` stays "Tarn" everywhere else (store,
-  install dialog, extensions page). The home page opens on search and ends on a signature: the `tarn`
-  wordmark, large and faded, with the version (`src/ui/wordmark.ts`); sub-pages show "‹ Settings" and a 20px
-  title.
+  install dialog, extensions page). The home page opens on search and ends on the
+  signature (`src/ui/wordmark.ts`); sub-pages open with the bar described
+  below.
 - **Desktop proportions, like macOS System Settings:** 13.5px titles, 12px
   descriptions, 24px icon tiles with 15px glyphs, 10px group corners, a 32px
   search field. Switches are 34×20, like Safari's settings, not phone-sized.
@@ -107,7 +109,9 @@ Advanced
   a control under its title, like widget sizes). No per-row exceptions, no
   measuring in script. Controls on the right stay vertically centered.
   Hairlines start where the text does.
-- Picker tiles are square (16:10 on the Backgrounds page), and their clock
+- Sub-pages open with an iOS-style bar: "‹ Settings" on the left, the
+  page's name centered, search under it.
+- Clock tiles are square (16:10 on the Clock page), and their clock
   text is sized in container units, so a thumbnail is a true small copy at
   any panel width.
 - Text is Google Sans Flex (bundled, see

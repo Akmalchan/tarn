@@ -34,10 +34,14 @@ import {wordmark} from '../ui/wordmark';
  * ends in a row that opens more, and Advanced sits last. See
  * docs/design/settings-panel.md.
  */
-type Page = 'home' | 'backgrounds' | 'widgets' | 'advanced';
+type Page = 'home' | 'backgrounds' | 'clock' | 'widgets' | 'advanced';
 
-/** Scenes on the first screen; the tile after them opens all of them. */
+/**
+ * Home shows three choices per picker, then a "Show All" tile that opens
+ * the page with all of them. The current choice is always among the three.
+ */
 const HOME_SCENES = 3;
+const HOME_FACES: readonly ClockStyle[] = ['center', 'minimal', 'none'];
 
 /**
  * Settings, docked in the browser's side panel next to the new tab. Every
@@ -150,11 +154,19 @@ export class TarnPanel extends LitElement {
       gap: 10px;
     }
 
+    /* Sub-pages: an iOS-style bar, back on the left, the title centered. */
+    .bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      min-height: 30px;
+    }
+
     .back {
       display: flex;
       align-items: center;
       justify-self: start;
-      padding: 2px 6px 2px 0;
+      padding: 4px 8px 4px 0;
       font: inherit;
       color: var(--ink);
       background: none;
@@ -214,10 +226,10 @@ export class TarnPanel extends LitElement {
     }
 
     h1 {
-      margin: -2px 0 0;
-      font-size: 20px;
-      font-weight: 650;
-      letter-spacing: -0.01em;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
     }
 
     .search {
@@ -450,18 +462,23 @@ export class TarnPanel extends LitElement {
         0 1px 1px rgb(0 0 0 / 0.06);
     }
 
-    /* Pickers: a card of four tiles, like the wallpaper and clock pickers
-       in macOS and iOS. Tiles scale with the panel; their text scales with
-       the tile (container units), so a thumbnail is a true small copy. */
+    /* Pickers. Backgrounds are four big tiles on the page; the clock is a
+       card of four square tiles. Either way the last tile is "Show All", a
+       mosaic that opens the page with every choice. Clock text is sized in
+       container units, so a thumbnail is a true small copy at any width. */
+    .scenes {
+      --ring-gap: var(--bg);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 12px;
+    }
+
     .tiles {
+      --ring-gap: var(--group);
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px 10px;
       padding: 12px 12px 10px;
-    }
-
-    .tiles.wide {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .pick {
@@ -469,7 +486,7 @@ export class TarnPanel extends LitElement {
       gap: 6px;
       min-width: 0;
       padding: 0;
-      font: 500 11.5px/14px var(--font-sans);
+      font: 500 var(--desc) / var(--desc-lh) var(--font-sans);
       color: var(--ink);
       text-align: center;
       background: none;
@@ -477,37 +494,42 @@ export class TarnPanel extends LitElement {
       cursor: pointer;
     }
 
+    .tiles .pick {
+      font-size: 11.5px;
+      line-height: 14px;
+    }
+
     .thumb {
       display: grid;
       place-content: center;
       justify-items: center;
       gap: 0.06em;
-      aspect-ratio: 1;
+      aspect-ratio: 16 / 10;
       overflow: hidden;
-      border-radius: 9px;
+      border-radius: 12px;
       box-shadow: inset 0 0 0 0.5px var(--hair);
       container-type: inline-size;
       transition: box-shadow 150ms ease;
     }
 
-    .wide .thumb {
-      aspect-ratio: 16 / 10;
+    .tiles .thumb {
+      aspect-ratio: 1;
+      border-radius: 9px;
     }
 
     .pick:hover .thumb {
       box-shadow:
         inset 0 0 0 0.5px var(--hair),
-        0 0 0 2px var(--group),
+        0 0 0 2px var(--ring-gap),
         0 0 0 4px var(--hair);
     }
 
     .pick[aria-checked='true'] .thumb {
       box-shadow:
-        0 0 0 2px var(--group),
-        0 0 0 4px var(--ink);
+        0 0 0 2.5px var(--ring-gap),
+        0 0 0 4.5px var(--ink);
     }
 
-    /* "Show All": the backgrounds as a small mosaic. */
     .thumb.more {
       grid-template: 1fr 1fr / 1fr 1fr;
       place-content: stretch;
@@ -518,25 +540,14 @@ export class TarnPanel extends LitElement {
       background: var(--field);
     }
 
-    .thumb.more span {
-      border-radius: 5px;
-    }
-
-    .hero {
+    .thumb.more > span {
       display: grid;
-      gap: 10px;
-      padding: 12px;
-      justify-items: center;
+      place-items: center;
+      border-radius: 10px;
     }
 
-    .hero .thumb {
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      border-radius: 8px;
-    }
-
-    .hero-name {
-      font-weight: 600;
+    .tiles .thumb.more > span {
+      border-radius: 5px;
     }
 
     .thumb.dark {
@@ -555,6 +566,10 @@ export class TarnPanel extends LitElement {
       font-variant-numeric: tabular-nums;
     }
 
+    .scenes .thumb .t {
+      font-size: 17cqi;
+    }
+
     .thumb .t.bold {
       font-weight: 650;
       letter-spacing: -0.05em;
@@ -565,12 +580,16 @@ export class TarnPanel extends LitElement {
       opacity: 0.75;
     }
 
-    .hero .thumb .t {
-      font-size: 14cqi;
+    .scenes .thumb .d {
+      font-size: 5cqi;
     }
 
-    .hero .thumb .d {
-      font-size: 3.6cqi;
+    .scenes .thumb .off {
+      font-size: 8cqi;
+    }
+
+    .thumb.more .t {
+      font-size: 13cqi;
     }
 
     .thumb .off {
@@ -801,6 +820,7 @@ export class TarnPanel extends LitElement {
       : {
           home: () => this.renderHome(),
           backgrounds: () => this.renderBackgrounds(),
+          clock: () => this.renderClock(),
           widgets: () => this.renderWidgets(),
           advanced: () => this.renderAdvanced(),
         }[this.page]();
@@ -812,10 +832,12 @@ export class TarnPanel extends LitElement {
             ${
               this.page === 'home'
                 ? nothing
-                : html`<button class="back" @click=${() => this.go('home')}>
+                : html`<div class="bar">
+                    <button class="back" @click=${() => this.go('home')}>
                       ${glyph('back')}Settings
                     </button>
-                    <h1>${PAGE_TITLES[this.page]}</h1>`
+                    <h1>${PAGE_TITLES[this.page]}</h1>
+                  </div>`
             }
             <label class="search">
               ${glyph('search')}
@@ -863,8 +885,12 @@ export class TarnPanel extends LitElement {
     return html`
       <section data-target="background">
         <h2>Background</h2>
-        <div class="group tiles" role="radiogroup" aria-label="Background">
-          ${homeScenes(this.settings.scene).map(scene => this.sceneButton(scene))}
+        <div class="scenes" role="radiogroup" aria-label="Background">
+          ${pickShown(
+            SCENES.map(s => s.id),
+            HOME_SCENES,
+            this.settings.scene,
+          ).map(id => this.sceneButton(sceneById(id)))}
           <button class="pick" @click=${() => this.go('backgrounds')}>
             <span class="thumb more" aria-hidden="true">
               ${SCENES.slice(0, 4).map(
@@ -880,7 +906,27 @@ export class TarnPanel extends LitElement {
       <section data-target="clock">
         <h2>Clock</h2>
         <div class="group tiles" role="radiogroup" aria-label="Clock">
-          ${CLOCK_STYLES.map(face => this.faceButton(face, preview))}
+          ${pickShown(HOME_FACES, HOME_FACES.length, this.settings.clock).map(
+            face => this.faceButton(face, preview),
+          )}
+          <button class="pick" @click=${() => this.go('clock')}>
+            <span
+              class="thumb more ${sceneTone(preview.scene)}"
+              aria-hidden="true"
+            >
+              ${CLOCK_STYLES.map(
+                face =>
+                  html`<span style="background: ${sceneStill(preview.scene)}"
+                    >${
+                      face === 'none'
+                        ? nothing
+                        : html`<span class="t ${face}">${preview.time}</span>`
+                    }</span
+                  >`,
+              )}
+            </span>
+            Show All
+          </button>
         </div>
       </section>
 
@@ -912,25 +958,21 @@ export class TarnPanel extends LitElement {
   }
 
   private renderBackgrounds() {
-    const scene = sceneById(this.settings.scene);
-    const preview = clockPreview(scene);
     return html`
-      <section>
-        <div class="group hero">
-          <span
-            class="thumb ${sceneTone(scene)}"
-            style="background: ${sceneStill(scene)}"
-          >
-            ${clockArt(this.settings.clock, preview)}
-          </span>
-          <span class="hero-name">${scene.name}</span>
+      <section data-target="all-backgrounds">
+        <div class="scenes" role="radiogroup" aria-label="Background">
+          ${SCENES.map(scene => this.sceneButton(scene))}
         </div>
       </section>
+    `;
+  }
 
-      <section data-target="all-backgrounds">
-        <h2>All backgrounds</h2>
-        <div class="group tiles wide" role="radiogroup" aria-label="Background">
-          ${SCENES.map(scene => this.sceneButton(scene))}
+  private renderClock() {
+    const preview = clockPreview(sceneById(this.settings.scene));
+    return html`
+      <section data-target="all-faces">
+        <div class="scenes" role="radiogroup" aria-label="Clock">
+          ${CLOCK_STYLES.map(face => this.faceButton(face, preview))}
         </div>
       </section>
     `;
@@ -1482,6 +1524,7 @@ const BROWSER = ((): string => {
 const PAGE_TITLES: Record<Page, string> = {
   home: 'Settings',
   backgrounds: 'Backgrounds',
+  clock: 'Clock',
   widgets: 'Widgets',
   advanced: 'Advanced',
 };
@@ -1512,14 +1555,14 @@ function clockArt(face: ClockStyle, {time, date}: ClockPreview) {
 }
 
 /**
- * The scenes on home: the first few, with the current one always among
- * them (in the last place when it's further down the list), so the choice
- * is visible and the tiles don't reshuffle on every pick.
+ * The choices a home picker shows: the first few, with the current one
+ * always among them (in the last place when it's further down the list),
+ * so the choice is visible and the tiles don't reshuffle on every pick.
  */
-function homeScenes(current: string): Scene[] {
-  const shown = SCENES.slice(0, HOME_SCENES);
-  if (shown.some(scene => scene.id === current)) return shown;
-  return [...shown.slice(0, -1), sceneById(current)];
+function pickShown<T>(all: readonly T[], count: number, current: T): T[] {
+  const shown = all.slice(0, count);
+  if (shown.includes(current)) return shown;
+  return [...shown.slice(0, -1), current];
 }
 
 const FACE_NAMES: Record<ClockStyle, string> = {
