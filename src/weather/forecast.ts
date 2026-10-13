@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {browser} from 'wxt/browser';
 import type {WeatherSettings} from '../settings/schema';
 import {getGoogleKey, temperatureUnit} from './config';
 import {fetchGoogle} from './google';
@@ -29,12 +30,29 @@ export function isCurrent(
   );
 }
 
+/**
+ * The forecast for a place: a fresh one another widget (or the clock)
+ * already fetched, or a new request. Shared by place, so two widgets for
+ * the same city make one request between them.
+ */
 export async function fetchForecast(
   place: Place,
   settings: WeatherSettings,
 ): Promise<Forecast> {
+  const key = cacheKey(place);
+  const cached = (await browser.storage.local.get(key))[key];
+  if (isCurrent((cached as Forecast | undefined) ?? null, place, settings)) {
+    return cached as Forecast;
+  }
   const unit = temperatureUnit(settings.units);
-  return settings.provider === 'google'
-    ? fetchGoogle(place.lat, place.lon, unit, await getGoogleKey())
-    : fetchOpenMeteo(place.lat, place.lon, unit);
+  const forecast =
+    settings.provider === 'google'
+      ? await fetchGoogle(place.lat, place.lon, unit, await getGoogleKey())
+      : await fetchOpenMeteo(place.lat, place.lon, unit);
+  await browser.storage.local.set({[key]: forecast}).catch(() => {});
+  return forecast;
+}
+
+function cacheKey(place: Place): string {
+  return `weather.cache.${place.lat},${place.lon}`;
 }

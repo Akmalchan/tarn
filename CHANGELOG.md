@@ -12,6 +12,9 @@ follow [Semantic Versioning](https://semver.org/).
   Search for a city or use your location; forecasts from Open-Meteo (free,
   no account) or Google with your own API key. Opt-in: nothing is sent
   until you add it.
+- Weather beside the clock: an icon and the temperature on the date line
+  (Settings > Clock > Show weather), on faces with a date line. It shares
+  forecasts with Weather widgets for the same place.
 - Your setup survives updates: a save only changes what you changed, so an
   older Tarn on another computer never erases a newer one's widgets or
   choices; renamed options get proper upgrades; every update first keeps a

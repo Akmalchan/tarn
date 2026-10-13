@@ -54,7 +54,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
-import {clockTime} from '../widgets/clock-faces';
+import {clockShowsWeather, clockTime} from '../widgets/clock-faces';
 import {
   addWallpaper,
   deleteWallpaper,
@@ -1100,6 +1100,7 @@ export class TarnPanel extends LitElement {
             ${showAll(preview.art)} Show All
           </button>
         </div>
+        ${this.clockWeatherRow()}
       </section>
 
       <div class="group">
@@ -1403,6 +1404,39 @@ export class TarnPanel extends LitElement {
               ${this.samples.testLayouts(widgets => this.applyPatch({widgets}))}
             </div>`
           : nothing
+      }
+    `;
+  }
+
+  /**
+   * "Show weather" beside the clock's date. Stays in place, disabled, for
+   * faces with no room for it, so the list doesn't jump while picking.
+   */
+  private clockWeatherRow() {
+    const {clock} = this.settings;
+    const fits = clockShowsWeather(clock);
+    const on = this.settings.weather.clock;
+    return html`
+      <div class="group">
+        <div class="row" data-target="clock-weather">
+          ${icon('weather')}
+          <span class="txt">Show weather</span>
+          <button
+            class="sw"
+            role="switch"
+            aria-label="Show weather beside the clock"
+            aria-checked=${on && fits}
+            ?disabled=${!fits}
+            @click=${() => this.setWeather({clock: !on})}
+          ></button>
+        </div>
+      </div>
+      ${
+        fits
+          ? nothing
+          : html`<p class="note">
+              Not shown with the ${FACE_NAMES[clock]} face.
+            </p>`
       }
     `;
   }
@@ -1927,7 +1961,11 @@ export class TarnPanel extends LitElement {
   };
 
   private setWeather(
-    patch: Partial<{provider: WeatherProvider; units: WeatherUnits}>,
+    patch: Partial<{
+      provider: WeatherProvider;
+      units: WeatherUnits;
+      clock: boolean;
+    }>,
   ): void {
     this.applyPatch({weather: {...this.settings.weather, ...patch}});
   }
@@ -2181,7 +2219,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide',
+      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide weather temperature',
   },
   {
     label: 'Widgets',

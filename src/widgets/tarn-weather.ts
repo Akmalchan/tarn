@@ -68,6 +68,7 @@ export class TarnWeather extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
     heading: {attribute: false},
+    inline: {type: Boolean, reflect: true},
     data: {state: true},
     settings: {state: true},
     problem: {state: true},
@@ -322,34 +323,57 @@ export class TarnWeather extends LitElement {
         }
       }
 
-      /* Extra large: two columns, the whole week. */
-      @container (min-width: 450px) and (min-height: 250px) {
-        .body {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: auto 1fr auto;
-          column-gap: 28px;
-        }
+      /* Small: place and glyph on top, a big temperature, the summary
+         at the foot, so the square is filled evenly. */
+      @container (max-width: 200px) {
         .now {
-          grid-column: 1;
+          height: 100%;
+          grid-template-rows: auto 1fr auto;
         }
-        .hours {
-          grid-column: 1;
+        .temp {
+          align-self: center;
+          font-size: 50px;
+        }
+        .cond {
           align-self: end;
         }
-        .days {
-          grid-column: 2;
-          grid-row: 1 / 3;
-        }
-        .now {
-          align-self: start;
-        }
-        .days .day:nth-child(n + 4) {
-          display: grid;
-        }
-        .credit {
-          grid-column: 1 / 3;
-        }
+      }
+
+      /* Inline, on the clock's date line: a glyph and a temperature. */
+      :host([inline]) {
+        display: inline-flex;
+        flex-direction: row;
+        height: auto;
+        padding: 0;
+        vertical-align: baseline;
+        color: inherit;
+        text-shadow: inherit;
+        font: inherit;
+      }
+
+      .inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        opacity: 1;
+        transition: opacity 150ms ease;
+      }
+
+      .inline:hover {
+        opacity: 0.8;
+      }
+
+      .inline .icon {
+        display: inline-block;
+        width: 1.15em;
+        height: 1.15em;
+        vertical-align: -0.2em;
       }
 
       /* The picker. */
@@ -399,6 +423,8 @@ export class TarnWeather extends LitElement {
   declare widgetId: string;
   /** The widget's name: the user's, or the default. */
   declare heading: string;
+  /** Compact, for the clock's date line: a glyph and a temperature. */
+  declare inline: boolean;
   declare data: WeatherData;
   /** Provider and units, from settings (null until loaded). */
   declare settings: WeatherSettings | null;
@@ -420,6 +446,7 @@ export class TarnWeather extends LitElement {
     super();
     this.widgetId = '';
     this.heading = 'Weather';
+    this.inline = false;
     this.data = EMPTY;
     this.settings = null;
     this.problem = '';
@@ -458,6 +485,7 @@ export class TarnWeather extends LitElement {
 
   override render() {
     const {place, forecast} = this.data;
+    if (this.inline) return this.renderInline(place, forecast);
     if (!place) {
       return html`
         <h3>${this.heading}</h3>
@@ -481,6 +509,40 @@ export class TarnWeather extends LitElement {
       </div>
       ${this.renderPicker()}
     `;
+  }
+
+  private renderInline(place: Place | null, forecast: Forecast | null) {
+    if (!place) {
+      return html`<button class="inline" @click=${this.openPicker}>
+          Add weather
+        </button>
+        ${this.renderPicker()}`;
+    }
+    const shown =
+      forecast && forecast.lat === place.lat && forecast.lon === place.lon
+        ? forecast
+        : null;
+    const today = shown?.days[0];
+    const summary = shown
+      ? `${place.name}: ${CONDITION_NAMES[shown.now.condition]}${
+          today ? `, H ${deg(today.max)} L ${deg(today.min)}` : ''
+        }. ${this.creditText()}.`
+      : place.name;
+    return html`<button
+        class="inline"
+        title=${this.problem || summary}
+        aria-label=${summary}
+        @click=${this.openPicker}
+      >
+        ${
+          shown
+            ? html`<span class="icon"
+                  >${weatherGlyph(shown.now.condition, shown.now.day)}</span
+                >${deg(shown.now.temp)}`
+            : '–°'
+        }
+      </button>
+      ${this.renderPicker()}`;
   }
 
   private renderNow(place: Place, forecast: Forecast | null) {
@@ -517,7 +579,7 @@ export class TarnWeather extends LitElement {
           (h, i) => html`
             <div class="hour">
               <span class="when"
-                >${i === 0 ? 'Now' : safeFormat(hour, h.time)}</span
+                >${i === 0 ? 'Now' : shortHour(safeFormat(hour, h.time))}</span
               >
               <span class="icon">${weatherGlyph(h.condition, h.day)}</span>
               <span>${deg(h.temp)}</span>
@@ -790,6 +852,11 @@ export class TarnWeather extends LitElement {
 /** A temperature, rounded, with a degree sign. */
 function deg(value: number): string {
   return `${Math.round(value)}°`;
+}
+
+/** "10 PM" -> "10PM": hour labels sit close together. */
+function shortHour(label: string): string {
+  return label.replace(/[\s\u202f]+(?=[AaPp]\.?[Mm])/, '');
 }
 
 function safeFormat(format: Intl.DateTimeFormat, time: number): string {

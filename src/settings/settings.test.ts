@@ -36,7 +36,7 @@ describe('normalizeSettings', () => {
       tabIcon: 'none',
       clock: 'none',
       widgets,
-      weather: {provider: 'google', units: 'fahrenheit'},
+      weather: {provider: 'google', units: 'fahrenheit', clock: false},
     });
   });
 

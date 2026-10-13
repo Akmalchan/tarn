@@ -151,7 +151,11 @@ describe('Google', () => {
 
 describe('isCurrent', () => {
   const place = {name: 'Tashkent', lat: 41.31, lon: 69.28};
-  const settings = {provider: 'open-meteo', units: 'celsius'} as const;
+  const settings = {
+    provider: 'open-meteo',
+    units: 'celsius',
+    clock: false,
+  } as const;
   const forecast = parseOpenMeteo(
     {
       current: {temperature_2m: 1, weather_code: 0, is_day: 1},

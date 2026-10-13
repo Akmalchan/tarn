@@ -41,48 +41,56 @@ type Preset = ReadonlyArray<readonly [WidgetKind, WidgetSize]>;
 
 export const TEST_LAYOUTS: Readonly<Record<string, Preset>> = {
   '1': [['favorites', 'l']],
+  // A large tile beside two stacked mediums: one clean 4-column band.
   '3': [
     ['favorites', 'l'],
-    ['focus', 's'],
-    ['notes', 's'],
+    ['weather', 'm'],
+    ['tasks', 'm'],
   ],
+  // Two large tiles, then a medium over two smalls: one 6-column band.
   '5': [
     ['favorites', 'l'],
+    ['notes', 'l'],
+    ['weather', 'm'],
     ['focus', 's'],
-    ['notes', 's'],
-    ['notes', 'm'],
-    ['focus', 'm'],
+    ['focus', 's'],
   ],
   '9': [
     ['favorites', 'xl'],
     ['notes', 'l'],
     ['focus', 's'],
-    ['focus', 's'],
-    ['notes', 'l'],
+    ['weather', 's'],
+    ['tasks', 'l'],
     ['notes', 'm'],
-    ['focus', 'm'],
+    ['weather', 'm'],
     ['favorites', 's'],
-    ['notes', 's'],
+    ['focus', 's'],
   ],
   '14': [
     ['favorites', 'xl'],
     ['notes', 'l'],
     ['focus', 's'],
-    ['notes', 's'],
-    ['focus', 'l'],
-    ['notes', 'm'],
+    ['weather', 's'],
+    ['weather', 'l'],
+    ['tasks', 'm'],
     ['focus', 'm'],
     ['favorites', 'l'],
     ['notes', 'xl'],
     ['focus', 's'],
     ['favorites', 's'],
     ['notes', 'm'],
-    ['focus', 'm'],
-    ['notes', 's'],
+    ['tasks', 'm'],
+    ['focus', 's'],
   ],
 };
 
 const SIZES: readonly WidgetSize[] = ['s', 's', 'm', 'm', 'l', 'xl'];
+
+const SAMPLE_PLACES = [
+  {name: 'Tashkent', detail: 'Uzbekistan', lat: 41.31, lon: 69.28},
+  {name: 'Lisbon', detail: 'Portugal', lat: 38.72, lon: -9.14},
+  {name: 'Tokyo', detail: 'Japan', lat: 35.69, lon: 139.69},
+];
 
 const SAMPLE_TASKS = [
   'Reply to Sam',
@@ -120,6 +128,12 @@ export async function buildTestLayout(preset: Preset): Promise<WidgetEntry[]> {
     widgets.map((widget, i) => {
       if (widget.kind === 'notes') {
         return saveWidgetData(widget.id, SAMPLE_NOTES[i % SAMPLE_NOTES.length]);
+      }
+      if (widget.kind === 'weather') {
+        return saveWidgetData(widget.id, {
+          place: SAMPLE_PLACES[i % SAMPLE_PLACES.length],
+          forecast: null,
+        });
       }
       if (widget.kind === 'tasks') {
         return saveWidgetData(
