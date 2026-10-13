@@ -8,7 +8,9 @@ Read CONTRIBUTING.md for structure and principles, and
 records what users want and hate, and Tarn's five product promises. Read
 `docs/brand/BRAND.md` before any visual, naming, icon or store-listing work:
 there is no logo, the `ta` mark is only for square slots, and it lists what
-was already rejected. The essentials:
+was already rejected. Read `docs/design/backgrounds.md` before changing or
+adding a background scene: the scenes, their cost, thumbnails, and the
+owner's taste. The essentials:
 
 ## Stack (decided, don't change without discussion)
 
