@@ -160,12 +160,27 @@ export class TarnPanel extends LitElement {
       fill: currentColor;
     }
 
-    /* Chrome's side panel header says "Settings" (the manifest's
-       short_name) with the ta icon; home shows the tarn wordmark. */
-    .wordmark svg {
+    /* Home ends on a quiet signature: the tarn wordmark, large and faded,
+       with the version. The top is left to search; Chrome's header already
+       says "Settings" with the ta icon. */
+    .signature {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      padding: 30px 0 6px;
+    }
+
+    .signature svg {
       display: block;
       width: auto;
-      height: 26px;
+      height: 46px;
+      color: var(--ink);
+      opacity: 0.14;
+    }
+
+    .signature span {
+      font-size: 12px;
+      color: var(--muted);
     }
 
     h1 {
@@ -242,7 +257,7 @@ export class TarnPanel extends LitElement {
       gap: 12px;
       box-sizing: border-box;
       width: 100%;
-      min-height: 46px;
+      min-height: 44px;
       padding: 8px 14px 8px 12px;
       font: inherit;
       color: inherit;
@@ -282,6 +297,12 @@ export class TarnPanel extends LitElement {
       45% {
         background: var(--field);
       }
+    }
+
+    .row:has(.sub) > .ico,
+    .wrow > .ico {
+      align-self: flex-start;
+      margin-top: 2px;
     }
 
     .ico {
@@ -335,8 +356,8 @@ export class TarnPanel extends LitElement {
     .sw {
       position: relative;
       flex: none;
-      width: 51px;
-      height: 31px;
+      width: 34px;
+      height: 20px;
       padding: 0;
       background: var(--track);
       border: 0;
@@ -350,13 +371,13 @@ export class TarnPanel extends LitElement {
       position: absolute;
       top: 2px;
       left: 2px;
-      width: 27px;
-      height: 27px;
+      width: 16px;
+      height: 16px;
       background: #ffffff;
       border-radius: 50%;
       box-shadow:
-        0 3px 8px rgb(0 0 0 / 0.15),
-        0 1px 1px rgb(0 0 0 / 0.16);
+        0 1px 3px rgb(0 0 0 / 0.18),
+        0 0 0 0.5px rgb(0 0 0 / 0.06);
       transition: transform 250ms cubic-bezier(0.3, 1.3, 0.6, 1);
     }
 
@@ -366,7 +387,7 @@ export class TarnPanel extends LitElement {
 
     .sw[aria-checked='true']::after {
       background: var(--knob-on);
-      transform: translateX(20px);
+      transform: translateX(14px);
     }
 
     .sw:disabled {
@@ -384,8 +405,8 @@ export class TarnPanel extends LitElement {
     }
 
     .seg button {
-      padding: 4px 10px;
-      font: 500 12.5px var(--font-sans);
+      padding: 3px 9px;
+      font: 500 12px var(--font-sans);
       color: var(--ink);
       background: none;
       border: 0;
@@ -725,7 +746,7 @@ export class TarnPanel extends LitElement {
           <div class="top">
             ${
               this.page === 'home'
-                ? html`<span class="wordmark">${wordmark()}</span>`
+                ? nothing
                 : html`<button class="back" @click=${() => this.go('home')}>
                       ${glyph('back')}Settings
                     </button>
@@ -846,6 +867,11 @@ export class TarnPanel extends LitElement {
           'advanced',
         )}
       </div>
+
+      <footer class="signature">
+        ${wordmark('Tarn')}
+        <span>Version ${this.version}</span>
+      </footer>
     `;
   }
 

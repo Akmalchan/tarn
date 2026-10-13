@@ -73,10 +73,13 @@ Settings (home)
   ignored; see `SidePanelUtil::GetTitleText` in Chromium). So `short_name`
   is "Settings" ("Dev Settings" in dev, both within the 12-character
   limit), and the extension's `name` stays "Tarn" everywhere else (store,
-  install dialog, extensions page). The home page opens on the `tarn` wordmark (`src/ui/wordmark.ts`), then
-  search; sub-pages show "‹ Settings" and a 21px
+  install dialog, extensions page). The home page opens on search and ends on a signature: the `tarn`
+  wordmark, large and faded, with the version (`src/ui/wordmark.ts`); sub-pages show "‹ Settings" and a 21px
   title.
-- Rows are at least 46px tall; text is Google Sans Flex (bundled, see
+- Rows are at least 44px tall. An icon sits top-left when its row holds
+  more than one line. Switches are desktop-sized (34×20), like Safari's
+  settings, not phone-sized.
+- Text is Google Sans Flex (bundled, see
   `src/styles/global.css`).
 
 ## Adding a setting
@@ -108,6 +111,8 @@ setting, and Advanced stays out of sight.
   twice. Chrome's header now says "Settings" instead.
 - **The ta mark in the panel:** Chrome's header already shows it next to
   "Settings". The panel keeps just the wordmark.
+- **The wordmark at the top:** it pushed search down and competed with
+  Chrome's "Settings" header. It closes the page instead.
 - **"Tarn Settings" as the short name:** 13 characters, over Chrome's
   limit of 12.
 - **A clock on/off switch:** the clock is picked by face, and "None" is one
