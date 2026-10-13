@@ -47,18 +47,26 @@ The primary and usually only brand element.
 
 ![wordmark](assets/png/wordmark/tarn-wordmark-black-1200.png)
 
-| Spec     | Value                                                                        |
-| -------- | ---------------------------------------------------------------------------- |
-| Text     | `tarn`, lowercase                                                            |
-| Font     | Google Sans Flex, default design: `wdth 100`, `ROND 0`, `slnt 0`, `opsz 144` |
-| Weight   | 500                                                                          |
-| Tracking | −0.03em between letters                                                      |
-| r–n gap  | +0.012em extra before the `n` (see below)                                    |
-| Files    | `assets/tarn-wordmark.svg` (black), `-white.svg`, `-mono.svg` (currentColor) |
+| Spec     | Value                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------ |
+| Text     | `tarn`, lowercase                                                                                      |
+| Font     | Google Sans Flex, default design: `wdth 100`, `ROND 0`, `slnt 0`, `opsz 32` (the text size, see below) |
+| Weight   | 500                                                                                                    |
+| Tracking | −0.03em between letters                                                                                |
+| r–n gap  | +0.06em extra before the `n` (see below)                                                               |
+| Files    | `assets/tarn-wordmark.svg` (black), `-white.svg`, `-mono.svg` (currentColor)                           |
 
 - **The r–n rule.** Squeezed together, `rn` reads as `m` and "tarn" becomes
-  "tam". The extra gap before the `n` prevents that. Never tighten it, and
-  never retype the wordmark as live text in a logo context; use the SVG.
+  "tam". Two settings prevent it, and both are needed: the font's text
+  optical size (`opsz 32`), which gives every letter more room than the
+  display size (`opsz 144`), and +0.06em before the `n`. Measured on
+  2026-10-13 (each word blurred as distance blurs it, its `rn` compared
+  pixel by pixel with an `m`, 0 = identical, `m` vs `n` = 20): the old
+  wordmark (`opsz 144`, +0.012em) scored 2.3 and read "tam"; a bigger gap
+  alone at `opsz 144` only reached 5.3; this one scores 12.8 and reads
+  "tarn" from across the room. Never tighten it, never go back to the
+  display size, and never retype the wordmark as live text in a logo
+  context; use the SVG.
 - **Clear space:** at least the height of the `a` on every side.
 - **Minimum size:** 48px wide on screen, 12mm in print.
 - **Color:** pure black on light backgrounds, pure white on dark ones, or one
@@ -263,9 +271,13 @@ docs/brand/
 To regenerate (only if the brand changes, with the owner's approval):
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install fonttools uharfbuzz
+python3 -m venv .venv && .venv/bin/pip install fonttools uharfbuzz brotli
 .venv/bin/python docs/brand/build_logo.py --font path/to/GoogleSansFlex[ROND,opsz,slnt,wdth,wght].ttf
 ```
+
+The bundled subset in `public/fonts/` draws the same outlines (verified
+byte for byte on 2026-10-13); the script's docstring shows how to convert it
+to a TTF.
 
 The script shapes text with HarfBuzz, so kerning matches what browsers draw,
 then outlines it with fontTools. Re-export the PNGs from the SVGs afterward at
@@ -298,23 +310,26 @@ background works), and copy the extension set into `public/action/` and
 
 Everything below was shown to the owner on 2026-10-10 and 2026-10-11.
 
-| Option                                        | Outcome                 | Why                                                             |
-| --------------------------------------------- | ----------------------- | --------------------------------------------------------------- |
-| Albert Sans wordmark                          | Replaced                | The owner preferred Google Sans Flex once it proved legal       |
-| Google Sans Flex, roundness 60 ("soft")       | **Rejected**            | The owner: default only, not soft                               |
-| "Still" symbol (half sun over its reflection) | Retired                 | The owner chose text over a pictorial symbol                    |
-| Glowing horizon line icon (the original)      | Retired                 | Read as a minus sign                                            |
-| Wordmark with an underline                    | Rejected                | Reads as a link; as an icon it shrinks to a minus sign          |
-| Plain `t` in a square                         | Not adopted             | Clear, but generic                                              |
-| `ta / rn` stacked (American Express style)    | Not adopted             | Great at 128px, mush at 16px; `rn` reads `m`                    |
-| `ta / rn` outlined                            | Rejected                | Thin strokes vanish below 48px                                  |
-| `tarn` bleeding off the square                | Rejected                | Reads "tam"                                                     |
-| `t` or `ta` at a waterline with a reflection  | Rejected                | The `t` reads as a cross                                        |
-| Glacier-blue mark, blue-grey (Granite) ink    | Replaced 2026-10-12     | The owner: black and white, not grey-ish                        |
-| Small optical size (opsz 18) for 16–32px      | Adopted 2026-10-12      | Keeps the `a` open in the toolbar                               |
-| **`ta`, `a` cut in half**                     | **Adopted**             | The owner: "super sick". Bold at 16px, abstract, still the name |
-| Pearl iridescent scene                        | **Rejected**            | Washed out                                                      |
-| Dispersed-light prism scene (light and dark)  | **Rejected**            | The owner: forget prism entirely                                |
-| Full rainbow, rainbow UI glow                 | Rejected                | Loud, reads as an AI feature                                    |
-| All caps TARN                                 | Rejected                | Loud; Google never caps product names                           |
-| Dark-first brand                              | Replaced by light first | Matches the browser around the tab                              |
+| Option                                        | Outcome                 | Why                                                                |
+| --------------------------------------------- | ----------------------- | ------------------------------------------------------------------ |
+| Albert Sans wordmark                          | Replaced                | The owner preferred Google Sans Flex once it proved legal          |
+| Google Sans Flex, roundness 60 ("soft")       | **Rejected**            | The owner: default only, not soft                                  |
+| "Still" symbol (half sun over its reflection) | Retired                 | The owner chose text over a pictorial symbol                       |
+| Glowing horizon line icon (the original)      | Retired                 | Read as a minus sign                                               |
+| Wordmark with an underline                    | Rejected                | Reads as a link; as an icon it shrinks to a minus sign             |
+| Plain `t` in a square                         | Not adopted             | Clear, but generic                                                 |
+| `ta / rn` stacked (American Express style)    | Not adopted             | Great at 128px, mush at 16px; `rn` reads `m`                       |
+| `ta / rn` outlined                            | Rejected                | Thin strokes vanish below 48px                                     |
+| `tarn` bleeding off the square                | Rejected                | Reads "tam"                                                        |
+| `t` or `ta` at a waterline with a reflection  | Rejected                | The `t` reads as a cross                                           |
+| Glacier-blue mark, blue-grey (Granite) ink    | Replaced 2026-10-12     | The owner: black and white, not grey-ish                           |
+| Small optical size (opsz 18) for 16–32px      | Adopted 2026-10-12      | Keeps the `a` open in the toolbar                                  |
+| Wordmark at `opsz 144`, +0.012em before `n`   | Replaced 2026-10-13     | The owner: "looks like tam in far distance". Measured: it did      |
+| Renaming (loch, lampi, kelda) or a new font   | Not adopted 2026-10-13  | The owner keeps the name; a fix inside Google Sans Flex was enough |
+| Wordmark at `opsz 32`, +0.06em before `n`     | **Adopted** 2026-10-13  | Reads "tarn" far away and keeps today's look ("B" of four)         |
+| **`ta`, `a` cut in half**                     | **Adopted**             | The owner: "super sick". Bold at 16px, abstract, still the name    |
+| Pearl iridescent scene                        | **Rejected**            | Washed out                                                         |
+| Dispersed-light prism scene (light and dark)  | **Rejected**            | The owner: forget prism entirely                                   |
+| Full rainbow, rainbow UI glow                 | Rejected                | Loud, reads as an AI feature                                       |
+| All caps TARN                                 | Rejected                | Loud; Google never caps product names                              |
+| Dark-first brand                              | Replaced by light first | Matches the browser around the tab                                 |

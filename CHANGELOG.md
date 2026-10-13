@@ -52,3 +52,8 @@ follow [Semantic Versioning](https://semver.org/).
   long-lived tabs, self-healing warm process.
 - Take-over page that switches off other new-tab extensions (optional
   `management` permission) and restores them when Tarn is turned off.
+
+### Changed
+
+- The wordmark reads "tarn" from a distance, not "tam": it is drawn from
+  Google Sans Flex's text size with a little more room before the n.
