@@ -22,9 +22,13 @@ Settings (home)
 ├── Background                     the first 4 scenes as thumbnails
 │   └── All backgrounds ›          appears once there are more than 4
 ├── Clock                          faces: Classic, Bold, Minimal, None
-├── Widgets ›                      on your tab (size, order, remove) + add
-├── Tarn                           Use Tarn for new tabs
-└── Advanced ›                     always last
+├── Widgets ›                      on your tab (size, remove) + add
+├── Use Tarn for new tabs          a switch
+├── Advanced ›                     always last
+└── Signature                      wordmark, "for Google Chrome™", version,
+                                   Privacy · Source code
+
+Advanced
     ├── Tab icon                   (Chromium only)
     ├── Keyboard                   the shortcuts that exist
     ├── Backup                     export, import, reset
@@ -81,6 +85,19 @@ Settings (home)
   search field. Switches are 34×20, like Safari's settings, not phone-sized.
   The sizes are tokens at the top of the panel's styles (`--title`,
   `--icon`, `--row-x`...); change them there, not per row.
+- **One line per row; explanations go under the box.** Like iOS and macOS
+  settings, a row is an icon, a title and a control or value (Widgets ›
+  shows "3"). What a setting does is a short note below its group, not a
+  second line in the row. Only "Add a widget" keeps a description line,
+  because there it is the point.
+- **Widgets are moved on the tab, not in the panel.** While the panel is
+  open the tab is in edit mode, and dragging there is direct; the panel
+  only sizes and removes them.
+- **The signature closes home, centered:** the wordmark faded, "for" and
+  the browser's own name (only names a browser reports: "Google Chrome™"
+  per BRAND.md, Edge, Opera, Brave, Vivaldi, Firefox; nothing otherwise),
+  the version, then Privacy (`PRIVACY.md`) and Source code links. A plain
+  line, never Google's logo or colors.
 - **One icon rule for every row.** The icon's box is exactly as tall as a
   title plus one description line, so it sits centered beside one or two
   lines and stays top-left once a description wraps further (or a row holds

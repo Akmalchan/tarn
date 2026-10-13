@@ -120,9 +120,9 @@ export class TarnPanel extends LitElement {
 
     .page {
       display: grid;
-      gap: 20px;
+      gap: 22px;
       align-content: start;
-      padding: 14px 14px 36px;
+      padding: 14px 16px 28px;
     }
 
     .page.forward {
@@ -172,27 +172,47 @@ export class TarnPanel extends LitElement {
       fill: currentColor;
     }
 
-    /* Home ends on a quiet signature: the tarn wordmark, large and faded,
-       with the version. The top is left to search; Chrome's header already
-       says "Settings" with the ta icon. */
+    /* Home ends on a quiet, centered signature: the tarn wordmark faded,
+       the browser it's for, the version, then Privacy and Source code. The
+       top is left to search; Chrome's header already says "Settings". */
     .signature {
       display: grid;
       justify-items: center;
-      gap: 8px;
-      padding: 30px 0 6px;
+      padding: 26px 0 0;
+      font-size: var(--desc);
+      line-height: var(--desc-lh);
+      color: var(--muted);
+      text-align: center;
     }
 
     .signature svg {
       display: block;
       width: auto;
-      height: 46px;
+      height: 40px;
+      margin-bottom: 10px;
       color: var(--ink);
-      opacity: 0.14;
+      opacity: 0.16;
     }
 
-    .signature span {
-      font-size: 12px;
-      color: var(--muted);
+    .signature .for {
+      color: var(--ink);
+      opacity: 0.6;
+    }
+
+    .signature .links {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .signature a {
+      color: inherit;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+
+    .signature a:hover {
+      color: var(--ink);
     }
 
     h1 {
@@ -342,12 +362,16 @@ export class TarnPanel extends LitElement {
     }
 
     .txt {
-      display: grid;
       flex: 1;
       min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .sub {
+      display: block;
+      white-space: normal;
       font-size: var(--desc);
       line-height: var(--desc-lh);
       color: var(--muted);
@@ -361,8 +385,12 @@ export class TarnPanel extends LitElement {
     }
 
     .value {
-      font-size: var(--title);
+      flex: none;
       color: var(--muted);
+    }
+
+    .value.ink {
+      color: var(--ink);
     }
 
     .sw {
@@ -417,8 +445,9 @@ export class TarnPanel extends LitElement {
     }
 
     .seg button {
-      padding: 3px 9px;
-      font: 500 12px var(--font-sans);
+      min-width: 26px;
+      padding: 3px 7px;
+      font: 500 11.5px/16px var(--font-sans);
       color: var(--ink);
       background: none;
       border: 0;
@@ -447,9 +476,9 @@ export class TarnPanel extends LitElement {
 
     .pick {
       display: grid;
-      gap: 7px;
+      gap: 6px;
       padding: 0;
-      font: 500 13px var(--font-sans);
+      font: 500 var(--desc) / var(--desc-lh) var(--font-sans);
       color: inherit;
       text-align: center;
       background: none;
@@ -509,48 +538,34 @@ export class TarnPanel extends LitElement {
       opacity: 0.75;
     }
 
-    .wrow .seg {
-      margin: 5px 0 3px;
-    }
-
-    .tools {
-      display: flex;
-      gap: 2px;
-    }
-
-    .ib {
-      display: grid;
-      place-items: center;
-      width: 26px;
-      height: 26px;
-      padding: 0;
-      color: var(--muted);
-      background: none;
-      border: 0;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .ib svg {
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
-    }
-
-    .ib:hover:not(:disabled) {
-      color: var(--ink);
-      background: var(--press);
-    }
-
-    .ib:disabled {
-      opacity: 0.3;
-      cursor: default;
-    }
-
-    .addmark {
+    /* The round plus and minus that add and remove widgets. */
+    .action {
+      display: block;
       flex: none;
       width: 20px;
       height: 20px;
+      fill: var(--ink);
+    }
+
+    .remove {
+      display: grid;
+      flex: none;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      margin-right: -4px;
+      padding: 0;
+      background: none;
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .remove .action {
+      fill: var(--muted);
+    }
+
+    .remove:hover .action {
       fill: var(--ink);
     }
 
@@ -564,6 +579,7 @@ export class TarnPanel extends LitElement {
     .note,
     .none {
       margin: 0 var(--row-x);
+      text-wrap: pretty;
       font-size: var(--desc);
       line-height: var(--desc-lh);
       color: var(--muted);
@@ -803,7 +819,6 @@ export class TarnPanel extends LitElement {
 
   private renderHome() {
     const {widgets, enabled} = this.settings;
-    const names = widgets.map(w => KIND_NAMES[w.kind]);
     const preview = clockPreview(sceneById(this.settings.scene));
     return html`
       <section data-target="background">
@@ -817,7 +832,7 @@ export class TarnPanel extends LitElement {
                 ${this.navRow(
                   'photo',
                   'All backgrounds',
-                  `${SCENES.length} scenes`,
+                  String(SCENES.length),
                   'backgrounds',
                 )}
               </div>`
@@ -836,27 +851,17 @@ export class TarnPanel extends LitElement {
         ${this.navRow(
           'widgets',
           'Widgets',
-          names.length ? listNames(names) : 'None yet',
+          widgets.length ? String(widgets.length) : 'None',
           'widgets',
           'widgets',
         )}
       </div>
 
       <section>
-        <h2>Tarn</h2>
         <div class="group">
           <div class="row" data-target="enabled">
             <span class="ico mark">${MARK_TILE}</span>
-            <span class="txt"
-              >Use Tarn for new tabs
-              <span class="sub"
-                >${
-                  enabled
-                    ? 'New tabs open Tarn.'
-                    : 'New tabs open the default page.'
-                }</span
-              ></span
-            >
+            <span class="txt">Use Tarn for new tabs</span>
             <button
               class="sw"
               role="switch"
@@ -867,20 +872,28 @@ export class TarnPanel extends LitElement {
             ></button>
           </div>
         </div>
+        <p class="note">
+          ${
+            enabled
+              ? 'Turn off to get your browser’s own new tab back.'
+              : 'New tabs open your browser’s own page.'
+          }
+        </p>
       </section>
 
       <div class="group">
-        ${this.navRow(
-          'sliders',
-          'Advanced',
-          'Tab icon, keyboard, backup, settings.json',
-          'advanced',
-        )}
+        ${this.navRow('sliders', 'Advanced', '', 'advanced')}
       </div>
 
       <footer class="signature">
         ${wordmark('Tarn')}
+        ${BROWSER ? html`<span class="for">for ${BROWSER}</span>` : nothing}
         <span>Version ${this.version}</span>
+        <span class="links">
+          <a href=${PRIVACY_URL} target="_blank" rel="noopener">Privacy</a>
+          <span aria-hidden="true">·</span>
+          <a href=${SOURCE_URL} target="_blank" rel="noopener">Source code</a>
+        </span>
       </footer>
     `;
   }
@@ -904,8 +917,12 @@ export class TarnPanel extends LitElement {
         ${
           widgets.length
             ? html`<div class="group">
-                ${widgets.map((widget, i) => this.widgetRow(widget, i))}
-              </div>`
+                  ${widgets.map((widget, i) => this.widgetRow(widget, i))}
+                </div>
+                <p class="note">
+                  While this panel is open, drag widgets on your tab to move
+                  them.
+                </p>`
             : html`<p class="none">
                 No widgets. The page stays calm: just the background and the
                 clock.
@@ -928,7 +945,7 @@ export class TarnPanel extends LitElement {
                   >${KIND_NAMES[kind]}
                   <span class="sub">${KIND_NOTES[kind]}</span></span
                 >
-                <svg class="addmark" viewBox="0 0 24 24" aria-hidden="true">
+                <svg class="action" viewBox="0 0 24 24" aria-hidden="true">
                   ${GLYPHS.plus}
                 </svg>
               </button>
@@ -955,16 +972,7 @@ export class TarnPanel extends LitElement {
               <div class="group">
                 <div class="row" data-target="tab-icon">
                   ${icon('tab')}
-                  <span class="txt"
-                    >Tab icon
-                    <span class="sub"
-                      >${
-                        tabIcon === 'none'
-                          ? 'No icon in the tab.'
-                          : 'Chrome’s own new-tab icon.'
-                      }</span
-                    ></span
-                  >
+                  <span class="txt">Tab icon</span>
                   <div class="seg" role="radiogroup" aria-label="Tab icon">
                     ${TAB_ICONS.map(
                       value => html`
@@ -980,6 +988,13 @@ export class TarnPanel extends LitElement {
                   </div>
                 </div>
               </div>
+              <p class="note">
+                ${
+                  tabIcon === 'none'
+                    ? 'New tabs show no icon.'
+                    : 'New tabs show Chrome’s own new-tab icon.'
+                }
+              </p>
             </section>`
       }
 
@@ -1008,28 +1023,26 @@ export class TarnPanel extends LitElement {
             @click=${this.exportSettings}
           >
             ${icon('share')}
-            <span class="txt"
-              >Export settings <span class="sub">Saves a .json file</span></span
-            >
+            <span class="txt">Export settings</span>
           </button>
           <button class="row" @click=${this.pickImport}>
             ${icon('tray')}
-            <span class="txt"
-              >Import settings
-              <span class="sub">From a file you exported</span></span
-            >
+            <span class="txt">Import settings</span>
           </button>
           <button class="row" data-target="reset" @click=${this.onReset}>
             ${icon('reset')}
-            <span class="txt"
-              >${this.confirmReset ? 'Click again to reset' : 'Reset to defaults'}
-              <span class="sub"
-                >Background, clock, widgets and tab icon</span
-              ></span
-            >
+            <span class="txt">Reset to defaults</span>
+            ${
+              this.confirmReset
+                ? html`<span class="value ink">Click again</span>`
+                : nothing
+            }
           </button>
         </div>
-        <p class="note">Import and reset never turn Tarn on or off.</p>
+        <p class="note">
+          Export saves a .json file you can import later. Reset restores the
+          background, clock, widgets and tab icon. Neither turns Tarn on or off.
+        </p>
       </section>
 
       <section>
@@ -1066,14 +1079,12 @@ export class TarnPanel extends LitElement {
           </div>
           <button class="row" @click=${this.copyDiagnostics}>
             ${icon('doc')}
-            <span class="txt"
-              >Copy diagnostics
-              <span class="sub"
-                >Version, browser and settings, for bug reports</span
-              ></span
-            >
+            <span class="txt">Copy diagnostics</span>
           </button>
         </div>
+        <p class="note">
+          Copies the version, browser and settings, for bug reports.
+        </p>
       </section>
 
       ${
@@ -1109,9 +1120,8 @@ export class TarnPanel extends LitElement {
                 @click=${() => this.go(entry.page, entry.target)}
               >
                 ${icon(entry.glyph)}
-                <span class="txt"
-                  >${entry.label}<span class="sub">${entry.where}</span></span
-                >
+                <span class="txt">${entry.label}</span>
+                <span class="value">${entry.where}</span>
                 ${chevron()}
               </button>
             `,
@@ -1165,52 +1175,34 @@ export class TarnPanel extends LitElement {
 
   private widgetRow(widget: WidgetEntry, index: number) {
     const name = KIND_NAMES[widget.kind];
-    const last = this.settings.widgets.length - 1;
     return html`
-      <div class="row wrow">
+      <div class="row">
         ${icon(KIND_GLYPHS[widget.kind])}
-        <span class="txt"
-          >${name}
-          <span class="seg" role="radiogroup" aria-label="${name} size">
-            ${WIDGET_SIZES.map(
-              size => html`
-                <button
-                  role="radio"
-                  title=${SIZE_NAMES[size]}
-                  aria-checked=${size === widget.size}
-                  @click=${() => this.resizeWidget(index, size)}
-                >
-                  ${size.toUpperCase()}
-                </button>
-              `,
-            )}
-          </span></span
-        >
-        <span class="tools">
-          <button
-            class="ib"
-            aria-label="Move ${name} up"
-            ?disabled=${index === 0}
-            @click=${() => this.moveWidget(index, -1)}
-          >
-            ${glyph('up')}
-          </button>
-          <button
-            class="ib"
-            aria-label="Move ${name} down"
-            ?disabled=${index === last}
-            @click=${() => this.moveWidget(index, 1)}
-          >
-            ${glyph('down')}
-          </button>
-          <button
-            class="ib"
-            aria-label="Remove ${name}"
-            @click=${() => this.removeWidget(index)}
-          >
-            ${glyph('minus')}
-          </button>
+        <span class="txt">${name}</span>
+        <span class="seg" role="radiogroup" aria-label="${name} size">
+          ${WIDGET_SIZES.map(
+            size => html`
+              <button
+                role="radio"
+                title=${SIZE_NAMES[size]}
+                aria-checked=${size === widget.size}
+                @click=${() => this.resizeWidget(index, size)}
+              >
+                ${size.toUpperCase()}
+              </button>
+            `,
+          )}
         </span>
+        <button
+          class="remove"
+          aria-label="Remove ${name}"
+          title="Remove"
+          @click=${() => this.removeWidget(index)}
+        >
+          <svg class="action" viewBox="0 0 24 24" aria-hidden="true">
+            ${GLYPHS.minus}
+          </svg>
+        </button>
       </div>
     `;
   }
@@ -1218,7 +1210,7 @@ export class TarnPanel extends LitElement {
   private navRow(
     glyphName: GlyphName,
     title: string,
-    sub: string,
+    value: string,
     page: Page,
     target = '',
   ) {
@@ -1229,7 +1221,8 @@ export class TarnPanel extends LitElement {
         @click=${() => this.go(page)}
       >
         ${icon(glyphName)}
-        <span class="txt">${title}<span class="sub">${sub}</span></span>
+        <span class="txt">${title}</span>
+        ${value ? html`<span class="value">${value}</span>` : nothing}
         ${chevron()}
       </button>
     `;
@@ -1296,14 +1289,6 @@ export class TarnPanel extends LitElement {
       widgets.splice(index, 0, removed);
       this.applyPatch({widgets});
     });
-  }
-
-  private moveWidget(index: number, by: -1 | 1): void {
-    const widgets = [...this.settings.widgets];
-    const [moved] = widgets.splice(index, 1);
-    if (!moved) return;
-    widgets.splice(index + by, 0, moved);
-    this.applyPatch({widgets});
   }
 
   private resizeWidget(index: number, size: WidgetSize): void {
@@ -1454,11 +1439,26 @@ const chevron = () =>
     ${GLYPHS.chevron}
   </svg>`;
 
-/** "Favorites, Notes, Focus timer +2" */
-function listNames(names: string[]): string {
-  const shown = names.slice(0, 3).join(', ');
-  return names.length > 3 ? `${shown} +${names.length - 3}` : shown;
-}
+const PRIVACY_URL = 'https://github.com/Akmalchan/tarn/blob/main/PRIVACY.md';
+const SOURCE_URL = 'https://github.com/Akmalchan/tarn';
+
+/**
+ * The browser Tarn runs in, for the signature's "for ..." line. Only names
+ * a browser reports about itself; anything unrecognized shows no line.
+ * "Google Chrome™" follows docs/brand/BRAND.md (descriptive use only).
+ */
+const BROWSER = ((): string => {
+  if (import.meta.env.FIREFOX) return 'Firefox';
+  const brands = (
+    navigator as Navigator & {
+      userAgentData?: {brands: Array<{brand: string}>};
+    }
+  ).userAgentData?.brands.map(b => b.brand);
+  const known = ['Microsoft Edge', 'Opera', 'Brave', 'Vivaldi'];
+  const other = known.find(name => brands?.includes(name));
+  if (other) return other;
+  return brands?.includes('Google Chrome') ? 'Google Chrome™' : '';
+})();
 
 const PAGE_TITLES: Record<Page, string> = {
   home: 'Settings',
