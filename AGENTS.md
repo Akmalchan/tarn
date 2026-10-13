@@ -151,6 +151,10 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   often at slower paces.
 - Measured idle cost (M4, headed Chrome, % of one core, page / graphics):
   active 4.1-5.8 / 7.5-10.6; calm (at 15 fps, before the move to 20) 2.7 / 5.8.
+- Scene thumbnails in settings are real frames (`public/scenes/<id>.webp`,
+  320x200, ~2-4 KB each) rendered from the same shaders by
+  `scripts/scene-previews.mjs`, over the scene's still gradient while they
+  load (`scenePreview`). Regenerate them when a scene changes.
 - The shader prelude offers the same gradient noise two ways: `noise`/`fbm`
   (computed per pixel, exact) and `noiseFast`/`fbmFast` (one fetch from a
   512x512 R16F texture baked from the identical function, an exact port of the

@@ -12,7 +12,10 @@ follow [Semantic Versioning](https://semver.org/).
   ESLint, Prettier, Vitest and CI.
 - WebGL2 background renderer that runs in a worker, caps at 30fps, pauses
   when hidden and respects reduced motion.
-- Four scenes: Tarn, Ember, Bloom and Wave.
+- Six scenes: Tarn, Ember, Bloom, Wave, Aurora (northern lights over a night
+  sky) and Silk (pale satin folds, a light scene).
+- Settings thumbnails are real frames of each scene, rendered from the same
+  shaders (`scripts/scene-previews.mjs`): six WebPs, ~14 KB in all.
 - Settings synced through browser storage.
 - Toolbar button with an on/off switch that hands new tabs back to the
   browser's own page.
