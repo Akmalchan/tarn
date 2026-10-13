@@ -19,8 +19,8 @@ browser's side panel has its own).
 ```
 Settings (home)
 ├── Search                         finds every setting, on any page
-├── Background                     4 big tiles: 3 scenes + "Show All"
-│   └── Backgrounds                every scene
+├── Wallpaper                      4 big tiles: 3 scenes + "Show All"
+│   └── Wallpapers                 every scene; search filters them
 ├── Clock                          a card: Classic, Minimal, None + "Show All"
 │   └── Clock                      every face (Classic, Bold, Minimal, None)
 ├── Widgets ›                      on your tab (size, remove) + add
@@ -38,7 +38,7 @@ Advanced
 
 ## Rules
 
-1. **Home holds what most people change.** Today that's the background,
+1. **Home holds what most people change.** Today that's the wallpaper,
    the clock and widgets. Anything else goes one level down.
 2. **Show a few, then "Show All".** A picker shows three choices and a
    fourth tile, "Show All" (a background, blurred and faded, with a grid icon), that opens a page
