@@ -50,6 +50,14 @@ describe('normalizeSettings', () => {
     ).toEqual({...DEFAULT_SETTINGS, scene: 'wave'});
   });
 
+  it('keeps a photo wallpaper and drops a malformed one', () => {
+    const photo = 'photo:0b6c4f7e-2d1a-4c3b-9e8f-123456789abc';
+    expect(normalizeSettings({scene: photo}).scene).toBe(photo);
+    expect(normalizeSettings({scene: 'photo:../x'}).scene).toBe(
+      DEFAULT_SETTINGS.scene,
+    );
+  });
+
   it('keeps every clock face', () => {
     for (const clock of CLOCK_STYLES) {
       expect(normalizeSettings({clock}).clock).toBe(clock);
