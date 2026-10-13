@@ -68,6 +68,7 @@ function nameOf(url: string): string {
 export class TarnFavorites extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
+    editing: {attribute: false},
     sites: {state: true},
     icons: {state: true},
     adding: {state: true},
@@ -87,8 +88,23 @@ export class TarnFavorites extends LitElement {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
         gap: 10px 6px;
+        flex: 1;
+        min-height: 0;
+        padding-top: 5px;
+        margin-top: -5px;
         overflow: hidden;
         align-content: start;
+      }
+
+      /* Arranging a full tile: scroll to reach Add. */
+      :host([editing]) .sites {
+        overflow-y: auto;
+        scrollbar-width: none;
+      }
+
+      /* Arranging: sites don't open, so a press anywhere drags the tile. */
+      :host([editing]) .link {
+        pointer-events: none;
       }
 
       .site {
@@ -138,9 +154,10 @@ export class TarnFavorites extends LitElement {
         background: rgb(255 255 255);
       }
 
+      /* The icon fills most of its tile, like Safari's favorites. */
       .chip img {
-        width: 26px;
-        height: 26px;
+        width: 32px;
+        height: 32px;
       }
 
       /* No icon in Chrome's cache: the site's first letter on a calm color. */
@@ -179,14 +196,11 @@ export class TarnFavorites extends LitElement {
         color: var(--ink);
         background: var(--chip-strong);
         cursor: pointer;
-        opacity: 0;
-        transition: opacity 150ms ease;
+        transition: transform 150ms ease;
       }
 
-      .site:hover .remove,
-      .site:focus-within .remove,
-      .remove:focus-visible {
-        opacity: 1;
+      .remove:hover {
+        transform: scale(1.12);
       }
 
       .add {
@@ -252,8 +266,8 @@ export class TarnFavorites extends LitElement {
           font-size: 20px;
         }
         .chip img {
-          width: 30px;
-          height: 30px;
+          width: 38px;
+          height: 38px;
         }
       }
 
@@ -270,6 +284,8 @@ export class TarnFavorites extends LitElement {
   ];
 
   declare widgetId: string;
+  /** The settings panel is open: show add and remove. */
+  declare editing: boolean;
   declare sites: Site[];
   declare adding: boolean;
   declare error: string;
@@ -282,6 +298,7 @@ export class TarnFavorites extends LitElement {
   constructor() {
     super();
     this.widgetId = '';
+    this.editing = false;
     this.sites = [];
     this.adding = false;
     this.error = '';
@@ -300,32 +317,55 @@ export class TarnFavorites extends LitElement {
     this.unwatch();
   }
 
+  override willUpdate(changed: Map<string, unknown>): void {
+    if (changed.has('editing')) {
+      this.toggleAttribute('editing', this.editing);
+      if (!this.editing) this.adding = false;
+    }
+  }
+
   override render() {
     if (this.adding) return this.renderForm();
+    if (!this.sites.length && !this.editing) {
+      return html`
+        <h3>Favorites</h3>
+        <p class="empty">Open settings to add your sites.</p>
+      `;
+    }
     return html`
       <h3>Favorites</h3>
       <div class="sites">
         ${this.sites.map(
           (site, i) => html`
             <div class="site">
-              <a class="link" href=${site.url} title=${site.title}>
+              <a
+                class="link"
+                href=${this.editing ? nothing : site.url}
+                title=${site.title}
+                tabindex=${this.editing ? '-1' : nothing}
+              >
                 ${this.chip(site)}
                 <span class="name">${site.title}</span>
               </a>
-              <button
-                class="remove"
-                aria-label="Remove ${site.title}"
-                @click=${(event: Event) => this.removeSite(event, i)}
-              >
-                ×
-              </button>
+              ${
+                this.editing
+                  ? html`<button
+                      class="remove"
+                      data-edit
+                      aria-label="Remove ${site.title}"
+                      @click=${(event: Event) => this.removeSite(event, i)}
+                    >
+                      ×
+                    </button>`
+                  : nothing
+              }
             </div>
           `,
         )}
         ${
-          this.sites.length < MAX_SITES
+          this.editing && this.sites.length < MAX_SITES
             ? html`
-                <button class="add" @click=${this.startAdding}>
+                <button class="add" data-edit @click=${this.startAdding}>
                   <span class="chip" aria-hidden="true">+</span>
                   <span class="name">Add</span>
                 </button>
@@ -339,7 +379,7 @@ export class TarnFavorites extends LitElement {
   private renderForm() {
     return html`
       <h3>Add a site</h3>
-      <form @submit=${this.onSubmit}>
+      <form data-edit @submit=${this.onSubmit}>
         <input
           name="url"
           type="text"

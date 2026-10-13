@@ -106,7 +106,13 @@ How a page arrives on screen matters more than how fast it does
 Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
 
 - A widget is its own custom element (code, styles, storage by `widgetId`)
-  plus one entry in `widgets/registry.ts`. Modules load eagerly on purpose:
+  plus one entry in `widgets/registry.ts`.
+  Each kind offers only the sizes its content looks right at
+  (`WIDGET_SIZE_OPTIONS` in `settings/schema.ts`: Focus S/M; Notes and
+  Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
+  one. A widget marked `editable` (Favorites) stays live in edit mode and
+  shows its own controls (add and remove sites) there, marked `data-edit` so
+  pressing them doesn't start a drag; its links are off meanwhile. Modules load eagerly on purpose:
   a reload must draw every widget in its first frame.
 - **Edit mode:** while the settings side panel is open (`watchSidePanel`),
   widgets can be dragged (Pointer Events + capture) or moved with arrow
