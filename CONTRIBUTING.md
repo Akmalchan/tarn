@@ -42,6 +42,9 @@ src/
 
 ## Adding a background scene
 
+The full guide, with each scene's cost and what was rejected, is
+`docs/design/backgrounds.md`.
+
 1. Add a `Scene` to `src/backdrop/scenes/index.ts`: an id, a name, four
    colors, a base color, speed, resolution and a fragment body defining
    `vec3 scene(vec2 uv, float t)`.
