@@ -110,7 +110,7 @@ live as constants in [`build_logo.py`](build_logo.py).
 | App-style icon, website favicon, large uses   | Yes                                                                                                                                   | `tarn-mark.svg`, `png/mark/tarn-mark-64…1024.png`                                                          |
 | The browser tab's icon                        | **No.** The tab shows Chrome's own icon on purpose; `public/icon/16.png` and `32.png` stay transparent (see `AGENTS.md`, Permissions) | —                                                                                                          |
 | On the new tab page itself                    | **No.** The page belongs to the user; no branding on it                                                                               | —                                                                                                          |
-| Next to the wordmark                          | Only in store art, the README header and the settings panel's header                                                                  | `src/ui/mark.ts` (one color, small master)                                                                 |
+| Next to the wordmark                          | Only in store art and the README header                                                                                               | —                                                                                                          |
 
 ### Colorways
 
@@ -141,16 +141,16 @@ live as constants in [`build_logo.py`](build_logo.py).
 - **License:** SIL Open Font License 1.1, released by Google on Google Fonts
   in 2025. Its license file declares no Reserved Font Name. Commercial use,
   logos and bundling inside the extension are allowed.
-  - Bundling: ship the woff2 (about 21 KB for Latin with every axis) with
-    `OFL.txt` next to it, for example in `public/fonts/`. Never load it from
-    Google at runtime (Tarn makes no network requests).
+  - Bundled in `public/fonts/`: a Latin subset of the variable font with
+    weight and optical size (about 140 KB), roundness, width and slant pinned
+    to the default, with `OFL.txt` next to it. Never load it from Google at
+    runtime (Tarn makes no network requests).
   - Don't market Tarn as "made with Google's font" or imply that Google
     endorses it.
   - Only use **Google Sans Flex** from Google Fonts. The original "Google
     Sans" files are proprietary.
-- **Product UI:** the plan is to bundle Google Sans Flex for UI text so Tarn
-  looks the same on every OS. Until that lands, `--font-sans` in
-  `src/styles/global.css` is `system-ui`.
+- **Product UI:** Google Sans Flex everywhere, through `--font-sans` in
+  `src/styles/global.css`, with the system font as fallback.
 - **Case:** sentence case for UI text. Never all caps for the name.
 
 ## Color
