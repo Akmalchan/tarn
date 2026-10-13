@@ -10,13 +10,15 @@ import {mirrorSettings} from '../app/mirror';
 import {answerPanelPresence} from '../app/side-panel';
 import {SCENES, sceneById, scenePreview, sceneTone} from '../backdrop/scenes';
 import type {Scene} from '../backdrop/scenes/types';
-import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
+import type {WidgetSize} from '../layout/bands';
 import {
   CLOCK_STYLES,
   DEFAULT_SETTINGS,
+  DEFAULT_WIDGET_SIZE,
   MAX_WIDGETS,
   TAB_ICONS,
   WIDGET_KINDS,
+  WIDGET_SIZE_OPTIONS,
   newWidgetId,
   normalizeSettings,
   type ClockStyle,
@@ -1259,7 +1261,7 @@ export class TarnPanel extends LitElement {
         ${icon(KIND_GLYPHS[widget.kind])}
         <span class="txt">${name}</span>
         <span class="seg" role="radiogroup" aria-label="${name} size">
-          ${WIDGET_SIZES.map(
+          ${WIDGET_SIZE_OPTIONS[widget.kind].map(
             size => html`
               <button
                 role="radio"
@@ -1351,7 +1353,7 @@ export class TarnPanel extends LitElement {
     const widget: WidgetEntry = {
       id: newWidgetId(kind),
       kind,
-      size: DEFAULT_SIZE[kind],
+      size: DEFAULT_WIDGET_SIZE[kind],
     };
     this.applyPatch({widgets: [...this.settings.widgets, widget]});
     this.showToast(`${KIND_NAMES[kind]} added`);
@@ -1602,18 +1604,21 @@ const FACE_NAMES: Record<ClockStyle, string> = {
 const KIND_NAMES: Record<WidgetKind, string> = {
   favorites: 'Favorites',
   notes: 'Notes',
+  tasks: 'Tasks',
   focus: 'Focus timer',
 };
 
 const KIND_NOTES: Record<WidgetKind, string> = {
   favorites: 'Your sites, one click away',
   notes: 'A note that stays on this computer',
+  tasks: 'A short to-do list',
   focus: 'One task and a timer',
 };
 
 const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
   favorites: 'star',
   notes: 'note',
+  tasks: 'checklist',
   focus: 'timer',
 };
 
@@ -1622,12 +1627,6 @@ const SIZE_NAMES: Record<WidgetSize, string> = {
   m: 'Medium',
   l: 'Large',
   xl: 'Extra large',
-};
-
-const DEFAULT_SIZE: Record<WidgetKind, WidgetSize> = {
-  favorites: 'l',
-  notes: 'm',
-  focus: 's',
 };
 
 interface SearchEntry {
