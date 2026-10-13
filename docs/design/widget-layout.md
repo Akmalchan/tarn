@@ -18,7 +18,10 @@ Open it full screen and resize the window.
    large doesn't fit, it shows as large.
 4. **Every row is a clean rectangle, two tiles tall. No holes.**
    - Large and extra large fill the row's height on their own.
-   - Two smalls stack on top of each other. Two mediums do too.
+   - Smalls and mediums fill a block row by row, in your order ("bricks"):
+     for example a small and a medium on top, a medium and a small below.
+     Or they stack in pairs (two smalls, or two mediums), whichever keeps
+     every widget at its own size and your order best.
    - A small or medium with no partner grows to fill the space.
    - A row of only smalls and mediums that would leave empty space (for
      example two stacked smalls in a narrow window) lies flat instead: side
@@ -132,8 +135,10 @@ because nothing moves.
 ## What's next
 
 1. Snapshots and export for settings, so nothing is ever lost.
-2. Drag to reorder, with keyboard support.
-3. More widgets.
+2. More widgets.
+
+Done: drag to reorder while the settings panel is open, with keyboard
+support (arrow keys, Home, End) and screen-reader announcements.
 
 ## Open questions
 

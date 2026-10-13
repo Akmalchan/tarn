@@ -75,68 +75,156 @@ export function layoutBands(
   columns: number,
 ): BandLayout {
   const cols = Math.max(2, Math.min(MAX_COLUMNS, Math.floor(columns)));
+  const sized = items.map(item => {
+    let [w, h] = SPAN[item.size] ?? SPAN.s;
+    if (w > cols) [w, h] = SPAN.l;
+    return {id: item.id, w, h};
+  });
+  if (!sized.length) return {placements: [], bands: [], heights: []};
+  // Two ways to combine the one-row widgets (smalls and mediums), each a
+  // full two-row block: row by row in your reading order ("bricks", e.g. a
+  // small and a medium over a medium and a small), or stacked in pairs of
+  // the same size. Both are tried, each in your order and with one-cell
+  // blocks (the most flexible pieces) saved for last, at every wrap width;
+  // the best final shape wins.
+  const blockSets = [brickBlocks(sized, cols), pairBlocks(sized)];
+  let best: {layout: BandLayout; score: number[]} | null = null;
+  for (const [set, blocks] of blockSets.entries()) {
+    const widest = Math.max(...blocks.map(b => b.w));
+    const orders = [
+      blocks,
+      [...blocks.filter(b => b.w > 1), ...blocks.filter(b => b.w === 1)],
+    ];
+    for (const [variant, order] of orders.entries()) {
+      for (let width = cols; width >= widest; width--) {
+        const groups = fillBands(
+          order.map(b => b.w),
+          width,
+        ).map(band => band.map(index => order[index]!));
+        const candidate = arrange(groups, cols, set + variant);
+        if (!best || isLess(candidate.score, best.score)) best = candidate;
+      }
+    }
+  }
+  return best!.layout;
+}
+
+interface Sized {
+  id: string;
+  w: number;
+  h: 1 | 2;
+}
+
+/**
+ * One-row widgets stacked in pairs of the same size: two smalls in a
+ * one-cell column, two mediums in a two-cell column. A widget left without
+ * a partner grows to fill its column (small to 1x2, medium to 2x2).
+ */
+function pairBlocks(items: readonly Sized[]): Block[] {
   const blocks: Block[] = [];
   let openSmall: Block | null = null;
   let openMedium: Block | null = null;
-
-  for (const item of items) {
-    let [w, h] = SPAN[item.size] ?? SPAN.s;
-    if (w > cols) [w, h] = SPAN.l;
+  for (const {id, w, h} of items) {
     if (h === 2) {
-      blocks.push({
-        w,
-        stack: false,
-        parts: [{id: item.id, col: 0, row: 0, w, h}],
-      });
+      blocks.push({w, stack: false, parts: [{id, col: 0, row: 0, w, h}]});
     } else if (w === 1) {
       if (openSmall) {
-        openSmall.parts.push({id: item.id, col: 0, row: 1, w: 1, h: 1});
+        openSmall.parts.push({id, col: 0, row: 1, w: 1, h: 1});
         openSmall = null;
       } else {
         openSmall = {
           w: 1,
           stack: true,
-          parts: [{id: item.id, col: 0, row: 0, w: 1, h: 1}],
+          parts: [{id, col: 0, row: 0, w: 1, h: 1}],
         };
         blocks.push(openSmall);
       }
     } else if (openMedium) {
-      openMedium.parts.push({id: item.id, col: 0, row: 1, w: 2, h: 1});
+      openMedium.parts.push({id, col: 0, row: 1, w: 2, h: 1});
       openMedium = null;
     } else {
       openMedium = {
         w: 2,
         stack: true,
-        parts: [{id: item.id, col: 0, row: 0, w: 2, h: 1}],
+        parts: [{id, col: 0, row: 0, w: 2, h: 1}],
       };
       blocks.push(openMedium);
     }
   }
-  // A widget without a partner grows to fill its column.
   if (openSmall) openSmall.parts[0]!.h = 2;
   if (openMedium) openMedium.parts[0]!.h = 2;
+  return blocks;
+}
 
-  if (!blocks.length) return {placements: [], bands: [], heights: []};
-  // Try every wrap width, in your order and with one-cell blocks (small
-  // pairs, the most flexible pieces) saved for last; keep the arrangement
-  // whose final shape is best.
-  const widest = Math.max(...blocks.map(b => b.w));
-  const orders = [
-    blocks,
-    [...blocks.filter(b => b.w > 1), ...blocks.filter(b => b.w === 1)],
-  ];
-  let best: {layout: BandLayout; score: number[]} | null = null;
-  for (const [variant, order] of orders.entries()) {
-    for (let width = cols; width >= widest; width--) {
-      const groups = fillBands(
-        order.map(b => b.w),
-        width,
-      ).map(band => band.map(index => order[index]!));
-      const candidate = arrange(groups, cols, variant);
-      if (!best || isLess(candidate.score, best.score)) best = candidate;
+/**
+ * One-row widgets laid row by row, in reading order: each run of smalls and
+ * mediums between taller widgets becomes as few two-row "brick" blocks as
+ * possible, the first widgets filling the top row and the rest the bottom
+ * one. A run that can't be split into full bricks is stacked in pairs.
+ */
+function brickBlocks(items: readonly Sized[], cols: number): Block[] {
+  const blocks: Block[] = [];
+  for (let i = 0; i < items.length;) {
+    if (items[i]!.h === 2) {
+      const {id, w, h} = items[i]!;
+      blocks.push({w, stack: false, parts: [{id, col: 0, row: 0, w, h}]});
+      i++;
+      continue;
+    }
+    let end = i;
+    while (end < items.length && items[end]!.h === 1) end++;
+    const run = items.slice(i, end);
+    blocks.push(...(splitIntoBricks(run, cols) ?? pairBlocks(run)));
+    i = end;
+  }
+  return blocks;
+}
+
+/**
+ * The fewest consecutive bricks that cover `run` exactly, or null when it
+ * can't be done. A brick needs an even total width and a prefix that fills
+ * exactly half of it (the top row); it may be at most `cols` wide.
+ */
+function splitIntoBricks(run: readonly Sized[], cols: number): Block[] | null {
+  const n = run.length;
+  // fewest[i]: fewest bricks covering run[0..i); from[i]: where the last starts.
+  const fewest = [0, ...Array<number>(n).fill(Infinity)];
+  const from = Array<number>(n + 1).fill(-1);
+  for (let end = 1; end <= n; end++) {
+    for (let start = 0; start < end; start++) {
+      if (fewest[start] === Infinity) continue;
+      if (!brick(run.slice(start, end), cols)) continue;
+      if (fewest[start]! + 1 < fewest[end]!) {
+        fewest[end] = fewest[start]! + 1;
+        from[end] = start;
+      }
     }
   }
-  return best!.layout;
+  if (fewest[n] === Infinity) return null;
+  const bricks: Block[] = [];
+  for (let end = n; end > 0; end = from[end]!) {
+    bricks.unshift(brick(run.slice(from[end]!, end), cols)!);
+  }
+  return bricks;
+}
+
+function brick(run: readonly Sized[], cols: number): Block | null {
+  const total = run.reduce((sum, item) => sum + item.w, 0);
+  const half = total / 2;
+  if (total % 2 !== 0 || half > cols) return null;
+  const parts: Block['parts'] = [];
+  let col = 0;
+  let row: 0 | 1 = 0;
+  for (const {id, w} of run) {
+    if (row === 0 && col + w > half) return null;
+    parts.push({id, col, row, w, h: 1});
+    col += w;
+    if (row === 0 && col === half) {
+      row = 1;
+      col = 0;
+    }
+  }
+  return {w: half, stack: true, parts};
 }
 
 interface Shape {
@@ -148,8 +236,8 @@ interface Shape {
 /**
  * Turns groups of blocks into placed bands, and scores the result (lower is
  * better): fewest bands, then fewest empty cells before the last band, then
- * your order kept (`reordered` counts changes made before this), then the
- * fullest last band.
+ * fewest widgets grown beyond their size, then your order kept
+ * (`reordered` counts changes made before this), then the fullest last band.
  */
 function arrange(
   groups: Block[][],
@@ -181,7 +269,15 @@ function arrange(
     reordered + (ordered.some((shape, i) => shape !== shapes[i]) ? 1 : 0);
   const widths = ordered.map(shape => shape.width);
   const gaps = widths.slice(0, -1).reduce((n, w) => n + full - w, 0);
-  const score = [ordered.length, gaps, moved, full - widths.at(-1)!];
+  // One-row widgets that had to grow to fill a two-row block (a small made
+  // 1x2, a medium made 2x2); bands laid flat keep their real sizes.
+  const grown = shapes
+    .filter(shape => !shape.flat)
+    .flatMap(shape => shape.group)
+    .filter(block => block.stack)
+    .flatMap(block => block.parts)
+    .filter(part => part.h === 2).length;
+  const score = [ordered.length, gaps, grown, moved, full - widths.at(-1)!];
 
   const placements: Placement[] = [];
   const bands: number[] = [];

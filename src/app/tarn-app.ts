@@ -10,7 +10,11 @@ import type {TarnBackdrop} from '../backdrop/tarn-backdrop';
 import './tarn-settings-button';
 import '../widgets/tarn-board';
 import '../widgets/tarn-clock';
-import type {TarnBoard, TilesDetail} from '../widgets/tarn-board';
+import type {
+  ReorderDetail,
+  TarnBoard,
+  TilesDetail,
+} from '../widgets/tarn-board';
 import {SCENES, sceneById, sceneTone} from '../backdrop/scenes';
 import {
   DEFAULT_SETTINGS,
@@ -25,6 +29,7 @@ import {
   rememberedScene,
 } from './first-paint';
 import {canHandOff, handOffToBrowserNewTab} from './handoff';
+import {watchSidePanel} from './side-panel';
 import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
 
@@ -38,6 +43,7 @@ export class TarnApp extends LitElement {
     revealed: {state: true},
     settled: {state: true},
     handingOff: {state: true},
+    editing: {state: true},
   };
 
   static override styles = css`
@@ -56,6 +62,8 @@ export class TarnApp extends LitElement {
       --chip: rgb(255 255 255 / 0.14);
       --chip-hover: rgb(255 255 255 / 0.22);
       --chip-strong: rgb(30 34 44 / 0.85);
+      /* A widget being dragged: a nearly solid card. */
+      --tile-held: rgb(20 25 34 / 0.86);
       /* Keeps white text readable over bright patches (Ember's orange). */
       --ink-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
     }
@@ -72,6 +80,7 @@ export class TarnApp extends LitElement {
       --chip: rgb(255 255 255 / 0.45);
       --chip-hover: rgb(255 255 255 / 0.65);
       --chip-strong: rgb(255 255 255 / 0.9);
+      --tile-held: rgb(246 246 251 / 0.88);
       --focus-ring: rgb(22 26 38 / 0.6);
       --ink-shadow: none;
     }
@@ -197,10 +206,13 @@ export class TarnApp extends LitElement {
   declare settled: {live: boolean} | null;
   /** Tarn is switched off: render nothing while the browser's page loads. */
   declare handingOff: boolean;
+  /** The settings panel is open: widgets can be rearranged by dragging. */
+  declare editing: boolean;
 
   private idleTimer = 0;
   private schemeQuery = matchMedia('(prefers-color-scheme: dark)');
   private unwatch: () => void = () => {};
+  private unwatchPanel: () => void = () => {};
 
   constructor() {
     super();
@@ -215,6 +227,7 @@ export class TarnApp extends LitElement {
     this.revealed = null;
     this.settled = null;
     this.handingOff = canHandOff && isRememberedOff();
+    this.editing = false;
   }
 
   override connectedCallback(): void {
@@ -232,6 +245,7 @@ export class TarnApp extends LitElement {
       if (!settings.enabled) void handOffToBrowserNewTab();
     });
     this.unwatch = watchSettings(this.applySettings);
+    this.unwatchPanel = watchSidePanel(open => (this.editing = open));
     window.addEventListener('pointermove', this.onActivity, {passive: true});
     window.addEventListener('keydown', this.onKeyDown);
     this.schemeQuery.addEventListener('change', this.onSchemeChange);
@@ -240,6 +254,7 @@ export class TarnApp extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.unwatch();
+    this.unwatchPanel();
     window.removeEventListener('pointermove', this.onActivity);
     window.removeEventListener('keydown', this.onKeyDown);
     this.schemeQuery.removeEventListener('change', this.onSchemeChange);
@@ -296,6 +311,8 @@ export class TarnApp extends LitElement {
                   .widgets=${widgets}
                   ?instant=${this.resumed}
                   glass=${this.liveScene ? 'shader' : 'css'}
+                  ?editing=${this.editing}
+                  @tarn-reorder=${this.onReorder}
                   @tarn-tiles=${this.onTiles}
                 ></tarn-board>`
               : nothing
@@ -322,6 +339,13 @@ export class TarnApp extends LitElement {
   }
 
   /** Widgets moved: the backdrop frosts the scene behind them. */
+  /** Widgets were dragged into a new order: show it, then save it. */
+  private onReorder = (event: CustomEvent<ReorderDetail>) => {
+    const {widgets} = event.detail;
+    this.applySettings({...this.settings, widgets});
+    void saveSettings({widgets});
+  };
+
   private onTiles = (event: CustomEvent<TilesDetail>) => {
     const {rects, strength, radius} = event.detail;
     const backdrop =
