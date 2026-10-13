@@ -73,8 +73,8 @@ Settings (home)
   ignored; see `SidePanelUtil::GetTitleText` in Chromium). So `short_name`
   is "Settings" ("Dev Settings" in dev, both within the 12-character
   limit), and the extension's `name` stays "Tarn" everywhere else (store,
-  install dialog, extensions page). The home page opens on the `tarn`
-  wordmark (`src/ui/wordmark.ts`); sub-pages show "‹ Settings" and a 21px
+  install dialog, extensions page). The home page opens on the brand lockup, the ta mark and the
+  wordmark in one color (`src/ui/mark.ts`, `src/ui/wordmark.ts`); sub-pages show "‹ Settings" and a 21px
   title.
 - Rows are at least 46px tall; text is the system font.
 

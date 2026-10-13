@@ -14,9 +14,15 @@ const PATH =
   'M80.55 0Q80.55 0 80.55 0Q80.55 0 80.55 0V-52.58Q80.55 -52.58 80.55 -52.58Q80.55 -52.58 80.55 -52.58H90.15Q90.15 -52.58 90.15 -52.58Q90.15 -52.58 90.15 -52.58V-43.62L89.59 -44.33H90.15Q93 -49.1 96.81 -51.32Q100.62 -53.53 104.57 -53.53Q105.34 -53.53 106.43 -53.42Q107.51 -53.3 109.35 -52.93Q109.35 -52.93 109.35 -52.93Q109.35 -52.93 109.35 -52.93V-43.46Q109.35 -43.46 109.35 -43.46Q109.35 -43.46 109.35 -43.46Q107.68 -43.83 106.39 -43.97Q105.11 -44.11 104.31 -44.11Q98.88 -44.11 94.78 -40.02Q90.68 -35.93 90.68 -28.62V0Q90.68 0 90.68 0Q90.68 0 90.68 0Z ' +
   'M111.4 0V-52.58Q111.4 -52.58 111.4 -52.58Q111.4 -52.58 111.4 -52.58H121.35Q121.35 -52.58 121.35 -52.58Q121.35 -52.58 121.35 -52.58V-43.28L120.05 -44.61H121.28Q123.78 -48.52 128.32 -51.03Q132.87 -53.53 138.32 -53.53Q147.08 -53.53 152 -48.11Q156.92 -42.68 156.92 -33.64V0Q156.92 0 156.92 0Q156.92 0 156.92 0H146.78Q146.78 0 146.78 0Q146.78 0 146.78 0V-31.5Q146.78 -37.16 144.03 -40.7Q141.27 -44.24 135.16 -44.24Q129.54 -44.24 125.54 -40.28Q121.53 -36.32 121.53 -29.92V0Q121.53 0 121.53 0Q121.53 0 121.53 0H111.4Q111.4 0 111.4 0Q111.4 0 111.4 0Z';
 
-/** The `tarn` wordmark in currentColor, sized by the caller's CSS height. */
-export const wordmark = (label = 'Tarn') => html`
-  <svg viewBox=${VIEW_BOX} role="img" aria-label=${label}>
-    <path fill="currentColor" d=${PATH}></path>
-  </svg>
-`;
+/**
+ * The `tarn` wordmark in currentColor, sized by the caller's CSS height.
+ * Pass an empty label when something around it already names Tarn.
+ */
+export const wordmark = (label = 'Tarn') =>
+  label
+    ? html`<svg viewBox=${VIEW_BOX} role="img" aria-label=${label}>
+        <path fill="currentColor" d=${PATH}></path>
+      </svg>`
+    : html`<svg viewBox=${VIEW_BOX} aria-hidden="true">
+        <path fill="currentColor" d=${PATH}></path>
+      </svg>`;

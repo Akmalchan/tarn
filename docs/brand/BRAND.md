@@ -110,7 +110,7 @@ live as constants in [`build_logo.py`](build_logo.py).
 | App-style icon, website favicon, large uses   | Yes                                                                                                                                   | `tarn-mark.svg`, `png/mark/tarn-mark-64…1024.png`                                                          |
 | The browser tab's icon                        | **No.** The tab shows Chrome's own icon on purpose; `public/icon/16.png` and `32.png` stay transparent (see `AGENTS.md`, Permissions) | —                                                                                                          |
 | On the new tab page itself                    | **No.** The page belongs to the user; no branding on it                                                                               | —                                                                                                          |
-| Next to the wordmark                          | Only in store art and the README header                                                                                               | —                                                                                                          |
+| Next to the wordmark                          | Only in store art, the README header and the settings panel's header                                                                  | `src/ui/mark.ts` (one color, small master)                                                                 |
 
 ### Colorways
 

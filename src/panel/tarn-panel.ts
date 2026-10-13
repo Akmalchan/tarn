@@ -29,6 +29,7 @@ import {
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
+import {mark} from '../ui/mark';
 import {wordmark} from '../ui/wordmark';
 
 /**
@@ -162,10 +163,24 @@ export class TarnPanel extends LitElement {
 
     /* Chrome's side panel header says "Settings" (the manifest's
        short_name), so home shows the wordmark and sub-pages their title. */
-    .wordmark svg {
+    /* The brand lockup (docs/brand/BRAND.md): the ta mark, then the
+       wordmark at about 70% of its height, 25% of its height apart. */
+    .lockup {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lockup .mark svg {
+      display: block;
+      width: 32px;
+      height: 32px;
+    }
+
+    .lockup .word svg {
       display: block;
       width: auto;
-      height: 26px;
+      height: 22px;
     }
 
     h1 {
@@ -725,7 +740,10 @@ export class TarnPanel extends LitElement {
           <div class="top">
             ${
               this.page === 'home'
-                ? html`<span class="wordmark">${wordmark()}</span>`
+                ? html`<div class="lockup" role="img" aria-label="Tarn">
+                    <span class="mark">${mark()}</span>
+                    <span class="word">${wordmark('')}</span>
+                  </div>`
                 : html`<button class="back" @click=${() => this.go('home')}>
                       ${glyph('back')}Settings
                     </button>
