@@ -398,6 +398,30 @@ export class TarnPanel extends LitElement {
       fill: var(--muted);
     }
 
+    /* A widget's name: plain text until clicked, then a field. */
+    .name {
+      flex: 1;
+      min-width: 0;
+      margin: 0 0 0 -5px;
+      padding: 3px 5px;
+      font: inherit;
+      color: inherit;
+      text-overflow: ellipsis;
+      background: none;
+      border: 0;
+      border-radius: 6px;
+      outline: none;
+      cursor: text;
+    }
+
+    .name:hover {
+      background: var(--press);
+    }
+
+    .name:focus {
+      background: var(--field);
+    }
+
     .value {
       flex: none;
       color: var(--muted);
@@ -1283,11 +1307,23 @@ export class TarnPanel extends LitElement {
   }
 
   private widgetRow(widget: WidgetEntry, index: number) {
-    const name = KIND_NAMES[widget.kind];
+    const name = widget.name ?? KIND_NAMES[widget.kind];
     return html`
       <div class="row">
         ${icon(KIND_GLYPHS[widget.kind])}
-        <span class="txt">${name}</span>
+        <input
+          class="name"
+          .value=${name}
+          data-name=${name}
+          maxlength="40"
+          spellcheck="false"
+          placeholder=${KIND_NAMES[widget.kind]}
+          aria-label="Name of ${name}"
+          title="Rename"
+          @keydown=${this.onNameKey}
+          @change=${(event: Event) =>
+            this.renameWidget(index, (event.target as HTMLInputElement).value)}
+        />
         <span class="seg" role="radiogroup" aria-label="${name} size">
           ${WIDGET_SIZE_OPTIONS[widget.kind].map(
             size => html`
@@ -1393,10 +1429,37 @@ export class TarnPanel extends LitElement {
     this.applyPatch({
       widgets: this.settings.widgets.filter((_, i) => i !== index),
     });
-    this.showToast(`${KIND_NAMES[removed.kind]} removed`, () => {
-      const widgets = [...this.settings.widgets];
-      widgets.splice(index, 0, removed);
-      this.applyPatch({widgets});
+    this.showToast(
+      `${removed.name ?? KIND_NAMES[removed.kind]} removed`,
+      () => {
+        const widgets = [...this.settings.widgets];
+        widgets.splice(index, 0, removed);
+        this.applyPatch({widgets});
+      },
+    );
+  }
+
+  /** Enter saves (by leaving the field); Escape puts the name back. */
+  private onNameKey = (event: KeyboardEvent) => {
+    const input = event.target as HTMLInputElement;
+    if (event.key === 'Enter') input.blur();
+    if (event.key === 'Escape') {
+      input.value = input.dataset['name'] ?? input.placeholder;
+      input.blur();
+    }
+  };
+
+  /** An empty name, or the kind's own name, goes back to the default. */
+  private renameWidget(index: number, value: string): void {
+    const name = value.trim().slice(0, 40);
+    this.applyPatch({
+      widgets: this.settings.widgets.map((w, i) => {
+        if (i !== index) return w;
+        const {id, kind, size} = w;
+        return name && name !== KIND_NAMES[kind]
+          ? {id, kind, size, name}
+          : {id, kind, size};
+      }),
     });
   }
 

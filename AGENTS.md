@@ -112,7 +112,12 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
   one. A widget marked `editable` (Favorites) stays live in edit mode and
   shows its own controls (add and remove sites) there, marked `data-edit` so
-  pressing them doesn't start a drag; its links are off meanwhile. Modules load eagerly on purpose:
+  pressing them doesn't start a drag; its links are off meanwhile.
+  In edit mode every tile also gets a holder on its top edge: the widget's
+  name (click to rename; `WidgetEntry.name`, shown as its heading) and a
+  remove button that asks once before removing. The board saves both
+  through the same `tarn-reorder` event as a drag. The tile clips its
+  content, not itself, so the holder can overlap its edge. Modules load eagerly on purpose:
   a reload must draw every widget in its first frame.
 - **Edit mode:** while the settings side panel is open (`watchSidePanel`),
   widgets can be dragged (Pointer Events + capture) or moved with arrow
