@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {GhostFrame, Renderer} from './renderer';
+import type {GhostFrame, Pace, Renderer} from './renderer';
 import {sceneById} from './scenes';
 
 /** Messages that drive a {@link Renderer}, locally or across a worker. */
@@ -12,7 +12,8 @@ export type RendererCommand =
   | {type: 'scene'; id: string}
   | {type: 'visible'; visible: boolean}
   | {type: 'reducedMotion'; reduced: boolean}
-  | {type: 'tiles'; rects: number[]; strength: number; radius: number};
+  | {type: 'tiles'; rects: number[]; strength: number; radius: number}
+  | {type: 'pace'; pace: Pace};
 
 export interface WorkerInit {
   type: 'init';
@@ -37,6 +38,8 @@ export type WorkerEvent =
       at: number;
       running: boolean;
       quality: number;
+      /** Animation speed multiplier right now (pace). */
+      rate: number;
     }
   | {type: 'ghost'; id: number; ghost: GhostFrame | null};
 
@@ -59,6 +62,9 @@ export function applyCommand(
       break;
     case 'tiles':
       renderer.setTiles(command.rects, command.strength, command.radius);
+      break;
+    case 'pace':
+      renderer.setPace(command.pace);
       break;
   }
 }
