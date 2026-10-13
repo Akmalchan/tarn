@@ -25,12 +25,14 @@ Removing Tarn removes all of it.
 Only if you add a Weather widget and choose a place:
 
 - **City search:** what you type in the place search is sent to Open-Meteo
-  (open-meteo.com) to find matching places.
+  (open-meteo.com) to find matching places, even if Google gives your
+  forecasts.
 - **Forecasts:** the chosen place's coordinates, rounded to about a
   kilometer, are sent to the weather provider: Open-Meteo by default, or
   Google's Weather API if you pick it in Settings > Advanced and add your
   own Google API key. Nothing else is sent: no account, no cookies, no
-  page you visit.
+  page you visit. Like any request on the internet, the provider also sees
+  your IP address; Tarn adds nothing that identifies you.
 - **How often:** at most once every 30 minutes per place, only while a Tarn
   tab is visible. The last forecast is kept on this computer so new tabs
   show it at once.
