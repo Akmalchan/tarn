@@ -17,6 +17,7 @@ import {MAX_COLUMNS, columnsFor} from '../layout/bands';
 import type {WidgetEntry} from '../settings/schema';
 import {CELL, GAP, PITCH, moveTo, nearestOrder, placeTiles} from './geometry';
 import {WIDGETS, renderWidget} from './registry';
+import {LocaleController, t} from '../i18n';
 
 export {CELL, GAP} from './geometry';
 export const RADIUS = 24;
@@ -328,6 +329,8 @@ export class TarnBoard extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgets = [];
     this.glass = 'shader';
     this.instant = false;
@@ -422,7 +425,7 @@ export class TarnBoard extends LitElement {
     return html`
       ${
         this.editing && count > 1
-          ? html`<p class="hint">Drag to rearrange</p>`
+          ? html`<p class="hint">${t('board.hint')}</p>`
           : nothing
       }
       ${repeat(
@@ -444,10 +447,10 @@ export class TarnBoard extends LitElement {
               ?data-dragging=${held}
               tabindex=${this.editing ? '0' : '-1'}
               role=${this.editing ? 'button' : 'group'}
-              aria-roledescription=${this.editing ? 'movable widget' : nothing}
+              aria-roledescription=${this.editing ? t('board.movable') : nothing}
               aria-label=${
                 this.editing
-                  ? `${name}, ${index + 1} of ${count}. Drag, or use the arrow keys, to move it.`
+                  ? t('board.position', {name, index: index + 1, count})
                   : name
               }
               style="width:${w}px;height:${h}px;transform:translate(${x}px, ${y}px)"
@@ -696,8 +699,8 @@ export class TarnBoard extends LitElement {
       <div class="holder">
         <input
           data-edit
-          aria-label="Name"
-          title="Rename"
+          aria-label=${t('board.name')}
+          title=${t('board.rename')}
           maxlength="40"
           spellcheck="false"
           autocomplete="off"
@@ -709,11 +712,15 @@ export class TarnBoard extends LitElement {
         <button
           data-edit
           class=${confirming ? 'confirm' : ''}
-          aria-label=${confirming ? `Confirm removing ${name}` : `Remove ${name}`}
-          title="Remove"
+          aria-label=${
+            confirming
+              ? t('board.confirmRemove', {name})
+              : t('board.removeWidget', {name})
+          }
+          title=${t('common.remove')}
           @click=${() => this.askRemove(widget.id)}
         >
-          ${confirming ? 'Remove' : '×'}
+          ${confirming ? t('common.remove') : '×'}
         </button>
       </div>
     `;
@@ -734,7 +741,7 @@ export class TarnBoard extends LitElement {
     const list = this.widgets.map(w => {
       if (w.id !== id) return w;
       const rest: WidgetEntry = {id: w.id, kind: w.kind, size: w.size};
-      const custom = text && text !== WIDGETS[w.kind]?.name;
+      const custom = text && text !== defaultName(w);
       return custom ? {...rest, name: text} : rest;
     });
     this.save(list);
@@ -753,7 +760,9 @@ export class TarnBoard extends LitElement {
     }
     this.confirming = null;
     const removed = this.widgets.find(w => w.id === id);
-    this.announcement = removed ? `${widgetName(removed)} removed.` : '';
+    this.announcement = removed
+      ? t('board.removed', {name: widgetName(removed)})
+      : '';
     this.save(this.widgets.filter(w => w.id !== id));
   }
 
@@ -772,7 +781,11 @@ export class TarnBoard extends LitElement {
     const moved = order.find(w => w.id === movedId);
     const position = order.indexOf(moved!) + 1;
     const name = moved ? widgetName(moved) : '';
-    this.announcement = `${name} moved to ${position} of ${order.length}.`;
+    this.announcement = t('board.moved', {
+      name,
+      position,
+      count: order.length,
+    });
     const changed = order.some((w, i) => w.id !== this.widgets[i]?.id);
     if (!changed) {
       this.preview = null;
@@ -817,7 +830,13 @@ function unsafeEase() {
 
 /** The user's name for a widget, or its kind's. */
 function widgetName(widget: WidgetEntry): string {
-  return widget.name ?? WIDGETS[widget.kind]?.name ?? widget.kind;
+  return widget.name ?? defaultName(widget);
+}
+
+/** A widget kind's own name, in the current language. */
+function defaultName(widget: WidgetEntry): string {
+  const definition = WIDGETS[widget.kind];
+  return definition ? t(definition.nameKey) : widget.kind;
 }
 
 /** Whether an event started on a widget's own control (`data-edit`). */

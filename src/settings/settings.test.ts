@@ -29,6 +29,7 @@ describe('normalizeSettings', () => {
         clock: 'none',
         widgets,
         weather: {provider: 'google', units: 'fahrenheit'},
+        language: 'de',
       }),
     ).toEqual({
       enabled: false,
@@ -37,6 +38,7 @@ describe('normalizeSettings', () => {
       clock: 'none',
       widgets,
       weather: {provider: 'google', units: 'fahrenheit', clock: false},
+      language: 'de',
     });
   });
 

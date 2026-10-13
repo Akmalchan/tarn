@@ -6,6 +6,9 @@
 import {DEFAULT_SCENE_ID, SCENES} from '../backdrop/scenes';
 import {isPhotoId} from '../wallpapers/store';
 import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
+import {LANGUAGE_SETTINGS, type LanguageSetting} from '../i18n/languages';
+
+export {LANGUAGE_SETTINGS, type LanguageSetting} from '../i18n/languages';
 import {migrateSettings} from './migrate';
 
 /**
@@ -140,6 +143,8 @@ export interface Settings {
   /** In the user's order. Empty by default: a calm page is the default. */
   readonly widgets: readonly WidgetEntry[];
   readonly weather: WeatherSettings;
+  /** 'auto' follows the browser's languages. */
+  readonly language: LanguageSetting;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -149,6 +154,7 @@ export const DEFAULT_SETTINGS: Settings = {
   clock: 'center',
   widgets: [],
   weather: {provider: 'open-meteo', units: 'auto', clock: false},
+  language: 'auto',
 };
 
 /**
@@ -181,6 +187,9 @@ export function normalizeSettings(raw: unknown): Settings {
     clock,
     widgets: normalizeWidgets(value.widgets),
     weather: normalizeWeather(value.weather),
+    language: LANGUAGE_SETTINGS.includes(value.language as LanguageSetting)
+      ? (value.language as LanguageSetting)
+      : DEFAULT_SETTINGS.language,
   };
 }
 

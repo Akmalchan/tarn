@@ -56,6 +56,17 @@ owner's taste. The essentials:
   new-tab extension (Chromium only). Adding any permission needs a stated reason.
 - **Performance:** never block first paint; animate only transform/opacity;
   backgrounds pause when hidden and honor `prefers-reduced-motion`.
+- **Words:** every visible word goes through `t()` (`src/i18n/`); never
+  write UI text inline. Add the English to `messages/en.ts` (grouped keys,
+  `{name}` placeholders, no wording that depends on a count) and the same
+  key to all 9 other catalogs; `i18n.test.ts` fails on a missing key or
+  placeholder. Pass `locale()` to every Intl call. Languages: en, es,
+  pt-BR, fr, de, ru, ja, zh-CN, ko, tr; 'auto' follows the browser. The
+  active catalog is mirrored in localStorage, so the first frame is
+  already in the right language; components re-render on a change with
+  `new LocaleController(this)`. The manifest name and description come
+  from `public/_locales`. Google's weather credit stays in English (its
+  required wording).
 - **Settings** go through `src/settings/` (versioned key, normalized on read).
   Never trust stored data's shape.
 - **Never lose a setup** (`settings/store.ts`, `migrate.ts`, `backup.ts`;

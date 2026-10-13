@@ -13,6 +13,7 @@ import {
   watchWidgetData,
 } from './data';
 import {widgetStyles} from './styles';
+import {LocaleController, t} from '../i18n';
 
 interface Task {
   readonly id: string;
@@ -191,8 +192,10 @@ export class TarnTasks extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgetId = '';
-    this.heading = 'Tasks';
+    this.heading = t('widget.tasks');
     this.tasks = [];
     this.done = new Set();
     this.fading = new Set();
@@ -229,8 +232,8 @@ export class TarnTasks extends LitElement {
             : html`<li class="add">
                 <input
                   class="new"
-                  aria-label="New task"
-                  placeholder="Add a task"
+                  aria-label=${t('tasks.new')}
+                  placeholder=${t('tasks.add')}
                   maxlength=${MAX_LENGTH}
                   spellcheck="false"
                   @keydown=${this.onNewKey}
@@ -250,7 +253,7 @@ export class TarnTasks extends LitElement {
                 data-id=${task.id}
               >
                 <input
-                  aria-label="Task"
+                  aria-label=${t('tasks.task')}
                   maxlength=${MAX_LENGTH}
                   spellcheck="false"
                   .value=${task.text}
@@ -260,7 +263,7 @@ export class TarnTasks extends LitElement {
                 />
                 <button
                   class="check"
-                  aria-label=${done ? 'Not done' : 'Done'}
+                  aria-label=${done ? t('tasks.notDone') : t('tasks.done')}
                   aria-pressed=${done}
                   @click=${() => this.toggle(task.id)}
                 >

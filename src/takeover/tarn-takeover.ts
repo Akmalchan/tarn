@@ -15,6 +15,8 @@ import {
   requestManagePermission,
   type Rival,
 } from './rivals';
+import {LocaleController, t, useLanguage} from '../i18n';
+import {loadSettings} from '../settings/store';
 
 type Step = 'loading' | 'permission' | 'choose' | 'done';
 
@@ -151,6 +153,9 @@ export class TarnTakeover extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
+    void loadSettings().then(settings => useLanguage(settings.language));
     this.step = 'loading';
     this.rivals = [];
     this.selected = new Set();
@@ -176,33 +181,22 @@ export class TarnTakeover extends LitElement {
         return nothing;
       case 'permission':
         return html`
-          <h1>Make Tarn your new tab</h1>
-          <p>
-            Only one extension can control the new tab page. Tarn can switch the
-            others off for you, and switch them back on whenever you turn Tarn
-            off.
-          </p>
+          <h1>${t('takeover.permissionTitle')}</h1>
+          <p>${t('takeover.permissionBody')}</p>
           <button ?disabled=${this.busy} @click=${this.askPermission}>
-            Allow Tarn to manage extensions
+            ${t('takeover.allow')}
           </button>
           <p class="fine">
-            ${
-              this.denied
-                ? 'Permission was not granted. You can try again anytime.'
-                : 'Your browser will ask you to confirm. Tarn only switches extensions on or off when you ask it to.'
-            }
+            ${this.denied ? t('takeover.denied') : t('takeover.confirmNote')}
           </p>
         `;
       case 'choose':
         return this.renderChoose();
       case 'done':
         return html`
-          <h1>Tarn is your new tab</h1>
-          <p>
-            The selected extensions are switched off. Turn Tarn off from its
-            toolbar button anytime and they come back.
-          </p>
-          <button @click=${this.openNewTab}>Open a new tab</button>
+          <h1>${t('takeover.doneTitle')}</h1>
+          <p>${t('takeover.doneBody')}</p>
+          <button @click=${this.openNewTab}>${t('takeover.openNewTab')}</button>
         `;
     }
   }
@@ -210,19 +204,14 @@ export class TarnTakeover extends LitElement {
   private renderChoose() {
     if (!this.rivals.length) {
       return html`
-        <h1>All clear</h1>
-        <p>
-          No other extensions are switched on, so Tarn already owns the new tab.
-        </p>
-        <button @click=${this.openNewTab}>Open a new tab</button>
+        <h1>${t('takeover.clearTitle')}</h1>
+        <p>${t('takeover.clearBody')}</p>
+        <button @click=${this.openNewTab}>${t('takeover.openNewTab')}</button>
       `;
     }
     return html`
-      <h1>Switch off other new tabs</h1>
-      <p>
-        The ones that look like new-tab extensions are already selected. Turning
-        Tarn off later switches them back on.
-      </p>
+      <h1>${t('takeover.chooseTitle')}</h1>
+      <p>${t('takeover.chooseBody')}</p>
       <ul>
         ${this.rivals.map(
           rival => html`
@@ -241,7 +230,7 @@ export class TarnTakeover extends LitElement {
                 <span class="name">${rival.name}</span>
                 ${
                   rival.likelyNewTab
-                    ? html`<span class="tag">New tab</span>`
+                    ? html`<span class="tag">${t('takeover.newTabTag')}</span>`
                     : nothing
                 }
               </label>
@@ -253,7 +242,7 @@ export class TarnTakeover extends LitElement {
         ?disabled=${this.busy || !this.selected.size}
         @click=${this.takeOver}
       >
-        Switch off ${this.selected.size || ''} and use Tarn
+        ${t('takeover.switchOff')}
       </button>
     `;
   }

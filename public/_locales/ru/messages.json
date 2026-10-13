@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn",
+    "description": "The extension name. Not translated."
+  },
+  "extShortName": {
+    "message": "Настройки",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "Спокойное и ясное начало каждой вкладки.",
+    "description": "Store and extension-page description."
+  }
+}

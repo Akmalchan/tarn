@@ -7,7 +7,7 @@ import {LitElement, css, html, nothing, type PropertyValues} from 'lit';
 import {browser} from 'wxt/browser';
 import {DEFAULT_SETTINGS, type WeatherSettings} from '../settings/schema';
 import {loadSettings, watchSettings} from '../settings/store';
-import {CONDITION_NAMES} from '../weather/conditions';
+import {conditionName} from '../weather/conditions';
 import {roundCoordinate} from '../weather/config';
 import {REFRESH_MS, fetchForecast, isCurrent} from '../weather/forecast';
 import {weatherGlyph} from '../weather/glyphs';
@@ -20,6 +20,7 @@ import {
   watchWidgetData,
 } from './data';
 import {sheetStyles, widgetStyles} from './styles';
+import {LocaleController, locale, t} from '../i18n';
 
 interface WeatherData {
   readonly place: Place | null;
@@ -444,8 +445,10 @@ export class TarnWeather extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgetId = '';
-    this.heading = 'Weather';
+    this.heading = t('widget.weather');
     this.inline = false;
     this.data = EMPTY;
     this.settings = null;
@@ -490,8 +493,8 @@ export class TarnWeather extends LitElement {
       return html`
         <h3>${this.heading}</h3>
         <div class="empty">
-          <span>See the weather where you are, or anywhere.</span>
-          <button @click=${this.openPicker}>Choose a Place</button>
+          <span>${t('weather.empty')}</span>
+          <button @click=${this.openPicker}>${t('weather.choose')}</button>
         </div>
         ${this.renderPicker()}
       `;
@@ -514,7 +517,7 @@ export class TarnWeather extends LitElement {
   private renderInline(place: Place | null, forecast: Forecast | null) {
     if (!place) {
       return html`<button class="inline" @click=${this.openPicker}>
-          Add weather
+          ${t('weather.addToClock')}
         </button>
         ${this.renderPicker()}`;
     }
@@ -524,8 +527,10 @@ export class TarnWeather extends LitElement {
         : null;
     const today = shown?.days[0];
     const summary = shown
-      ? `${place.name}: ${CONDITION_NAMES[shown.now.condition]}${
-          today ? `, H ${deg(today.max)} L ${deg(today.min)}` : ''
+      ? `${place.name}: ${conditionName(shown.now.condition)}${
+          today
+            ? `, ${t('weather.highLow', {high: deg(today.max), low: deg(today.min)})}`
+            : ''
         }. ${this.creditText()}.`
       : place.name;
     return html`<button
@@ -548,13 +553,19 @@ export class TarnWeather extends LitElement {
   private renderNow(place: Place, forecast: Forecast | null) {
     const today = forecast?.days[0];
     const condition = forecast
-      ? `${CONDITION_NAMES[forecast.now.condition]}${
-          today ? ` · H ${deg(today.max)} L ${deg(today.min)}` : ''
+      ? `${conditionName(forecast.now.condition)}${
+          today
+            ? ` · ${t('weather.highLow', {high: deg(today.max), low: deg(today.min)})}`
+            : ''
         }`
       : '';
     return html`
       <div class="now" title=${this.creditText()}>
-        <button class="place" title="Change place" @click=${this.openPicker}>
+        <button
+          class="place"
+          title=${t('weather.change')}
+          @click=${this.openPicker}
+        >
           ${place.name}
         </button>
         <div class="temp">${forecast ? deg(forecast.now.temp) : '–°'}</div>
@@ -567,7 +578,7 @@ export class TarnWeather extends LitElement {
   }
 
   private renderHours(forecast: Forecast) {
-    const hour = new Intl.DateTimeFormat(undefined, {
+    const hour = new Intl.DateTimeFormat(locale(), {
       hour: 'numeric',
       timeZone: forecast.timeZone,
     });
@@ -579,7 +590,7 @@ export class TarnWeather extends LitElement {
           (h, i) => html`
             <div class="hour">
               <span class="when"
-                >${i === 0 ? 'Now' : shortHour(safeFormat(hour, h.time))}</span
+                >${i === 0 ? t('weather.now') : shortHour(hour, h.time)}</span
               >
               <span class="icon">${weatherGlyph(h.condition, h.day)}</span>
               <span>${deg(h.temp)}</span>
@@ -596,7 +607,7 @@ export class TarnWeather extends LitElement {
     const low = Math.min(...days.map(d => d.min));
     const high = Math.max(...days.map(d => d.max));
     const span = Math.max(high - low, 1);
-    const weekday = new Intl.DateTimeFormat(undefined, {
+    const weekday = new Intl.DateTimeFormat(locale(), {
       weekday: 'short',
       timeZone: 'UTC',
     });
@@ -606,7 +617,7 @@ export class TarnWeather extends LitElement {
           (d, i) => html`
             <div class="day">
               <span
-                >${i === 0 ? 'Today' : safeFormat(weekday, Date.parse(`${d.date}T12:00:00Z`))}</span
+                >${i === 0 ? t('weather.today') : safeFormat(weekday, Date.parse(`${d.date}T12:00:00Z`))}</span
               >
               <span class="icon">${weatherGlyph(d.condition)}</span>
               <span class="min">${deg(d.min)}</span>
@@ -626,7 +637,7 @@ export class TarnWeather extends LitElement {
   private credit() {
     return this.provider() === 'google'
       ? 'Includes weather data from Google'
-      : html`Weather by
+      : html`${t('weather.by')}
           <a href="https://open-meteo.com/" target="_blank" rel="noopener"
             >Open-Meteo</a
           >`;
@@ -635,7 +646,7 @@ export class TarnWeather extends LitElement {
   private creditText(): string {
     return this.provider() === 'google'
       ? 'Includes weather data from Google'
-      : 'Weather by Open-Meteo.com';
+      : `${t('weather.by')} Open-Meteo.com`;
   }
 
   private provider() {
@@ -648,11 +659,11 @@ export class TarnWeather extends LitElement {
     return html`
       <dialog data-edit @close=${this.closePicker}>
         <form method="dialog" @submit=${this.onPickerSubmit}>
-          <h4>Choose a Place</h4>
+          <h4>${t('weather.choose')}</h4>
           <input
             type="search"
-            aria-label="City"
-            placeholder="Search for a city"
+            aria-label=${t('weather.city')}
+            placeholder=${t('weather.search')}
             autocomplete="off"
             spellcheck="false"
             @input=${this.onSearchInput}
@@ -682,17 +693,16 @@ export class TarnWeather extends LitElement {
             class="use-location"
             @click=${this.useMyLocation}
           >
-            Use My Location
+            ${t('weather.useLocation')}
           </button>
           <p class="privacy">
-            City search goes to Open-Meteo. Forecasts come from
-            ${google ? 'Google, with your API key' : 'Open-Meteo'}. Only the
-            place you choose is sent, rounded to about a kilometer, and only to
-            get its weather.
+            ${t('weather.privacy', {
+              provider: google ? t('weather.providerGoogle') : 'Open-Meteo',
+            })}
           </p>
           <div class="buttons">
             <button type="button" @click=${() => this.closePicker()}>
-              Cancel
+              ${t('common.cancel')}
             </button>
           </div>
         </form>
@@ -805,9 +815,9 @@ export class TarnWeather extends LitElement {
       const results = await searchPlaces(query);
       if (id !== this.searchId) return;
       this.results = results;
-      this.note = results.length ? '' : 'No places by that name.';
+      this.note = results.length ? '' : t('weather.noPlaces');
     } catch {
-      if (id === this.searchId) this.note = 'Can’t search right now.';
+      if (id === this.searchId) this.note = t('weather.cantSearch');
     }
   }
 
@@ -817,19 +827,19 @@ export class TarnWeather extends LitElement {
       .request({permissions: ['geolocation']})
       .catch(() => false);
     if (!granted) {
-      this.note = 'Location wasn’t allowed. You can search for a city instead.';
+      this.note = t('weather.locationDenied');
       return;
     }
-    this.note = 'Finding you…';
+    this.note = t('weather.finding');
     navigator.geolocation.getCurrentPosition(
       position =>
         this.pick({
-          name: 'My Location',
+          name: t('weather.myLocation'),
           lat: position.coords.latitude,
           lon: position.coords.longitude,
         }),
       () => {
-        this.note = 'Couldn’t find your location. Try searching instead.';
+        this.note = t('weather.locationFailed');
       },
       {maximumAge: REFRESH_MS, timeout: 15_000},
     );
@@ -854,9 +864,20 @@ function deg(value: number): string {
   return `${Math.round(value)}°`;
 }
 
-/** "10 PM" -> "10PM": hour labels sit close together. */
-function shortHour(label: string): string {
-  return label.replace(/[\s\u202f]+(?=[AaPp]\.?[Mm])/, '');
+/**
+ * Just the hour, as tightly as the language allows: "10PM", "21" (not
+ * "21 Uhr" or "21時"); hour labels sit close together.
+ */
+function shortHour(format: Intl.DateTimeFormat, time: number): string {
+  try {
+    return format
+      .formatToParts(time)
+      .filter(part => part.type === 'hour' || part.type === 'dayPeriod')
+      .map(part => part.value.replace(/\./g, ''))
+      .join('');
+  } catch {
+    return '';
+  }
 }
 
 function safeFormat(format: Intl.DateTimeFormat, time: number): string {
@@ -870,13 +891,13 @@ function safeFormat(format: Intl.DateTimeFormat, time: number): string {
 /** A short line for the widget when the forecast can't update. */
 function describe(error: unknown, shown: Forecast | null): string {
   if (error instanceof WeatherError && error.reason === 'key') {
-    return 'Check the Google API key in Settings';
+    return t('weather.checkKey');
   }
-  if (!shown) return 'Can’t get the weather right now';
+  if (!shown) return t('weather.unavailable');
   const minutes = Math.round((Date.now() - shown.fetched) / 60_000);
   if (minutes < 90) return '';
   const hours = Math.round(minutes / 60);
-  return `Offline · updated ${hours} h ago`;
+  return t('weather.offline', {hours});
 }
 
 customElements.define('tarn-weather', TarnWeather);

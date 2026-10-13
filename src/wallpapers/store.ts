@@ -128,22 +128,33 @@ export function isPhotoId(id: string): boolean {
   return /^photo:[\w-]{8,64}$/.test(id);
 }
 
+/** Why a file couldn't become a wallpaper; settings words it for the user. */
+export type WallpaperErrorCode =
+  'notImage' | 'tooLarge' | 'cantOpen' | 'cantProcess';
+
+export class WallpaperError extends Error {
+  constructor(readonly code: WallpaperErrorCode) {
+    super(code);
+    this.name = 'WallpaperError';
+  }
+}
+
 /**
- * Decodes an image file and saves it. Throws an Error with a message fit
- * to show the user when the file can't be used.
+ * Decodes an image file and saves it. Throws a WallpaperError when the file
+ * can't be used.
  */
 export async function addWallpaper(file: File): Promise<WallpaperInfo> {
   if (!file.type.startsWith('image/')) {
-    throw new Error('That file isn’t an image.');
+    throw new WallpaperError('notImage');
   }
   if (file.size > MAX_FILE_BYTES) {
-    throw new Error('That image is too large (over 50 MB).');
+    throw new WallpaperError('tooLarge');
   }
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, {imageOrientation: 'from-image'});
   } catch {
-    throw new Error('That image couldn’t be opened.');
+    throw new WallpaperError('cantOpen');
   }
   try {
     const {width, height} = bitmap;
@@ -277,7 +288,7 @@ function encode(
   const height = Math.max(1, Math.round(bitmap.height * scale));
   const canvas = new OffscreenCanvas(width, height);
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('That image couldn’t be processed.');
+  if (!context) throw new WallpaperError('cantProcess');
   context.imageSmoothingQuality = 'high';
   context.drawImage(bitmap, 0, 0, width, height);
   return canvas.convertToBlob({type: 'image/webp', quality});

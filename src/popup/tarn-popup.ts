@@ -11,6 +11,7 @@ import {DEFAULT_SETTINGS, type Settings} from '../settings/schema';
 import {loadSettings} from '../settings/store';
 import {canManageRivals} from '../takeover/rivals';
 import '../ui/tarn-switch';
+import {LocaleController, t, useLanguage} from '../i18n';
 
 /** The toolbar popup: one switch that turns Tarn's new tab on or off. */
 export class TarnPopup extends LitElement {
@@ -116,6 +117,8 @@ export class TarnPopup extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.settings = DEFAULT_SETTINGS;
     this.loaded = false;
   }
@@ -125,6 +128,7 @@ export class TarnPopup extends LitElement {
     void loadSettings().then(settings => {
       this.settings = settings;
       this.loaded = true;
+      void useLanguage(settings.language);
     });
   }
 
@@ -137,17 +141,11 @@ export class TarnPopup extends LitElement {
       </header>
       <div class="row">
         <div>
-          <div class="label">Tarn new tab</div>
-          <div class="hint">
-            ${
-              enabled
-                ? 'New tabs open Tarn.'
-                : 'New tabs open the default page.'
-            }
-          </div>
+          <div class="label">${t('popup.newTab')}</div>
+          <div class="hint">${enabled ? t('popup.on') : t('popup.off')}</div>
         </div>
         <tarn-switch
-          label="Tarn new tab"
+          label=${t('popup.newTab')}
           .checked=${enabled}
           ?disabled=${!this.loaded || !canHandOff}
           @change=${this.onEnabledChange}
@@ -156,18 +154,12 @@ export class TarnPopup extends LitElement {
       ${
         canManageRivals
           ? html`<button class="fix" @click=${this.openTakeover}>
-              <span>Other new tab taking over?</span>
-              <span class="go">Fix it →</span>
+              <span>${t('popup.takeover')}</span>
+              <span class="go">${t('popup.fix')}</span>
             </button>`
           : nothing
       }
-      ${
-        canHandOff
-          ? nothing
-          : html`<p class="note">
-              In Firefox, turn Tarn off from Add-ons and themes (about:addons).
-            </p>`
-      }
+      ${canHandOff ? nothing : html`<p class="note">${t('popup.firefox')}</p>`}
     `;
   }
 

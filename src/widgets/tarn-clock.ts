@@ -7,6 +7,7 @@ import {LitElement, css, html, nothing} from 'lit';
 import type {ClockStyle} from '../settings/schema';
 import {clockShowsWeather, clockTime} from './clock-faces';
 import './tarn-weather';
+import {LocaleController, locale} from '../i18n';
 
 /**
  * The big clock and date above the widgets. One size on every screen; only
@@ -107,6 +108,8 @@ export class TarnClock extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.now = new Date();
     this.face = 'center';
     this.weather = false;
@@ -126,9 +129,9 @@ export class TarnClock extends LitElement {
 
   override render() {
     const time = this.now
-      .toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+      .toLocaleTimeString(locale(), {hour: 'numeric', minute: '2-digit'})
       .replace(/\s?[AP]M$/i, '');
-    const date = this.now.toLocaleDateString([], {
+    const date = this.now.toLocaleDateString(locale(), {
       weekday: 'long',
       month: 'long',
       day: 'numeric',

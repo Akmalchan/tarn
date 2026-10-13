@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Ten languages: English, Español, Português (Brasil), Français, Deutsch,
+  Русский, 日本語, 简体中文, 한국어 and Türkçe. Tarn follows the browser's
+  language, or pick one in Settings > Language. Dates, times and the store
+  listing follow it too.
 - Weather widget: now, the next hours and the week ahead, in four sizes.
   Search for a city or use your location; forecasts from Open-Meteo (free,
   no account) or Google with your own API key. Opt-in: nothing is sent

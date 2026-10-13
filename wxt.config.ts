@@ -45,11 +45,15 @@ export default defineConfig({
   // The dev build installs beside the real one, so it gets its own name and
   // the white mark (hooks below) to tell the two apart at a glance.
   manifest: ({browser, mode}) => ({
-    name: mode === 'development' ? 'Tarn Dev' : 'Tarn',
+    name: mode === 'development' ? 'Tarn Dev' : '__MSG_extName__',
+    // Name, panel title and description come from public/_locales, so the
+    // store listing and Chrome's own UI speak the browser's language.
+    default_locale: 'en',
     // Chrome titles the side panel with short_name (max 12 characters), and
     // the panel is Tarn's settings. Everywhere else shows the full name.
-    short_name: mode === 'development' ? 'Dev Settings' : 'Settings',
-    description: 'A still, clear start to every tab.',
+    short_name:
+      mode === 'development' ? 'Dev Settings' : '__MSG_extShortName__',
+    description: '__MSG_extDescription__',
     // `offscreen` keeps the first-paint mirror in sync (see background.ts).
     // `favicon` shows Chrome's own new-tab icon in the tab, and later lets
     // site icons appear without any network request.

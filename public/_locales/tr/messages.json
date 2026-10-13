@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn",
+    "description": "The extension name. Not translated."
+  },
+  "extShortName": {
+    "message": "Ayarlar",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "Her sekme için sakin ve berrak bir başlangıç.",
+    "description": "Store and extension-page description."
+  }
+}

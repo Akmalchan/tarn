@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn",
+    "description": "The extension name. Not translated."
+  },
+  "extShortName": {
+    "message": "設定",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "すべてのタブに、静かで澄んだはじまりを。",
+    "description": "Store and extension-page description."
+  }
+}

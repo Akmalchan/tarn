@@ -25,6 +25,9 @@
   holds a still frame if you prefer reduced motion.
 - **Every browser.** One codebase for Chrome, Edge, Brave, Arc, Opera,
   Vivaldi and Firefox.
+- **Ten languages.** English, Spanish, Portuguese (Brazil), French, German,
+  Russian, Japanese, Chinese (Simplified), Korean and Turkish, following
+  your browser or chosen in settings.
 - **One-click switch.** Tarn's toolbar button turns it on or off. If another
   new-tab extension (like Momentum) is in the way, Tarn can switch it off
   for you, and back on when you turn Tarn off.

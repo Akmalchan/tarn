@@ -32,6 +32,7 @@ import {canHandOff, handOffToBrowserNewTab} from './handoff';
 import {watchSidePanel} from './side-panel';
 import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
+import {useLanguage} from '../i18n';
 
 /** Root of the new tab page. */
 export class TarnApp extends LitElement {
@@ -315,6 +316,7 @@ export class TarnApp extends LitElement {
     this.settings = settings;
     mirrorSettings(settings);
     void refreshFavicon(settings.tabIcon);
+    void useLanguage(settings.language);
   };
 
   private selectScene(id: string): void {
