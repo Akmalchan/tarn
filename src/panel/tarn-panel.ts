@@ -241,6 +241,17 @@ export class TarnPanel extends LitElement {
       color: var(--muted);
       background: var(--field);
       border-radius: 9px;
+      transition: box-shadow 150ms ease;
+    }
+
+    /* Focus shows on the whole field, like macOS: a soft ring, no box
+       around the text inside. */
+    .search:focus-within {
+      box-shadow: 0 0 0 3px var(--hair);
+    }
+
+    .search input:focus-visible {
+      outline: none;
     }
 
     .search svg {
@@ -462,7 +473,7 @@ export class TarnPanel extends LitElement {
         0 1px 1px rgb(0 0 0 / 0.06);
     }
 
-    /* Pickers. Backgrounds are four big tiles on the page; the clock is a
+    /* Pickers. Wallpapers are four big tiles on the page; the clock is a
        card of four square tiles. Either way the last tile is "Show All",
        which opens the page with every choice. Clock text is sized in
        container units, so a thumbnail is a true small copy at any width.
@@ -819,15 +830,18 @@ export class TarnPanel extends LitElement {
   }
 
   override render() {
-    const body = this.query.trim()
-      ? this.renderResults()
-      : {
-          home: () => this.renderHome(),
-          backgrounds: () => this.renderBackgrounds(),
-          clock: () => this.renderClock(),
-          widgets: () => this.renderWidgets(),
-          advanced: () => this.renderAdvanced(),
-        }[this.page]();
+    // On Wallpapers, search filters the wallpapers; elsewhere it finds
+    // settings.
+    const body =
+      this.query.trim() && this.page !== 'backgrounds'
+        ? this.renderResults()
+        : {
+            home: () => this.renderHome(),
+            backgrounds: () => this.renderBackgrounds(),
+            clock: () => this.renderClock(),
+            widgets: () => this.renderWidgets(),
+            advanced: () => this.renderAdvanced(),
+          }[this.page]();
     return html`
       ${keyed(
         this.page,
@@ -847,8 +861,14 @@ export class TarnPanel extends LitElement {
               ${glyph('search')}
               <input
                 type="search"
-                placeholder="Search"
-                aria-label="Search settings"
+                placeholder=${
+                  this.page === 'backgrounds' ? 'Search Wallpapers' : 'Search'
+                }
+                aria-label=${
+                  this.page === 'backgrounds'
+                    ? 'Search wallpapers'
+                    : 'Search settings'
+                }
                 .value=${this.query}
                 @input=${this.onSearch}
                 @keydown=${this.onSearchKey}
@@ -896,8 +916,8 @@ export class TarnPanel extends LitElement {
     const moreScene = SCENES.find(s => !scenes.includes(s.id)) ?? preview.scene;
     return html`
       <section data-target="background">
-        <h2>Background</h2>
-        <div class="scenes" role="radiogroup" aria-label="Background">
+        <h2>Wallpaper</h2>
+        <div class="scenes" role="radiogroup" aria-label="Wallpaper">
           ${scenes.map(id => this.sceneButton(sceneById(id)))}
           <button class="pick" @click=${() => this.go('backgrounds')}>
             ${showAll(moreScene)} Show All
@@ -943,10 +963,19 @@ export class TarnPanel extends LitElement {
   }
 
   private renderBackgrounds() {
+    const query = this.query.trim().toLowerCase();
+    const scenes = SCENES.filter(scene =>
+      scene.name.toLowerCase().includes(query),
+    );
+    if (!scenes.length) {
+      return html`<p class="none">
+        No wallpapers match “${this.query.trim()}”.
+      </p>`;
+    }
     return html`
       <section data-target="all-backgrounds">
-        <div class="scenes" role="radiogroup" aria-label="Background">
-          ${SCENES.map(scene => this.sceneButton(scene))}
+        <div class="scenes" role="radiogroup" aria-label="Wallpaper">
+          ${scenes.map(scene => this.sceneButton(scene))}
         </div>
       </section>
     `;
@@ -979,7 +1008,7 @@ export class TarnPanel extends LitElement {
                   them.
                 </p>`
             : html`<p class="none">
-                No widgets. The page stays calm: just the background and the
+                No widgets. The page stays calm: just the wallpaper and the
                 clock.
               </p>`
         }
@@ -1058,7 +1087,7 @@ export class TarnPanel extends LitElement {
         <div class="group">
           <div class="row" data-target="keys">
             ${icon('keyboard')}
-            <span class="txt">Switch background</span>
+            <span class="txt">Switch wallpaper</span>
             <span class="keys"><kbd>1</kbd>–<kbd>${SCENES.length}</kbd></span>
           </div>
           <div class="row">
@@ -1096,7 +1125,7 @@ export class TarnPanel extends LitElement {
         </div>
         <p class="note">
           Export saves a .json file you can import later. Reset restores the
-          background, clock, widgets and tab icon. Neither turns Tarn on or off.
+          wallpaper, clock, widgets and tab icon. Neither turns Tarn on or off.
         </p>
       </section>
 
@@ -1508,7 +1537,7 @@ const BROWSER = ((): string => {
 
 const PAGE_TITLES: Record<Page, string> = {
   home: 'Settings',
-  backgrounds: 'Backgrounds',
+  backgrounds: 'Wallpapers',
   clock: 'Clock',
   widgets: 'Widgets',
   advanced: 'Advanced',
@@ -1613,12 +1642,12 @@ interface SearchEntry {
 /** What search finds, and where each setting lives. */
 const SEARCH_INDEX: readonly SearchEntry[] = [
   {
-    label: 'Background',
+    label: 'Wallpaper',
     where: 'Settings',
     page: 'home',
     target: 'background',
     glyph: 'photo',
-    words: `scene wallpaper ${SCENES.map(s => s.name).join(' ')}`,
+    words: `scene background ${SCENES.map(s => s.name).join(' ')}`,
   },
   {
     label: 'Clock',
