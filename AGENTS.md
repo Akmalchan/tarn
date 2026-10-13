@@ -47,6 +47,16 @@ owner's taste. The essentials:
   backgrounds pause when hidden and honor `prefers-reduced-motion`.
 - **Settings** go through `src/settings/` (versioned key, normalized on read).
   Never trust stored data's shape.
+- **Never lose a setup** (`settings/store.ts`, `migrate.ts`, `backup.ts`;
+  pinned by `protection.test.ts`). Settings sync between computers that can
+  run different Tarn versions, so a save rewrites only the fields it
+  changes; values, widgets and fields this version doesn't know (a newer
+  Tarn wrote them) are kept, just not shown. Renaming or moving a stored
+  value bumps `SETTINGS_VERSION` with a migration step, plus the old shape
+  as a fixture in the "every past shape" test. Reset, Import and restores
+  use `replaceSettings` (a full replace, `enabled` kept). Each update first
+  saves an automatic backup (settings plus widget content, last 3), and
+  Export/Import carry the same backup format.
 
 ## Arrival (smoothness over speed)
 
