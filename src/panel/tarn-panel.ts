@@ -28,6 +28,7 @@ import {
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
+import {clockTime} from '../widgets/clock-faces';
 
 /**
  * The pages of the panel. Home shows what most people change; each section
@@ -593,6 +594,31 @@ export class TarnPanel extends LitElement {
       letter-spacing: -0.05em;
     }
 
+    .thumb .t.serif {
+      font-family: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    .thumb .t.stacked {
+      display: grid;
+      font-weight: 700;
+      line-height: 0.84;
+      letter-spacing: -0.05em;
+    }
+
+    .thumb .t.outline {
+      font-weight: 500;
+      -webkit-text-fill-color: transparent;
+      -webkit-text-stroke: max(0.6px, 0.012em) currentColor;
+    }
+
+    .thumb .t .pixel {
+      display: block;
+      height: 0.6em;
+      margin: 0.08em 0 0.1em;
+    }
+
     .thumb .d {
       font-size: 7.5cqi;
       white-space: nowrap;
@@ -830,10 +856,11 @@ export class TarnPanel extends LitElement {
   }
 
   override render() {
-    // On Wallpapers, search filters the wallpapers; elsewhere it finds
-    // settings.
+    // On Wallpapers and Clock, search filters that page's choices;
+    // elsewhere it finds settings.
+    const scoped = SCOPED_SEARCH[this.page];
     const body =
-      this.query.trim() && this.page !== 'backgrounds'
+      this.query.trim() && !scoped
         ? this.renderResults()
         : {
             home: () => this.renderHome(),
@@ -861,14 +888,8 @@ export class TarnPanel extends LitElement {
               ${glyph('search')}
               <input
                 type="search"
-                placeholder=${
-                  this.page === 'backgrounds' ? 'Search Wallpapers' : 'Search'
-                }
-                aria-label=${
-                  this.page === 'backgrounds'
-                    ? 'Search wallpapers'
-                    : 'Search settings'
-                }
+                placeholder=${scoped ? `Search ${scoped}` : 'Search'}
+                aria-label=${`Search ${scoped?.toLowerCase() ?? 'settings'}`}
                 .value=${this.query}
                 @input=${this.onSearch}
                 @keydown=${this.onSearchKey}
@@ -983,10 +1004,17 @@ export class TarnPanel extends LitElement {
 
   private renderClock() {
     const preview = clockPreview(sceneById(this.settings.scene));
+    const query = this.query.trim().toLowerCase();
+    const faces = CLOCK_STYLES.filter(face =>
+      FACE_NAMES[face].toLowerCase().includes(query),
+    );
+    if (!faces.length) {
+      return html`<p class="none">No clocks match “${this.query.trim()}”.</p>`;
+    }
     return html`
       <section data-target="all-faces">
         <div class="scenes" role="radiogroup" aria-label="Clock">
-          ${CLOCK_STYLES.map(face => this.faceButton(face, preview))}
+          ${faces.map(face => this.faceButton(face, preview))}
         </div>
       </section>
     `;
@@ -1577,7 +1605,7 @@ function showAll(scene: Scene) {
 /** The clock as a face draws it, for thumbnails and the preview. */
 function clockArt(face: ClockStyle, {time, date}: ClockPreview) {
   if (face === 'none') return nothing;
-  return html`<span class="t ${face}">${time}</span>
+  return html`<span class="t ${face}">${clockTime(face, time)}</span>
     ${face === 'minimal' ? nothing : html`<span class="d">${date}</span>`}`;
 }
 
@@ -1596,7 +1624,17 @@ const FACE_NAMES: Record<ClockStyle, string> = {
   center: 'Classic',
   bold: 'Bold',
   minimal: 'Minimal',
+  serif: 'Serif',
+  stacked: 'Stacked',
+  outline: 'Outline',
+  pixel: 'Pixel',
   none: 'None',
+};
+
+/** Pages whose search filters their own choices, and what they're called. */
+const SCOPED_SEARCH: Partial<Record<Page, string>> = {
+  backgrounds: 'Wallpapers',
+  clock: 'Clocks',
 };
 
 const KIND_NAMES: Record<WidgetKind, string> = {
@@ -1655,7 +1693,8 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     page: 'home',
     target: 'clock',
     glyph: 'clock',
-    words: 'time date face classic bold minimal hide',
+    words:
+      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide',
   },
   {
     label: 'Widgets',

@@ -5,7 +5,7 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {fakeBrowser} from 'wxt/testing/fake-browser';
-import {DEFAULT_SETTINGS, normalizeSettings} from './schema';
+import {CLOCK_STYLES, DEFAULT_SETTINGS, normalizeSettings} from './schema';
 import {loadSettings, saveSettings, watchSettings} from './store';
 
 describe('normalizeSettings', () => {
@@ -51,7 +51,7 @@ describe('normalizeSettings', () => {
   });
 
   it('keeps every clock face', () => {
-    for (const clock of ['center', 'bold', 'minimal', 'none'] as const) {
+    for (const clock of CLOCK_STYLES) {
       expect(normalizeSettings({clock}).clock).toBe(clock);
     }
   });

@@ -18,11 +18,23 @@ export const TAB_ICONS: readonly TabIcon[] = ['chrome', 'none'];
  * clock with the date (its id predates the other faces, so stored settings
  * keep working); 'none' hides it.
  */
-export type ClockStyle = 'center' | 'bold' | 'minimal' | 'none';
+export type ClockStyle =
+  | 'center'
+  | 'bold'
+  | 'minimal'
+  | 'serif'
+  | 'stacked'
+  | 'outline'
+  | 'pixel'
+  | 'none';
 export const CLOCK_STYLES: readonly ClockStyle[] = [
   'center',
   'bold',
   'minimal',
+  'serif',
+  'stacked',
+  'outline',
+  'pixel',
   'none',
 ];
 

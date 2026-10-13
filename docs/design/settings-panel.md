@@ -22,7 +22,7 @@ Settings (home)
 ├── Wallpaper                      4 big tiles: 3 scenes + "Show All"
 │   └── Wallpapers                 every scene; search filters them
 ├── Clock                          a card: Classic, Minimal, None + "Show All"
-│   └── Clock                      every face (Classic, Bold, Minimal, None)
+│   └── Clock                      all 8 faces; search filters them
 ├── Widgets ›                      on your tab (size, remove) + add
 ├── Advanced ›                     always last
 └── Signature                      wordmark, "for Google Chrome™", version,
