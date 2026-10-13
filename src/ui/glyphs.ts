@@ -31,6 +31,7 @@ export const GLYPHS = {
   down: svg`<path d="M12 16.4l-6.2-6.2 1.5-1.5 4.7 4.7 4.7-4.7 1.5 1.5z"/>`,
   chevron: svg`<path d="M9 5.6l6.4 6.4L9 18.4l-1.5-1.5 4.9-4.9-4.9-4.9z"/>`,
   back: svg`<path d="M15 5.6L8.6 12l6.4 6.4 1.5-1.5-4.9-4.9 4.9-4.9z"/>`,
+  grid: svg`<rect x="3" y="3" width="8" height="8" rx="2.2"/><rect x="13" y="3" width="8" height="8" rx="2.2"/><rect x="3" y="13" width="8" height="8" rx="2.2"/><rect x="13" y="13" width="8" height="8" rx="2.2"/>`,
   search: svg`<path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 0 1 6 12l4.8 4.7-1.6 1.6-4.7-4.8A7.5 7.5 0 1 1 10.5 3zm0 2.2a5.3 5.3 0 1 0 0 10.6 5.3 5.3 0 0 0 0-10.6z"/>`,
 } satisfies Record<string, SVGTemplateResult>;
 

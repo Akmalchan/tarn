@@ -531,23 +531,27 @@ export class TarnPanel extends LitElement {
     }
 
     .thumb.more {
-      grid-template: 1fr 1fr / 1fr 1fr;
-      place-content: stretch;
-      justify-items: stretch;
-      gap: 2px;
-      padding: 2px;
-      box-sizing: border-box;
+      position: relative;
       background: var(--field);
     }
 
-    .thumb.more > span {
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
+    .thumb.more .veil {
+      position: absolute;
+      inset: -12%;
+      opacity: 0.6;
+      filter: blur(5cqi);
     }
 
-    .tiles .thumb.more > span {
-      border-radius: 5px;
+    .thumb.more svg {
+      position: relative;
+      width: 16cqi;
+      height: 16cqi;
+      fill: currentColor;
+    }
+
+    .scenes .thumb.more svg {
+      width: 11cqi;
+      height: 11cqi;
     }
 
     .thumb.dark {
@@ -586,10 +590,6 @@ export class TarnPanel extends LitElement {
 
     .scenes .thumb .off {
       font-size: 8cqi;
-    }
-
-    .thumb.more .t {
-      font-size: 13cqi;
     }
 
     .thumb .off {
@@ -882,23 +882,21 @@ export class TarnPanel extends LitElement {
   private renderHome() {
     const {widgets} = this.settings;
     const preview = clockPreview(sceneById(this.settings.scene));
+    const scenes = pickShown(
+      SCENES.map(s => s.id),
+      HOME_SCENES,
+      this.settings.scene,
+    );
+    const faces = pickShown(HOME_FACES, HOME_FACES.length, this.settings.clock);
+    // The background "Show All" tile shows a scene that isn't on home.
+    const moreScene = SCENES.find(s => !scenes.includes(s.id)) ?? preview.scene;
     return html`
       <section data-target="background">
         <h2>Background</h2>
         <div class="scenes" role="radiogroup" aria-label="Background">
-          ${pickShown(
-            SCENES.map(s => s.id),
-            HOME_SCENES,
-            this.settings.scene,
-          ).map(id => this.sceneButton(sceneById(id)))}
+          ${scenes.map(id => this.sceneButton(sceneById(id)))}
           <button class="pick" @click=${() => this.go('backgrounds')}>
-            <span class="thumb more" aria-hidden="true">
-              ${SCENES.slice(0, 4).map(
-                scene =>
-                  html`<span style="background: ${sceneStill(scene)}"></span>`,
-              )}
-            </span>
-            Show All
+            ${showAll(moreScene)} Show All
           </button>
         </div>
       </section>
@@ -906,26 +904,9 @@ export class TarnPanel extends LitElement {
       <section data-target="clock">
         <h2>Clock</h2>
         <div class="group tiles" role="radiogroup" aria-label="Clock">
-          ${pickShown(HOME_FACES, HOME_FACES.length, this.settings.clock).map(
-            face => this.faceButton(face, preview),
-          )}
+          ${faces.map(face => this.faceButton(face, preview))}
           <button class="pick" @click=${() => this.go('clock')}>
-            <span
-              class="thumb more ${sceneTone(preview.scene)}"
-              aria-hidden="true"
-            >
-              ${CLOCK_STYLES.map(
-                face =>
-                  html`<span style="background: ${sceneStill(preview.scene)}"
-                    >${
-                      face === 'none'
-                        ? nothing
-                        : html`<span class="t ${face}">${preview.time}</span>`
-                    }</span
-                  >`,
-              )}
-            </span>
-            Show All
+            ${showAll(preview.scene)} Show All
           </button>
         </div>
       </section>
@@ -1545,6 +1526,14 @@ function clockPreview(scene: Scene): ClockPreview {
       .replace(/\s?[AP]M$/i, ''),
     date: now.toLocaleDateString([], {weekday: 'short', day: 'numeric'}),
   };
+}
+
+/** A "Show All" tile: a scene, blurred and faded, with a grid on it. */
+function showAll(scene: Scene) {
+  return html`<span class="thumb more ${sceneTone(scene)}" aria-hidden="true">
+    <span class="veil" style="background: ${sceneStill(scene)}"></span>
+    ${glyph('grid')}
+  </span>`;
 }
 
 /** The clock as a face draws it, for thumbnails and the preview. */
