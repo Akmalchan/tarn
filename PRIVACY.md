@@ -9,6 +9,9 @@ tracking, and it doesn't make network requests of its own.
   browser's extension storage. If you're signed in to your browser with sync
   turned on, your browser syncs them between your devices; Tarn never sees
   or sends them anywhere.
+- **Your photos**, if you add your own wallpaper, are saved on this
+  computer only, in the browser's storage for Tarn. They're never synced
+  or uploaded.
 - **Widget content** (your favorite sites, notes, timer) is saved on this
   computer only.
 - **Site icons** for your favorites are read from your browser's own icon
