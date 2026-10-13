@@ -11,6 +11,7 @@ import {
   unsafeCSS,
   type PropertyValues,
 } from 'lit';
+import {live} from 'lit/directives/live.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {MAX_COLUMNS, columnsFor} from '../layout/bands';
 import type {WidgetEntry} from '../settings/schema';
@@ -95,6 +96,7 @@ export class TarnBoard extends LitElement {
     preview: {state: true},
     draggingId: {state: true},
     announcement: {state: true},
+    confirming: {state: true},
   };
 
   static override styles = css`
@@ -113,7 +115,6 @@ export class TarnBoard extends LitElement {
       border: 1px solid var(--tile-line);
       background: var(--tile-fill);
       box-shadow: inset 0 1px 0 var(--tile-highlight);
-      overflow: hidden;
       transform-origin: 0 0;
       outline: none;
     }
@@ -128,6 +129,96 @@ export class TarnBoard extends LitElement {
     .content > * {
       width: 100%;
       height: 100%;
+    }
+
+    /* The tile clips its content, not itself, so the holder can sit on its
+       top edge. */
+    .content {
+      overflow: hidden;
+      border-radius: inherit;
+    }
+
+    /* Arranging: a holder on each tile's top edge with its name (click to
+       rename) and a button that removes it. Pressing the holder drags. */
+    .holder {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      max-width: calc(100% - 20px);
+      height: 26px;
+      padding: 0 3px 0 6px;
+      translate: -50% -50%;
+      font: 500 12px var(--font-sans);
+      color: var(--ink);
+      background: var(--tile-held, rgb(20 25 34 / 0.86));
+      border: 1px solid var(--tile-line-strong);
+      border-radius: 999px;
+      box-shadow: 0 4px 14px rgb(0 0 0 / 0.22);
+      animation: holder-in 200ms ease-out both;
+    }
+
+    .holder input {
+      min-width: 3ch;
+      max-width: 100%;
+      padding: 2px 5px;
+      font: inherit;
+      color: inherit;
+      text-overflow: ellipsis;
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      outline: none;
+      cursor: text;
+      field-sizing: content;
+    }
+
+    .holder input:hover,
+    .holder input:focus {
+      background: var(--chip);
+    }
+
+    .holder button {
+      display: grid;
+      flex: none;
+      place-items: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1;
+      color: var(--ink-dim);
+      background: transparent;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      transition:
+        background-color 150ms ease,
+        color 150ms ease;
+    }
+
+    .holder button:hover {
+      color: var(--ink);
+      background: var(--chip-hover);
+    }
+
+    /* Second press removes. */
+    .holder button.confirm {
+      padding: 0 9px;
+      font-size: 12px;
+      color: #fff;
+      background: rgb(214 64 69 / 0.92);
+    }
+
+    @keyframes holder-in {
+      from {
+        opacity: 0;
+        translate: -50% -30%;
+      }
     }
 
     /* Arranging: tiles lift a little under the pointer or keyboard focus. */
@@ -177,7 +268,7 @@ export class TarnBoard extends LitElement {
       position: absolute;
       left: 0;
       right: 0;
-      top: -34px;
+      top: -44px;
       margin: 0;
       text-align: center;
       font: 500 13px var(--font-sans);
@@ -207,6 +298,9 @@ export class TarnBoard extends LitElement {
       .tile[data-dragging] {
         transition: none;
       }
+      .holder {
+        animation: none;
+      }
     }
   `;
 
@@ -221,6 +315,9 @@ export class TarnBoard extends LitElement {
   declare preview: WidgetEntry[] | null;
   declare draggingId: string | null;
   declare announcement: string;
+  /** The widget whose remove button was pressed once (asks again). */
+  declare confirming: string | null;
+  private confirmTimer = 0;
 
   private queries: MediaQueryList[] = [];
   private lastBoxes = new Map<string, DOMRect>();
@@ -239,6 +336,7 @@ export class TarnBoard extends LitElement {
     this.preview = null;
     this.draggingId = null;
     this.announcement = '';
+    this.confirming = null;
   }
 
   override connectedCallback(): void {
@@ -338,7 +436,7 @@ export class TarnBoard extends LitElement {
           const y = dragged ? dragged.y : tile.y;
           const w = dragged ? dragged.width : tile.width;
           const h = dragged ? dragged.height : tile.height;
-          const name = WIDGETS[widget.kind]?.name ?? widget.kind;
+          const name = widgetName(widget);
           return html`
             <div
               class="tile"
@@ -356,11 +454,12 @@ export class TarnBoard extends LitElement {
               @pointerdown=${this.onPointerDown}
               @keydown=${this.onTileKey}
             >
+              ${this.editing ? this.holder(widget, name) : nothing}
               <div
                 class="content"
                 ?inert=${this.editing && !WIDGETS[widget.kind]?.editable}
               >
-                ${renderWidget(widget.kind, widget.id, this.editing)}
+                ${renderWidget(widget.kind, widget.id, this.editing, widget.name)}
               </div>
             </div>
           `;
@@ -591,10 +690,88 @@ export class TarnBoard extends LitElement {
     this.commit(next, id);
   };
 
+  private holder(widget: WidgetEntry, name: string) {
+    const confirming = this.confirming === widget.id;
+    return html`
+      <div class="holder">
+        <input
+          data-edit
+          aria-label="Name"
+          title="Rename"
+          maxlength="40"
+          spellcheck="false"
+          autocomplete="off"
+          size=${Math.max(3, name.length)}
+          .value=${live(name)}
+          @keydown=${this.onNameKey}
+          @change=${(event: Event) => this.rename(widget.id, event)}
+        />
+        <button
+          data-edit
+          class=${confirming ? 'confirm' : ''}
+          aria-label=${confirming ? `Confirm removing ${name}` : `Remove ${name}`}
+          title="Remove"
+          @click=${() => this.askRemove(widget.id)}
+        >
+          ${confirming ? 'Remove' : '×'}
+        </button>
+      </div>
+    `;
+  }
+
+  private onNameKey = (event: KeyboardEvent) => {
+    const input = event.target as HTMLInputElement;
+    if (event.key === 'Enter') input.blur();
+    if (event.key === 'Escape') {
+      input.value = input.defaultValue;
+      input.blur();
+    }
+  };
+
+  /** Saves a widget's new name; an empty one goes back to the default. */
+  private rename(id: string, event: Event): void {
+    const text = (event.target as HTMLInputElement).value.trim().slice(0, 40);
+    const list = this.widgets.map(w => {
+      if (w.id !== id) return w;
+      const rest: WidgetEntry = {id: w.id, kind: w.kind, size: w.size};
+      const custom = text && text !== WIDGETS[w.kind]?.name;
+      return custom ? {...rest, name: text} : rest;
+    });
+    this.save(list);
+  }
+
+  /** First press asks; a second press within a few seconds removes. */
+  private askRemove(id: string): void {
+    clearTimeout(this.confirmTimer);
+    if (this.confirming !== id) {
+      this.confirming = id;
+      this.confirmTimer = window.setTimeout(
+        () => (this.confirming = null),
+        3000,
+      );
+      return;
+    }
+    this.confirming = null;
+    const removed = this.widgets.find(w => w.id === id);
+    this.announcement = removed ? `${widgetName(removed)} removed.` : '';
+    this.save(this.widgets.filter(w => w.id !== id));
+  }
+
+  /** Hands a changed list (renamed, removed) to the app, which saves it. */
+  private save(list: WidgetEntry[]): void {
+    this.dispatchEvent(
+      new CustomEvent<ReorderDetail>('tarn-reorder', {
+        bubbles: true,
+        composed: true,
+        detail: {widgets: list},
+      }),
+    );
+  }
+
   private commit(order: WidgetEntry[], movedId: string): void {
     const moved = order.find(w => w.id === movedId);
     const position = order.indexOf(moved!) + 1;
-    const name = moved ? (WIDGETS[moved.kind]?.name ?? moved.kind) : '';
+    const name = moved ? widgetName(moved) : '';
     this.announcement = `${name} moved to ${position} of ${order.length}.`;
     const changed = order.some((w, i) => w.id !== this.widgets[i]?.id);
     if (!changed) {
@@ -636,6 +813,11 @@ function easeOut(t: number): number {
 
 function unsafeEase() {
   return unsafeCSS(EASE);
+}
+
+/** The user's name for a widget, or its kind's. */
+function widgetName(widget: WidgetEntry): string {
+  return widget.name ?? WIDGETS[widget.kind]?.name ?? widget.kind;
 }
 
 /** Whether an event started on a widget's own control (`data-edit`). */
