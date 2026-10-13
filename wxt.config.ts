@@ -6,6 +6,8 @@ const DEV_ICON_DIR = 'docs/brand/assets/png/extension-dev';
 const DEV_ICONS: Record<string, string> = {
   'action/16.png': 'action-16.png',
   'action/32.png': 'action-32.png',
+  'icon/16.png': 'action-16.png',
+  'icon/32.png': 'action-32.png',
   'icon/48.png': 'icon-48.png',
   'icon/96.png': 'icon-96.png',
   'icon/128.png': 'icon-128.png',
@@ -44,6 +46,9 @@ export default defineConfig({
   // the white mark (hooks below) to tell the two apart at a glance.
   manifest: ({browser, mode}) => ({
     name: mode === 'development' ? 'Tarn Dev' : 'Tarn',
+    // Chrome titles the side panel with short_name (max 12 characters), and
+    // the panel is Tarn's settings. Everywhere else shows the full name.
+    short_name: mode === 'development' ? 'Dev Settings' : 'Settings',
     description: 'A still, clear start to every tab.',
     // `offscreen` keeps the first-paint mirror in sync (see background.ts).
     // `favicon` shows Chrome's own new-tab icon in the tab, and later lets

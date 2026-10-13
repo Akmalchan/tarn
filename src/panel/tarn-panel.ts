@@ -159,10 +159,12 @@ export class TarnPanel extends LitElement {
       fill: currentColor;
     }
 
+    /* Sub-page titles only. Home has none: Chrome's side panel header
+       already says "Settings" (the manifest's short_name). */
     h1 {
-      margin: -4px 0 0;
-      font-size: 28px;
-      font-weight: 700;
+      margin: -2px 0 0;
+      font-size: 21px;
+      font-weight: 650;
       letter-spacing: -0.01em;
     }
 
@@ -716,7 +718,7 @@ export class TarnPanel extends LitElement {
           <div class="top">
             ${
               this.page === 'home'
-                ? html`<h1>${PAGE_TITLES.home}</h1>`
+                ? nothing
                 : html`<button class="back" @click=${() => this.go('home')}>
                       ${glyph('back')}Settings
                     </button>
@@ -915,7 +917,7 @@ export class TarnPanel extends LitElement {
                     <span class="sub"
                       >${
                         tabIcon === 'none'
-                          ? 'No icon. The tab never changes, even for a moment.'
+                          ? 'No icon in the tab.'
                           : 'Chrome’s own new-tab icon.'
                       }</span
                     ></span
