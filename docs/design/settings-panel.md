@@ -67,10 +67,12 @@ Settings (home)
 - **Filled icons**, drawn for Tarn in `src/ui/glyphs.ts`: one solid shape
   with details cut out, readable at 17px in a 28px tile. Never outline
   icons, never emoji.
-- **A large "Settings" title** heads the home page. Chrome's side panel
-  header already shows the extension's name and icon (it can't be changed),
-  so the panel never repeats the wordmark or "Tarn". Sub-pages show
-  "‹ Settings" and their own large title.
+- **No title on the home page.** Chrome draws the side panel's header
+  itself: the extension's icon and its manifest `short_name` (falling back
+  to `name`), and nothing else can change it (no API, and `document.title`
+  is ignored; see `SidePanelUtil::GetTitleText` in Chromium). That header
+  already says "Tarn", so home opens straight on search. Sub-pages show
+  "‹ Settings" and a 21px title.
 - Rows are at least 46px tall; text is the system font.
 
 ## Adding a setting
@@ -99,6 +101,10 @@ setting, and Advanced stays out of sight.
   "Advanced".
 - **A close button:** the side panel already has one.
 - **The wordmark in the panel:** it sat right under Chrome's own "Tarn"
-  header and read twice.
+  header and read twice. A big "Settings" title had the same problem.
+- **Renaming Chrome's header to "Settings"** through `short_name`: it would
+  also rename Tarn in Chrome's side panel list and pin button, where a bare
+  "Settings" looks like Chrome's own settings. "Tarn Settings" is over the
+  12-character limit.
 - **A clock on/off switch:** the clock is picked by face, and "None" is one
   of the faces.
