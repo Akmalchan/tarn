@@ -4,12 +4,16 @@
  */
 
 import type {GhostFrame, Pace, Renderer} from './renderer';
-import {sceneById} from './scenes';
+import type {Scene} from './scenes/types';
 
-/** Messages that drive a {@link Renderer}, locally or across a worker. */
+/**
+ * Messages that drive a {@link Renderer}, locally or across a worker.
+ * Scenes travel whole, resolved by the page: a worker can't read the
+ * localStorage index that describes the user's photos.
+ */
 export type RendererCommand =
   | {type: 'resize'; width: number; height: number}
-  | {type: 'scene'; id: string}
+  | {type: 'scene'; scene: Scene}
   | {type: 'visible'; visible: boolean}
   | {type: 'reducedMotion'; reduced: boolean}
   | {type: 'tiles'; rects: number[]; strength: number; radius: number}
@@ -18,7 +22,7 @@ export type RendererCommand =
 export interface WorkerInit {
   type: 'init';
   canvas: OffscreenCanvas;
-  scene: string;
+  scene: Scene;
   clock?: number;
 }
 
@@ -31,6 +35,8 @@ export interface GhostRequest {
 /** What the worker reports back to the page. */
 export type WorkerEvent =
   | {type: 'firstFrame'}
+  /** A frame of this scene is on screen (a photo may take a moment). */
+  | {type: 'sceneShown'; id: string}
   | {type: 'unavailable'}
   | {
       type: 'clock';
@@ -52,7 +58,7 @@ export function applyCommand(
       renderer.resize(command.width, command.height);
       break;
     case 'scene':
-      renderer.setScene(sceneById(command.id));
+      renderer.setScene(command.scene);
       break;
     case 'visible':
       renderer.setVisible(command.visible);

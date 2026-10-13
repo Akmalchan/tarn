@@ -13,7 +13,6 @@ import {
   type WorkerInit,
 } from './protocol';
 import {Renderer} from './renderer';
-import {sceneById} from './scenes';
 
 let renderer: Renderer | null = null;
 
@@ -24,17 +23,13 @@ self.onmessage = (
 ) => {
   const message = event.data;
   if (message.type === 'init') {
-    renderer = new Renderer(
-      message.canvas,
-      sceneById(message.scene),
-      message.clock,
-      {
-        onFirstFrame: () => post({type: 'firstFrame'}),
-        onUnavailable: () => post({type: 'unavailable'}),
-        onClock: (clock, at, running, quality, rate) =>
-          post({type: 'clock', clock, at, running, quality, rate}),
-      },
-    );
+    renderer = new Renderer(message.canvas, message.scene, message.clock, {
+      onFirstFrame: () => post({type: 'firstFrame'}),
+      onSceneShown: id => post({type: 'sceneShown', id}),
+      onUnavailable: () => post({type: 'unavailable'}),
+      onClock: (clock, at, running, quality, rate) =>
+        post({type: 'clock', clock, at, running, quality, rate}),
+    });
   } else if (message.type === 'ghost') {
     void (renderer?.ghost() ?? Promise.resolve(null))
       .catch(() => null)

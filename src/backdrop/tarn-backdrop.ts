@@ -26,6 +26,8 @@ import {DEFAULT_SCENE_ID, sceneById, sceneStill} from './scenes';
 
 /** Scene-to-scene crossfade. */
 const FADE_MS = 400;
+/** Longest a scene switch waits for the new scene's first frame. */
+const SHOWN_TIMEOUT_MS = 2000;
 /** Opening a new tab: the scene eases in from the browser's color... */
 const REVEAL_MS = 700;
 /** ...while settling from slightly enlarged, like a breath out. */
@@ -142,6 +144,8 @@ export class TarnBackdrop extends LitElement {
   /** The scene and moment of the last saved ghost, to skip identical ones. */
   private lastGhost: {scene: string; clock: number} | null = null;
   private ghostRequests = new Map<number, (ghost: GhostFrame | null) => void>();
+  /** Waiting for a scene's first frame (a photo decodes first). */
+  private shownWaiters = new Map<string, () => void>();
   private nextGhostId = 0;
   private firstFrame: () => void = () => {};
   private firstFrameDrawn = new Promise<void>(
@@ -399,6 +403,8 @@ export class TarnBackdrop extends LitElement {
         } else if (message.type === 'ghost') {
           this.ghostRequests.get(message.id)?.(message.ghost);
           this.ghostRequests.delete(message.id);
+        } else if (message.type === 'sceneShown') {
+          this.sceneShown(message.id);
         } else {
           this.clockState = message;
         }
@@ -406,7 +412,7 @@ export class TarnBackdrop extends LitElement {
       const init: WorkerInit = {
         type: 'init',
         canvas: offscreen,
-        scene: sceneId,
+        scene: sceneById(sceneId),
         clock: startClock,
       };
       this.worker.postMessage(init, [offscreen]);
@@ -414,6 +420,7 @@ export class TarnBackdrop extends LitElement {
       const {Renderer} = await import('./renderer');
       this.local = new Renderer(canvas, sceneById(sceneId), startClock, {
         onFirstFrame: () => this.firstFrame(),
+        onSceneShown: id => this.sceneShown(id),
         onUnavailable: () => this.markUnavailable(),
         onClock: (clock, at, running, quality, rate) =>
           (this.clockState = {clock, at, running, quality, rate}),
@@ -545,10 +552,21 @@ export class TarnBackdrop extends LitElement {
     this.applyBase(sceneId);
     await wait(FADE_MS);
     if (this.shownScene !== sceneId) return;
-    this.send({type: 'scene', id: sceneId});
+    const shown = new Promise<void>(resolve =>
+      this.shownWaiters.set(sceneId, resolve),
+    );
+    this.send({type: 'scene', scene: sceneById(sceneId)});
+    // A photo takes a moment to decode: fade in once it's drawn, not
+    // before (the canvas would show the old scene). A cap, in case.
+    await Promise.race([shown, wait(SHOWN_TIMEOUT_MS)]);
+    this.shownWaiters.delete(sceneId);
     await nextFrame();
     await nextFrame();
     if (this.shownScene === sceneId) canvas.style.opacity = '1';
+  }
+
+  private sceneShown(id: string): void {
+    this.shownWaiters.get(id)?.();
   }
 
   private applyBase(sceneId: string): void {

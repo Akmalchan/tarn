@@ -8,6 +8,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Your own photos as the background: drawn sharp and still (no CPU while
+  idle), with the same smooth arrival and reload as the animated scenes.
 - Edit mode: a holder on each widget's top edge to rename it (two
   Favorites can be "Project A" and "Project B") or remove it. Widgets can
   be renamed in the settings panel too.
