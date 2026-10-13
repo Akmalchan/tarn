@@ -17,8 +17,8 @@
 
 ## Features
 
-- **Living backgrounds.** Hand-written WebGL2 shaders: Tarn, Ember, Bloom
-  and Wave. Press <kbd>1</kbd>–<kbd>4</kbd> to switch.
+- **Living backgrounds.** Hand-written WebGL2 shaders: Tarn, Ember, Bloom,
+  Wave, Aurora and Silk. Press <kbd>1</kbd>–<kbd>6</kbd> to switch.
 - **Light on your machine.** Renders off the main thread at reduced
   resolution, caps at 30fps, stops completely when the tab is hidden, and
   holds a still frame if you prefer reduced motion.

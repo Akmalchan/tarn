@@ -8,7 +8,7 @@ import {keyed} from 'lit/directives/keyed.js';
 import {browser} from 'wxt/browser';
 import {mirrorSettings} from '../app/mirror';
 import {answerPanelPresence} from '../app/side-panel';
-import {SCENES, sceneById, sceneStill, sceneTone} from '../backdrop/scenes';
+import {SCENES, sceneById, scenePreview, sceneTone} from '../backdrop/scenes';
 import type {Scene} from '../backdrop/scenes/types';
 import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
 import {
@@ -1196,7 +1196,7 @@ export class TarnPanel extends LitElement {
         aria-checked=${scene.id === this.settings.scene}
         @click=${() => this.selectScene(scene.id)}
       >
-        <span class="thumb" style="background: ${sceneStill(scene)}"></span>
+        <span class="thumb" style="background: ${scenePreview(scene)}"></span>
         ${scene.name}
       </button>
     `;
@@ -1214,7 +1214,7 @@ export class TarnPanel extends LitElement {
       >
         <span
           class="thumb ${sceneTone(scene)}"
-          style="background: ${sceneStill(scene)}"
+          style="background: ${scenePreview(scene)}"
         >
           ${face === 'none' ? html`<span class="off">Off</span>` : clockArt(face, preview)}
         </span>
