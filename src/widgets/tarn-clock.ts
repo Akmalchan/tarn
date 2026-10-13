@@ -5,12 +5,15 @@
 
 import {LitElement, css, html, nothing} from 'lit';
 import type {ClockStyle} from '../settings/schema';
+import {clockTime} from './clock-faces';
 
 /**
  * The big clock and date above the widgets. One size on every screen; only
  * a phone-narrow window gets a smaller one. It updates once a minute, on the
  * minute, and not at all while the tab is hidden. `face` picks the style:
- * classic (thin, with the date), bold, or minimal (time only).
+ * classic (thin, with the date), bold, minimal (time only), serif, stacked
+ * (hours over minutes), outline, or pixel (8-bit). None loads a font: serif
+ * uses the system's, pixel is drawn (clock-faces.ts).
  */
 export class TarnClock extends LitElement {
   static override properties = {
@@ -40,6 +43,37 @@ export class TarnClock extends LitElement {
     :host([face='bold']) time {
       font-weight: 600;
       letter-spacing: -0.05em;
+    }
+
+    :host([face='serif']) time {
+      font-family: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    :host([face='stacked']) time {
+      display: grid;
+      font-size: 104px;
+      font-weight: 700;
+      line-height: 0.84;
+      letter-spacing: -0.05em;
+    }
+
+    :host([face='outline']) time {
+      font-weight: 500;
+      -webkit-text-fill-color: transparent;
+      -webkit-text-stroke: 1.5px var(--ink);
+      text-shadow: none;
+    }
+
+    :host([face='pixel']) time {
+      line-height: 1;
+    }
+
+    .pixel {
+      display: block;
+      height: 0.6em;
+      margin: 0.08em 0 0.1em;
     }
 
     .date {
@@ -91,7 +125,9 @@ export class TarnClock extends LitElement {
       day: 'numeric',
     });
     return html`
-      <time datetime=${this.now.toISOString()}>${time}</time>
+      <time datetime=${this.now.toISOString()}
+        >${clockTime(this.face, time)}</time
+      >
       ${this.face === 'minimal' ? nothing : html`<div class="date">${date}</div>`}
     `;
   }
