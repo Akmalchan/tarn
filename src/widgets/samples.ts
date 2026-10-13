@@ -7,6 +7,7 @@ import {html} from 'lit';
 import type {WidgetSize} from '../layout/bands';
 import {
   WIDGET_KINDS,
+  WIDGET_SIZE_OPTIONS,
   newWidgetId,
   type WidgetEntry,
   type WidgetKind,
@@ -83,6 +84,13 @@ export const TEST_LAYOUTS: Readonly<Record<string, Preset>> = {
 
 const SIZES: readonly WidgetSize[] = ['s', 's', 'm', 'm', 'l', 'xl'];
 
+const SAMPLE_TASKS = [
+  'Reply to Sam',
+  'Book the dentist',
+  'Water the plants',
+  'Read chapter 4',
+];
+
 /** A random mix, for spotting layouts nobody thought of. */
 export function randomLayout(): Preset {
   const count = 2 + Math.floor(Math.random() * 12);
@@ -95,15 +103,29 @@ export function randomLayout(): Preset {
 
 /** Creates the widgets and fills them with sample content. */
 export async function buildTestLayout(preset: Preset): Promise<WidgetEntry[]> {
-  const widgets = preset.map(([kind, size]) => ({
-    id: newWidgetId(kind),
-    kind,
-    size,
-  }));
+  // Presets test layout shapes, so sizes win: a kind that doesn't offer
+  // the size is swapped for the next one that does (a small note becomes
+  // a focus timer).
+  const widgets = preset.map(([wanted, size], i) => {
+    const kinds = [
+      ...WIDGET_KINDS.slice(i % WIDGET_KINDS.length),
+      ...WIDGET_KINDS,
+    ];
+    const kind = WIDGET_SIZE_OPTIONS[wanted].includes(size)
+      ? wanted
+      : kinds.find(k => WIDGET_SIZE_OPTIONS[k].includes(size))!;
+    return {id: newWidgetId(kind), kind, size};
+  });
   await Promise.all(
     widgets.map((widget, i) => {
       if (widget.kind === 'notes') {
         return saveWidgetData(widget.id, SAMPLE_NOTES[i % SAMPLE_NOTES.length]);
+      }
+      if (widget.kind === 'tasks') {
+        return saveWidgetData(
+          widget.id,
+          SAMPLE_TASKS.map((text, n) => ({id: `t${n}`, text})),
+        );
       }
       if (widget.kind === 'favorites') {
         const count = widget.size === 's' ? 3 : widget.size === 'm' ? 5 : 8;

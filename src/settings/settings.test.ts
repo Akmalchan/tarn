@@ -69,8 +69,19 @@ describe('normalizeSettings', () => {
     });
     expect(widgets).toEqual([
       {id: 'notes-1', kind: 'notes', size: 'xl'},
-      {id: 'focus-3', kind: 'focus', size: 'm'},
+      {id: 'focus-3', kind: 'focus', size: 's'},
     ]);
+  });
+
+  it('snaps each widget to a size it offers', () => {
+    const {widgets} = normalizeSettings({
+      widgets: [
+        {id: 'notes-1', kind: 'notes', size: 's'},
+        {id: 'focus-2', kind: 'focus', size: 'xl'},
+        {id: 'tasks-3', kind: 'tasks', size: 'l'},
+      ],
+    });
+    expect(widgets.map(w => w.size)).toEqual(['m', 'm', 'l']);
   });
 
   it('caps the widget list', () => {

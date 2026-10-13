@@ -38,12 +38,44 @@ export const CLOCK_STYLES: readonly ClockStyle[] = [
   'none',
 ];
 
-export type WidgetKind = 'favorites' | 'notes' | 'focus';
+export type WidgetKind = 'favorites' | 'notes' | 'tasks' | 'focus';
 export const WIDGET_KINDS: readonly WidgetKind[] = [
   'favorites',
   'notes',
+  'tasks',
   'focus',
 ];
+
+/** The sizes each widget offers: only those its content looks right at. */
+export const WIDGET_SIZE_OPTIONS: Readonly<
+  Record<WidgetKind, readonly WidgetSize[]>
+> = {
+  favorites: ['s', 'm', 'l', 'xl'],
+  notes: ['m', 'l', 'xl'],
+  tasks: ['m', 'l', 'xl'],
+  focus: ['s', 'm'],
+};
+
+/** Size when first added. */
+export const DEFAULT_WIDGET_SIZE: Readonly<Record<WidgetKind, WidgetSize>> = {
+  favorites: 'l',
+  notes: 'm',
+  tasks: 'm',
+  focus: 's',
+};
+
+/** `size` if the widget offers it, otherwise the nearest size it does. */
+export function fitWidgetSize(kind: WidgetKind, size: WidgetSize): WidgetSize {
+  const options = WIDGET_SIZE_OPTIONS[kind];
+  if (options.includes(size)) return size;
+  const rank = WIDGET_SIZES.indexOf(size);
+  return options.reduce((best, option) =>
+    Math.abs(WIDGET_SIZES.indexOf(option) - rank) <
+    Math.abs(WIDGET_SIZES.indexOf(best) - rank)
+      ? option
+      : best,
+  );
+}
 
 /** One widget on the page. Its content lives in local storage by `id`. */
 export interface WidgetEntry {
@@ -123,9 +155,12 @@ function normalizeWidgets(raw: unknown): WidgetEntry[] {
     widgets.push({
       id,
       kind: kind as WidgetKind,
-      size: WIDGET_SIZES.includes(size as WidgetSize)
-        ? (size as WidgetSize)
-        : 'm',
+      size: fitWidgetSize(
+        kind as WidgetKind,
+        WIDGET_SIZES.includes(size as WidgetSize)
+          ? (size as WidgetSize)
+          : DEFAULT_WIDGET_SIZE[kind as WidgetKind],
+      ),
     });
     if (widgets.length === MAX_WIDGETS) break;
   }
