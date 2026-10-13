@@ -4,6 +4,7 @@
  */
 
 import {DEFAULT_SCENE_ID, SCENES} from '../backdrop/scenes';
+import {isPhotoId} from '../wallpapers/store';
 import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
 
 /**
@@ -114,8 +115,11 @@ export const DEFAULT_SETTINGS: Settings = {
  */
 export function normalizeSettings(raw: unknown): Settings {
   const value = isRecord(raw) ? raw : {};
+  // A user's photo (`photo:<id>`) is kept even if this device doesn't have
+  // it; the background falls back to the default scene at render time.
   const scene =
-    typeof value.scene === 'string' && SCENES.some(s => s.id === value.scene)
+    typeof value.scene === 'string' &&
+    (SCENES.some(s => s.id === value.scene) || isPhotoId(value.scene))
       ? value.scene
       : DEFAULT_SETTINGS.scene;
   const enabled =

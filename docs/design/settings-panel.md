@@ -20,7 +20,8 @@ browser's side panel has its own).
 Settings (home)
 ├── Search                         finds every setting, on any page
 ├── Wallpaper                      4 big tiles: 3 scenes + "Show All"
-│   └── Wallpapers                 every scene; search filters them
+│   └── Wallpapers                 Add Photo…, Your Photos, then the live
+│                                  scenes; search filters both
 ├── Clock                          a card: Classic, Minimal, None + "Show All"
 │   └── Clock                      all 8 faces; search filters them
 ├── Widgets ›                      on your tab (size, remove) + add
@@ -155,3 +156,21 @@ setting, and Advanced stays out of sight.
   limit of 12.
 - **A clock on/off switch:** the clock is picked by face, and "None" is one
   of the faces.
+
+## Your own photos
+
+"Add Photo…" sits right under the search on Wallpapers. Picked images
+(several at once is fine) are stored by `src/wallpapers/store.ts` in
+IndexedDB on this computer only: the original untouched, a display copy
+(WebP, at most 3840px) and a 480px thumbnail, plus the photo's mean color
+and tone. A small index of colors and sizes is mirrored to localStorage
+(`tarn.photos`) so first paint knows a photo's color without waiting.
+
+- A photo is chosen through the same `scene` setting, as `photo:<uuid>`.
+  Settings sync, photos don't: another computer without the photo shows
+  the default scene.
+- Adding selects the new photo. The badge on a photo's corner (on hover
+  or keyboard focus) deletes it, with Undo; deleting the current photo
+  goes back to the default scene.
+- The background draws photos still, through the renderer, so they
+  arrive, crossfade and ghost on reload like any scene.

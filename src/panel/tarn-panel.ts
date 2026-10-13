@@ -8,7 +8,13 @@ import {keyed} from 'lit/directives/keyed.js';
 import {browser} from 'wxt/browser';
 import {mirrorSettings} from '../app/mirror';
 import {answerPanelPresence} from '../app/side-panel';
-import {SCENES, sceneById, scenePreview, sceneTone} from '../backdrop/scenes';
+import {
+  DEFAULT_SCENE_ID,
+  SCENES,
+  sceneById,
+  scenePreview,
+  sceneTone,
+} from '../backdrop/scenes';
 import type {Scene} from '../backdrop/scenes/types';
 import type {WidgetSize} from '../layout/bands';
 import {
@@ -31,6 +37,15 @@ import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
 import {clockTime} from '../widgets/clock-faces';
+import {
+  addWallpaper,
+  deleteWallpaper,
+  isPhotoId,
+  listWallpapers,
+  photoMirror,
+  restoreWallpaper,
+  type WallpaperInfo,
+} from '../wallpapers/store';
 
 /**
  * The pages of the panel. Home shows what most people change; each section
@@ -61,6 +76,7 @@ export class TarnPanel extends LitElement {
     jsonDraft: {state: true},
     jsonStatus: {state: true},
     confirmReset: {state: true},
+    photos: {state: true},
   };
 
   static override styles = css`
@@ -571,6 +587,49 @@ export class TarnPanel extends LitElement {
         0 0 0 4px var(--ink);
     }
 
+    /* A user's photo: the tile plus a delete badge on its corner, shown
+       on hover or keyboard focus. */
+    .photo {
+      position: relative;
+      display: grid;
+      min-width: 0;
+    }
+
+    .photo .label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .delete {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      color: var(--group);
+      background: var(--ink);
+      border: 2px solid var(--bg);
+      border-radius: 50%;
+      opacity: 0;
+      cursor: pointer;
+      transition: opacity 120ms ease;
+    }
+
+    .delete svg {
+      width: 11px;
+      height: 11px;
+      fill: currentColor;
+    }
+
+    .photo:hover .delete,
+    .delete:focus-visible {
+      opacity: 1;
+    }
+
     .thumb.more {
       position: relative;
       background: var(--field);
@@ -829,6 +888,10 @@ export class TarnPanel extends LitElement {
   declare jsonDraft: string | null;
   declare jsonStatus: string;
   declare confirmReset: boolean;
+  /** The user's own wallpapers (src/wallpapers/store.ts), newest first. */
+  declare photos: WallpaperInfo[];
+  /** Object URLs of the photos' thumbnails, by id. */
+  private photoUrls = new Map<string, string>();
 
   private unwatch: () => void = () => {};
   private direction: 'forward' | 'backward' | '' = '';
@@ -848,6 +911,7 @@ export class TarnPanel extends LitElement {
     this.jsonDraft = null;
     this.jsonStatus = '';
     this.confirmReset = false;
+    this.photos = [];
   }
 
   override connectedCallback(): void {
@@ -859,14 +923,20 @@ export class TarnPanel extends LitElement {
     void loadSettings().then(s => (this.settings = s));
     this.unwatch = watchSettings(s => (this.settings = s));
     window.addEventListener('keydown', this.onKeyDown);
+    // Another page added or deleted a photo: its mirror key changed.
+    window.addEventListener('storage', this.onStorage);
+    void this.loadPhotos();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.unwatch();
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('storage', this.onStorage);
     clearTimeout(this.toastTimer);
     clearTimeout(this.resetTimer);
+    for (const url of this.photoUrls.values()) URL.revokeObjectURL(url);
+    this.photoUrls.clear();
   }
 
   override updated(): void {
@@ -945,6 +1015,14 @@ export class TarnPanel extends LitElement {
         hidden
         @change=${this.onImportFile}
       />
+      <input
+        id="photo"
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        @change=${this.onPhotoFiles}
+      />
     `;
   }
 
@@ -952,7 +1030,7 @@ export class TarnPanel extends LitElement {
 
   private renderHome() {
     const {widgets} = this.settings;
-    const preview = clockPreview(sceneById(this.settings.scene));
+    const preview = clockPreview(this.art(this.settings.scene));
     const scenes = pickShown(
       SCENES.map(s => s.id),
       HOME_SCENES,
@@ -960,14 +1038,14 @@ export class TarnPanel extends LitElement {
     );
     const faces = pickShown(HOME_FACES, HOME_FACES.length, this.settings.clock);
     // The background "Show All" tile shows a scene that isn't on home.
-    const moreScene = SCENES.find(s => !scenes.includes(s.id)) ?? preview.scene;
+    const moreScene = SCENES.find(s => !scenes.includes(s.id)) ?? SCENES[0]!;
     return html`
       <section data-target="background">
         <h2>Wallpaper</h2>
         <div class="scenes" role="radiogroup" aria-label="Wallpaper">
-          ${scenes.map(id => this.sceneButton(sceneById(id)))}
+          ${scenes.map(id => this.wallpaperButton(id))}
           <button class="pick" @click=${() => this.go('backgrounds')}>
-            ${showAll(moreScene)} Show All
+            ${showAll(sceneArt(moreScene))} Show All
           </button>
         </div>
       </section>
@@ -977,7 +1055,7 @@ export class TarnPanel extends LitElement {
         <div class="group tiles" role="radiogroup" aria-label="Clock">
           ${faces.map(face => this.faceButton(face, preview))}
           <button class="pick" @click=${() => this.go('clock')}>
-            ${showAll(preview.scene)} Show All
+            ${showAll(preview.art)} Show All
           </button>
         </div>
       </section>
@@ -1011,25 +1089,49 @@ export class TarnPanel extends LitElement {
 
   private renderBackgrounds() {
     const query = this.query.trim().toLowerCase();
-    const scenes = SCENES.filter(scene =>
-      scene.name.toLowerCase().includes(query),
-    );
-    if (!scenes.length) {
-      return html`<p class="none">
-        No wallpapers match “${this.query.trim()}”.
-      </p>`;
-    }
+    const matches = (name: string) => name.toLowerCase().includes(query);
+    const scenes = SCENES.filter(scene => matches(scene.name));
+    const photos = this.photos.filter(photo => matches(photo.name));
     return html`
-      <section data-target="all-backgrounds">
-        <div class="scenes" role="radiogroup" aria-label="Wallpaper">
-          ${scenes.map(scene => this.sceneButton(scene))}
-        </div>
-      </section>
+      <div class="group" data-target="add-photo">
+        <button class="row" @click=${this.pickPhoto}>
+          ${icon('photo')}
+          <span class="txt">Add Photo…</span>
+        </button>
+      </div>
+
+      ${
+        photos.length
+          ? html`<section data-target="photos">
+              <h2>Your Photos</h2>
+              <div class="scenes" role="radiogroup" aria-label="Your photos">
+                ${photos.map(photo => this.wallpaperButton(photo.id))}
+              </div>
+            </section>`
+          : nothing
+      }
+      ${
+        scenes.length
+          ? html`<section data-target="all-backgrounds">
+              ${this.photos.length ? html`<h2>Live</h2>` : nothing}
+              <div class="scenes" role="radiogroup" aria-label="Wallpaper">
+                ${scenes.map(scene => this.sceneButton(scene))}
+              </div>
+            </section>`
+          : nothing
+      }
+      ${
+        !scenes.length && !photos.length
+          ? html`<p class="none">
+              No wallpapers match “${this.query.trim()}”.
+            </p>`
+          : nothing
+      }
     `;
   }
 
   private renderClock() {
-    const preview = clockPreview(sceneById(this.settings.scene));
+    const preview = clockPreview(this.art(this.settings.scene));
     const query = this.query.trim().toLowerCase();
     const faces = CLOCK_STYLES.filter(face =>
       FACE_NAMES[face].toLowerCase().includes(query),
@@ -1285,9 +1387,42 @@ export class TarnPanel extends LitElement {
     `;
   }
 
+  /** A built-in scene or one of the user's photos, by id. */
+  private wallpaperButton(id: string) {
+    if (!isPhotoId(id)) return this.sceneButton(sceneById(id));
+    const photo = this.photos.find(p => p.id === id);
+    const {background} = this.art(id);
+    const name = photo?.name ?? 'Photo';
+    return html`
+      <span class="photo">
+        <button
+          class="pick"
+          role="radio"
+          aria-checked=${id === this.settings.scene}
+          @click=${() => this.selectScene(id)}
+        >
+          <span class="thumb" style="background: ${background}"></span>
+          <span class="label">${name}</span>
+        </button>
+        ${
+          photo
+            ? html`<button
+                class="delete"
+                aria-label="Delete ${name}"
+                title="Delete"
+                @click=${() => void this.deletePhoto(id)}
+              >
+                ${glyph('close')}
+              </button>`
+            : nothing
+        }
+      </span>
+    `;
+  }
+
   /** A clock face, drawn on the current background so it previews truly. */
   private faceButton(face: ClockStyle, preview: ClockPreview) {
-    const {scene} = preview;
+    const {art} = preview;
     return html`
       <button
         class="pick"
@@ -1295,10 +1430,7 @@ export class TarnPanel extends LitElement {
         aria-checked=${face === this.settings.clock}
         @click=${() => this.applyPatch({clock: face})}
       >
-        <span
-          class="thumb ${sceneTone(scene)}"
-          style="background: ${scenePreview(scene)}"
-        >
+        <span class="thumb ${art.tone}" style="background: ${art.background}">
           ${face === 'none' ? html`<span class="off">Off</span>` : clockArt(face, preview)}
         </span>
         ${FACE_NAMES[face]}
@@ -1483,6 +1615,91 @@ export class TarnPanel extends LitElement {
     this.settings = await saveSettings({tabIcon});
   }
 
+  /** How any wallpaper looks as a thumbnail: its picture and its tone. */
+  private art(id: string): Art {
+    if (!isPhotoId(id)) return sceneArt(sceneById(id));
+    const photo = this.photos.find(p => p.id === id);
+    const mirrored = photoMirror()[id];
+    const base = photo?.base ?? mirrored?.base;
+    const tone = photo?.tone ?? mirrored?.tone;
+    // Not on this computer (synced from another one): the default scene,
+    // as the background itself falls back to it.
+    if (!base || !tone) return sceneArt(sceneById(DEFAULT_SCENE_ID));
+    const url = this.photoUrls.get(id);
+    return {
+      background: url
+        ? `url('${url}') center / cover no-repeat, ${base}`
+        : base,
+      tone,
+    };
+  }
+
+  private async loadPhotos(): Promise<void> {
+    try {
+      const photos = await listWallpapers();
+      const ids = new Set(photos.map(p => p.id));
+      for (const [id, url] of this.photoUrls) {
+        if (ids.has(id)) continue;
+        URL.revokeObjectURL(url);
+        this.photoUrls.delete(id);
+      }
+      for (const photo of photos) {
+        if (!this.photoUrls.has(photo.id)) {
+          this.photoUrls.set(photo.id, URL.createObjectURL(photo.thumb));
+        }
+      }
+      this.photos = photos;
+    } catch (error) {
+      console.error('Tarn: could not read your photos', error);
+    }
+  }
+
+  private onStorage = (event: StorageEvent) => {
+    if (event.key === 'tarn.photos') void this.loadPhotos();
+  };
+
+  private pickPhoto = () => {
+    this.renderRoot.querySelector<HTMLInputElement>('#photo')?.click();
+  };
+
+  /** Adds each chosen image and shows the last one, as macOS does. */
+  private onPhotoFiles = async (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const files = [...(input.files ?? [])];
+    input.value = '';
+    let added: WallpaperInfo | null = null;
+    for (const file of files) {
+      try {
+        added = await addWallpaper(file);
+      } catch (error) {
+        this.showToast(
+          error instanceof Error
+            ? error.message
+            : 'That image couldn’t be added.',
+        );
+      }
+    }
+    await this.loadPhotos();
+    if (added) {
+      this.selectScene(added.id);
+      this.showToast(files.length > 1 ? 'Photos added' : 'Photo added');
+    }
+  };
+
+  private async deletePhoto(id: string): Promise<void> {
+    const wasCurrent = this.settings.scene === id;
+    const record = await deleteWallpaper(id);
+    if (wasCurrent) this.selectScene(DEFAULT_SCENE_ID);
+    await this.loadPhotos();
+    if (!record) return;
+    this.showToast(`${record.info.name} deleted`, () => {
+      void restoreWallpaper(record).then(async () => {
+        await this.loadPhotos();
+        if (wasCurrent) this.selectScene(id);
+      });
+    });
+  }
+
   private selectScene(id: string): void {
     this.settings = {...this.settings, scene: id};
     // Mirror for first paint too, so the next new tab opens on it directly.
@@ -1636,17 +1853,27 @@ const PAGE_TITLES: Record<Page, string> = {
   advanced: 'Advanced',
 };
 
-/** What the clock face thumbnails show: the time now, on the current scene. */
+/** A wallpaper as a thumbnail draws it: a CSS background and its tone. */
+interface Art {
+  background: string;
+  tone: 'light' | 'dark';
+}
+
+function sceneArt(scene: Scene): Art {
+  return {background: scenePreview(scene), tone: sceneTone(scene)};
+}
+
+/** What the clock face thumbnails show: the time now, on the wallpaper. */
 interface ClockPreview {
-  scene: Scene;
+  art: Art;
   time: string;
   date: string;
 }
 
-function clockPreview(scene: Scene): ClockPreview {
+function clockPreview(art: Art): ClockPreview {
   const now = new Date();
   return {
-    scene,
+    art,
     time: now
       .toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
       .replace(/\s?[AP]M$/i, ''),
@@ -1660,9 +1887,9 @@ function clockPreview(scene: Scene): ClockPreview {
 }
 
 /** A "Show All" tile: a scene, blurred and faded, with a grid on it. */
-function showAll(scene: Scene) {
-  return html`<span class="thumb more ${sceneTone(scene)}" aria-hidden="true">
-    <span class="veil" style="background: ${scenePreview(scene)}"></span>
+function showAll(art: Art) {
+  return html`<span class="thumb more ${art.tone}" aria-hidden="true">
+    <span class="veil" style="background: ${art.background}"></span>
     ${glyph('grid')}
   </span>`;
 }
