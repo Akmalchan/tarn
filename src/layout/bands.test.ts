@@ -89,6 +89,30 @@ describe('layoutBands', () => {
     expect(bands).toEqual([6, 6, 1]);
   });
 
+  it('lays smalls and mediums as bricks, row by row in your order', () => {
+    // [S][ M ]
+    // [ M ][S]
+    const {placements, bands} = layoutBands(items('s', 'm', 'm', 's'), 6);
+    expect(bands).toEqual([3]);
+    const at = (id: string) => placements.find(p => p.id === id);
+    expect(at('w0')).toMatchObject({row: 0, col: 0, w: 1, h: 1});
+    expect(at('w1')).toMatchObject({row: 0, col: 1, w: 2, h: 1});
+    expect(at('w2')).toMatchObject({row: 1, col: 0, w: 2, h: 1});
+    expect(at('w3')).toMatchObject({row: 1, col: 2, w: 1, h: 1});
+  });
+
+  it('puts a brick beside a large widget', () => {
+    const {placements, bands} = layoutBands(items('l', 'm', 's', 's', 'm'), 6);
+    expect(bands).toEqual([5]);
+    expect(placements.every(p => p.h === 1 || p.id === 'w0')).toBe(true);
+  });
+
+  it('still stacks pairs when that avoids stretching a widget', () => {
+    // A small on each side of a large: pairing keeps both at 1x1.
+    const {placements} = layoutBands(items('s', 'l', 's'), 6);
+    expect(placements.filter(p => p.w === 1).every(p => p.h === 1)).toBe(true);
+  });
+
   it('never goes past six cells across', () => {
     const {bands} = layoutBands(items('xl', 'xl', 'xl'), 12);
     expect(Math.max(...bands)).toBeLessThanOrEqual(6);

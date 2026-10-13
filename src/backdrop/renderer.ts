@@ -147,6 +147,8 @@ export class Renderer {
   private glassStrength = 0;
   private glassRadius = 24;
   private glass: GlassProgram | null = null;
+  /** Tiles moved since the last frame: draw the next one without waiting. */
+  private tilesMoved = false;
   private frame: FrameTarget | null = null;
 
   /**
@@ -211,7 +213,12 @@ export class Renderer {
     this.tiles.set(rects.slice(0, this.tileCount * 4));
     this.glassStrength = Math.min(1, Math.max(0, strength));
     this.glassRadius = radius;
-    if (this.visible && this.sized) this.draw();
+    if (!this.visible || !this.sized) return;
+    // While the scene animates, the next frame picks the tiles up (at most
+    // one draw per display frame, however many updates arrive). Otherwise
+    // nothing else would draw, so draw now.
+    if (this.frameId) this.tilesMoved = true;
+    else this.draw();
   }
 
   setReducedMotion(reduced: boolean): void {
@@ -329,7 +336,15 @@ export class Renderer {
   private tick = (now: number): void => {
     this.frameId = requestFrame(this.tick);
     const sinceLastFrame = now - this.lastFrameAt;
+    if (this.tilesMoved && sinceLastFrame < this.governor.frameIntervalMs - 2) {
+      // Tiles are gliding: redraw now so the frost keeps up with them, but
+      // leave the animation clock and the quality governor alone.
+      this.tilesMoved = false;
+      this.draw();
+      return;
+    }
     if (sinceLastFrame < this.governor.frameIntervalMs - 2) return;
+    this.tilesMoved = false;
     this.lastFrameAt = now;
     if (this.governor.record(sinceLastFrame)) this.applySize();
     this.clock += Math.min(Math.max(now - this.clockAt, 0), MAX_STEP_MS) / 1000;
