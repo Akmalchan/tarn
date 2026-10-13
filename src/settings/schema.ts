@@ -6,6 +6,7 @@
 import {DEFAULT_SCENE_ID, SCENES} from '../backdrop/scenes';
 import {isPhotoId} from '../wallpapers/store';
 import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
+import {migrateSettings} from './migrate';
 
 /**
  * The icon in the tab. 'chrome' shows Chrome's own new-tab icon; 'none'
@@ -78,6 +79,17 @@ export function fitWidgetSize(kind: WidgetKind, size: WidgetSize): WidgetSize {
   );
 }
 
+/** The fields of a widget entry this version knows; others are kept as-is. */
+export const WIDGET_ENTRY_FIELDS: readonly string[] = [
+  'id',
+  'kind',
+  'size',
+  'name',
+];
+
+/** A widget id as stored: lowercase letters, digits and dashes. */
+export const WIDGET_ID = /^[a-z0-9-]{1,40}$/;
+
 /** One widget on the page. Its content lives in local storage by `id`. */
 export interface WidgetEntry {
   readonly id: string;
@@ -114,7 +126,7 @@ export const DEFAULT_SETTINGS: Settings = {
  * settings. Unknown values fall back to defaults instead of throwing.
  */
 export function normalizeSettings(raw: unknown): Settings {
-  const value = isRecord(raw) ? raw : {};
+  const value = migrateSettings(raw);
   // A user's photo (`photo:<id>`) is kept even if this device doesn't have
   // it; the background falls back to the default scene at render time.
   const scene =
@@ -151,7 +163,7 @@ function normalizeWidgets(raw: unknown): WidgetEntry[] {
     const {id, kind, size, name} = item;
     if (
       typeof id !== 'string' ||
-      !/^[a-z0-9-]{1,40}$/.test(id) ||
+      !WIDGET_ID.test(id) ||
       seen.has(id) ||
       !WIDGET_KINDS.includes(kind as WidgetKind)
     ) {

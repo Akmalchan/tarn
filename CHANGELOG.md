@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Your setup survives updates: a save only changes what you changed, so an
+  older Tarn on another computer never erases a newer one's widgets or
+  choices; renamed options get proper upgrades; every update first keeps a
+  backup of your settings and widget content (notes, tasks, favorites).
 - Your own photos as the background: drawn sharp and still (no CPU while
   idle), with the same smooth arrival and reload as the animated scenes.
 - Edit mode: a holder on each widget's top edge to rename it (two
@@ -54,8 +58,3 @@ follow [Semantic Versioning](https://semver.org/).
   long-lived tabs, self-healing warm process.
 - Take-over page that switches off other new-tab extensions (optional
   `management` permission) and restores them when Tarn is turned off.
-
-### Changed
-
-- The wordmark reads "tarn" from a distance, not "tam": it is drawn from
-  Google Sans Flex's text size with a little more room before the n.

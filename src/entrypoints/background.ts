@@ -5,6 +5,7 @@
 
 import {browser} from 'wxt/browser';
 import {defineBackground} from 'wxt/utils/define-background';
+import {saveAutoBackup} from '../settings/backup';
 
 /**
  * Keeps one offscreen document alive (Chromium). It mirrors synced settings
@@ -33,7 +34,16 @@ const WARM_MESSAGE = 'tarn:warm';
 
 export default defineBackground(() => {
   browser.runtime.onStartup.addListener(() => void ensureOffscreenDocument());
-  browser.runtime.onInstalled.addListener(() => void ensureOffscreenDocument());
+  browser.runtime.onInstalled.addListener(({reason}) => {
+    // An update: keep a copy of the setup as it was, before the new version
+    // reads or writes any of it (Settings > Advanced > Backup restores it).
+    if (reason === 'update') {
+      void saveAutoBackup().catch(error =>
+        console.warn('[tarn] backup before update failed:', error),
+      );
+    }
+    void ensureOffscreenDocument();
+  });
   browser.runtime.onMessage.addListener(message => {
     if ((message as {type?: unknown} | undefined)?.type === WARM_MESSAGE) {
       void ensureOffscreenDocument();
