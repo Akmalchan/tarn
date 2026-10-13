@@ -41,6 +41,7 @@ export interface RendererEvents {
     at: number,
     running: boolean,
     quality: number,
+    rate: number,
   ) => void;
 }
 
@@ -68,6 +69,25 @@ const CLOCK_WRAP_AFTER_S = TIME_PERIOD_S * 12;
 
 /** Longest step the clock may take between frames, so stalls never jump. */
 const MAX_STEP_MS = 100;
+/** Between frames, wake this long before the next is due (timer slack). */
+const WAKE_EARLY_MS = 12;
+
+/**
+ * How lively the scene is: `active` while someone is using the page, `calm`
+ * when nobody has for a while (1 min). It never stops.
+ */
+export type Pace = 'active' | 'calm';
+export const PACES: readonly Pace[] = ['active', 'calm'];
+
+/** Animation speed at each pace, relative to the scene's own speed. */
+const PACE_RATE: Readonly<Record<Pace, number>> = {active: 1, calm: 0.4};
+/**
+ * How quickly the speed eases toward a new pace (time constants, s):
+ * settling down is slow (about 10 s from active to calm, nothing you can
+ * catch happening); waking up is quick.
+ */
+const EASE_DOWN_S = 3;
+const EASE_UP_S = 0.5;
 
 interface CompiledScene {
   program: WebGLProgram;
@@ -123,6 +143,9 @@ export class Renderer {
   private visible = true;
   private reducedMotion = false;
   private frameId = 0;
+  /** The loop is running (waiting for a frame callback or on its timer). */
+  private looping = false;
+  private waitTimer: ReturnType<typeof setTimeout> | 0 = 0;
   private lastFrameAt = 0;
   /** Trades resolution and frame rate for smoothness on weak devices. */
   private governor = new QualityGovernor(
@@ -147,6 +170,9 @@ export class Renderer {
   private glassStrength = 0;
   private glassRadius = 24;
   private glass: GlassProgram | null = null;
+  private pace: Pace = 'active';
+  /** Current speed multiplier, easing toward the pace's rate. */
+  private rate = 1;
   /** Tiles moved since the last frame: draw the next one without waiting. */
   private tilesMoved = false;
   private frame: FrameTarget | null = null;
@@ -217,8 +243,23 @@ export class Renderer {
     // While the scene animates, the next frame picks the tiles up (at most
     // one draw per display frame, however many updates arrive). Otherwise
     // nothing else would draw, so draw now.
-    if (this.frameId) this.tilesMoved = true;
-    else this.draw();
+    if (this.looping) {
+      this.tilesMoved = true;
+      // Asleep between frames: wake now so the frost keeps up.
+      if (this.waitTimer) {
+        clearTimeout(this.waitTimer);
+        this.waitTimer = 0;
+        this.frameId = requestFrame(this.tick);
+      }
+    } else {
+      this.draw();
+    }
+  }
+
+  /** Eases the animation toward a new pace; see {@link Pace}. */
+  setPace(pace: Pace): void {
+    if (pace === this.pace || !PACES.includes(pace)) return;
+    this.pace = pace;
   }
 
   setReducedMotion(reduced: boolean): void {
@@ -326,31 +367,68 @@ export class Renderer {
       return;
     }
     this.draw();
-    if (!this.frameId) {
+    if (!this.looping) {
+      this.looping = true;
       this.clockAt = performance.now();
       this.frameId = requestFrame(this.tick);
       this.reportClock(true);
     }
   }
 
+  /**
+   * Waits for the next frame. Between frames the loop sleeps on a timer and
+   * only rejoins the display's frame callbacks just before a frame is due,
+   * instead of waking at every refresh (up to 120 times a second) to skip
+   * it. The frame itself is still drawn in step with the display.
+   */
+  private scheduleNext(delayMs: number): void {
+    if (delayMs > WAKE_EARLY_MS * 2) {
+      this.waitTimer = setTimeout(() => {
+        this.waitTimer = 0;
+        if (this.looping) this.frameId = requestFrame(this.tick);
+      }, delayMs - WAKE_EARLY_MS);
+    } else {
+      this.frameId = requestFrame(this.tick);
+    }
+  }
+
   private tick = (now: number): void => {
-    this.frameId = requestFrame(this.tick);
+    this.frameId = 0;
+    if (!this.looping) return;
+    const target = PACE_RATE[this.pace];
+    // The frame rate follows the speed, but less than in proportion: calm
+    // runs at 40% speed and 20 fps, so each frame moves the picture only
+    // 60% as far as at full speed, and settling down never looks choppier.
+    const fps = 2 / 3 + (Math.max(this.rate, 0.4) - 0.4) * (1 / 1.8);
+    const interval = this.governor.frameIntervalMs / fps;
     const sinceLastFrame = now - this.lastFrameAt;
-    if (this.tilesMoved && sinceLastFrame < this.governor.frameIntervalMs - 2) {
+    if (this.tilesMoved && sinceLastFrame < interval - 2) {
       // Tiles are gliding: redraw now so the frost keeps up with them, but
       // leave the animation clock and the quality governor alone.
       this.tilesMoved = false;
       this.draw();
+      this.scheduleNext(interval - sinceLastFrame);
       return;
     }
-    if (sinceLastFrame < this.governor.frameIntervalMs - 2) return;
+    if (sinceLastFrame < interval - 2) {
+      this.scheduleNext(interval - sinceLastFrame);
+      return;
+    }
     this.tilesMoved = false;
     this.lastFrameAt = now;
-    if (this.governor.record(sinceLastFrame)) this.applySize();
-    this.clock += Math.min(Math.max(now - this.clockAt, 0), MAX_STEP_MS) / 1000;
+    // Only full-speed frames tell the governor how the device is coping.
+    if (this.rate > 0.98 && this.governor.record(sinceLastFrame)) {
+      this.applySize();
+    }
+    const step = Math.min(Math.max(now - this.clockAt, 0), MAX_STEP_MS) / 1000;
     this.clockAt = now;
+    const ease = target < this.rate ? EASE_DOWN_S : EASE_UP_S;
+    this.rate += (target - this.rate) * (1 - Math.exp(-step / ease));
+    if (Math.abs(target - this.rate) < 0.002) this.rate = target;
+    this.clock += step * this.rate;
     this.draw();
     if (now - this.clockReportedAt > 1000) this.reportClock(true);
+    this.scheduleNext(interval);
   };
 
   private reportClock(running: boolean): void {
@@ -360,15 +438,19 @@ export class Renderer {
       performance.timeOrigin + performance.now(),
       running,
       this.governor.index,
+      this.rate,
     );
   }
 
   private stopLoop(): void {
-    if (this.frameId) {
-      cancelFrame(this.frameId);
+    if (this.looping) {
+      if (this.frameId) cancelFrame(this.frameId);
+      clearTimeout(this.waitTimer);
       this.reportClock(false);
     }
+    this.looping = false;
     this.frameId = 0;
+    this.waitTimer = 0;
   }
 
   private draw(): void {
