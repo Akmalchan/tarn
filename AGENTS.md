@@ -58,7 +58,7 @@ How a page arrives on screen matters more than how fast it does
   1.035x. Under it, the page color goes from the browser's gray to the
   scene's dark base in 0.25s, so the half-faded scene is never washed in
   gray (measured, dark mode: gray gone by ~0.15s instead of ~0.35s).
-  Controls (gear, switcher), the clock and widgets appear with the scene's
+  The gear, the clock and widgets appear with the scene's
   first frame (widgets fade in over 0.2s). Tried and rejected on 2026-10-12:
   a faster scene (0.45s, settle 0.65s) felt flashy. The owner wants widgets
   as soon as possible: waiting for the fade (~0.6-1s) felt "so late".

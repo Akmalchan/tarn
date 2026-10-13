@@ -33,13 +33,10 @@ import {watchSidePanel} from './side-panel';
 import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
 
-const IDLE_HIDE_MS = 2500;
-
 /** Root of the new tab page. */
 export class TarnApp extends LitElement {
   static override properties = {
     settings: {state: true},
-    controlsVisible: {state: true},
     revealed: {state: true},
     settled: {state: true},
     handingOff: {state: true},
@@ -138,65 +135,9 @@ export class TarnApp extends LitElement {
         opacity: 0;
       }
     }
-
-    .scenes {
-      position: fixed;
-      left: 50%;
-      bottom: 28px;
-      display: flex;
-      gap: 2px;
-      padding: 4px;
-      border-radius: 999px;
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      backdrop-filter: blur(24px) saturate(1.4);
-      -webkit-backdrop-filter: blur(24px) saturate(1.4);
-      transform: translate(-50%, 8px);
-      opacity: 0;
-      transition:
-        opacity 300ms ease,
-        transform 300ms ease;
-    }
-
-    .scenes[data-visible],
-    .scenes:hover,
-    .scenes:focus-within {
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-
-    button {
-      font: inherit;
-      font-size: 13px;
-      letter-spacing: 0.01em;
-      color: var(--text-dim);
-      background: transparent;
-      border: 0;
-      border-radius: 999px;
-      padding: 6px 14px;
-      cursor: pointer;
-      transition:
-        color 200ms ease,
-        background-color 200ms ease;
-    }
-
-    button:hover {
-      color: var(--text);
-    }
-
-    button[aria-pressed='true'] {
-      color: var(--text);
-      background: var(--glass-active);
-    }
-
-    button:focus-visible {
-      outline: 2px solid var(--focus-ring);
-      outline-offset: 1px;
-    }
   `;
 
   declare settings: Settings;
-  declare controlsVisible: boolean;
   /**
    * Set when the scene appears: `inPlace` on a reload, `live` unless only
    * the still gradient could be shown (no WebGL).
@@ -209,7 +150,6 @@ export class TarnApp extends LitElement {
   /** The settings panel is open: widgets can be rearranged by dragging. */
   declare editing: boolean;
 
-  private idleTimer = 0;
   private schemeQuery = matchMedia('(prefers-color-scheme: dark)');
   private unwatch: () => void = () => {};
   private unwatchPanel: () => void = () => {};
@@ -223,7 +163,6 @@ export class TarnApp extends LitElement {
       ...rememberedHome(),
       scene: rememberedScene(),
     });
-    this.controlsVisible = false;
     this.revealed = null;
     this.settled = null;
     this.handingOff = canHandOff && isRememberedOff();
@@ -246,7 +185,6 @@ export class TarnApp extends LitElement {
     });
     this.unwatch = watchSettings(this.applySettings);
     this.unwatchPanel = watchSidePanel(open => (this.editing = open));
-    window.addEventListener('pointermove', this.onActivity, {passive: true});
     window.addEventListener('keydown', this.onKeyDown);
     this.schemeQuery.addEventListener('change', this.onSchemeChange);
   }
@@ -255,10 +193,8 @@ export class TarnApp extends LitElement {
     super.disconnectedCallback();
     this.unwatch();
     this.unwatchPanel();
-    window.removeEventListener('pointermove', this.onActivity);
     window.removeEventListener('keydown', this.onKeyDown);
     this.schemeQuery.removeEventListener('change', this.onSchemeChange);
-    clearTimeout(this.idleTimer);
   }
 
   override render() {
@@ -275,23 +211,6 @@ export class TarnApp extends LitElement {
       ${
         this.revealed
           ? html`<div class="controls" ?data-in-place=${this.revealed.inPlace}>
-              <nav
-                class="scenes"
-                aria-label="Background"
-                ?data-visible=${this.controlsVisible}
-              >
-                ${SCENES.map(
-                  (scene, i) => html`
-                    <button
-                      aria-pressed=${scene.id === current}
-                      title="${scene.name} (${i + 1})"
-                      @click=${() => this.selectScene(scene.id)}
-                    >
-                      ${scene.name}
-                    </button>
-                  `,
-                )}
-              </nav>
               <tarn-settings-button></tarn-settings-button>
             </div>`
           : nothing
@@ -391,15 +310,6 @@ export class TarnApp extends LitElement {
     void saveSettings({scene: id});
   }
 
-  private onActivity = () => {
-    this.controlsVisible = true;
-    clearTimeout(this.idleTimer);
-    this.idleTimer = window.setTimeout(
-      () => (this.controlsVisible = false),
-      IDLE_HIDE_MS,
-    );
-  };
-
   private onKeyDown = (event: KeyboardEvent) => {
     if (
       event.metaKey ||
@@ -411,7 +321,6 @@ export class TarnApp extends LitElement {
     const scene = SCENES[Number(event.key) - 1];
     if (scene) {
       this.selectScene(scene.id);
-      this.onActivity();
     }
   };
 }
