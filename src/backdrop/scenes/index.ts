@@ -123,19 +123,128 @@ vec3 scene(vec2 uv, float t) {
 `,
 };
 
-export const SCENES: readonly Scene[] = [tarn, ember, bloom, wave];
+/**
+ * Northern lights: curtains of light hang over a night sky, their lower
+ * edges bright and sharp, fading upward, swaying slowly.
+ */
+const aurora: Scene = {
+  id: 'aurora',
+  name: 'Aurora',
+  colors: ['#02050b', '#08141f', '#3ed6a6', '#8d7ce0'],
+  base: '#03070d',
+  speed: 0.25,
+  resolution: 0.5,
+  fragment: /* glsl */ `
+float curtain(vec2 uv, float t, float seed, float height) {
+  float x = uv.x + seed;
+  float edge = height
+    + 0.2 * fbmFast(vec2(1.1 * x + 0.05 * t, seed - 0.03 * t))
+    + 0.06 * sin(3.1 * x - 0.25 * t + seed);
+  float d = uv.y - edge;
+  float rays = 0.12 + 0.88 * smoothstep(-0.4, 0.5,
+    noiseFast(vec2(7.0 * x + 0.35 * t, 0.6 * d + seed - 0.12 * t)));
+  float above = 0.6 * exp(-max(d, 0.0) * 12.0) + 0.4 * exp(-max(d, 0.0) * 3.2);
+  float below = exp(min(d, 0.0) * 30.0);
+  float sweep = smoothstep(-0.3, 0.4, noiseFast(vec2(0.9 * x - 0.06 * t, seed)));
+  return above * below * rays * (0.1 + 0.9 * sweep);
+}
+
+vec3 scene(vec2 uv, float t) {
+  vec3 col = mix(uColors[1], uColors[0], smoothstep(-0.8, 0.1, uv.y));
+
+  // The band crosses the sky at a slight angle, rising to the right.
+  const float TILT = 0.2;
+  vec2 r = mat2(cos(TILT), -sin(TILT), sin(TILT), cos(TILT)) * uv;
+  float a = curtain(r, t, 0.0, -0.1);
+  float b = curtain(r * vec2(0.75, 1.0), t * 0.8, 7.3, 0.06);
+  float high = smoothstep(0.0, 0.55, r.y + 0.12);
+  vec3 light = mix(uColors[2], uColors[3], high);
+  col += light * (a + 0.55 * b) * 1.2;
+  col += uColors[2] * 0.03 * smoothstep(0.1, -0.5, uv.y);
+
+  vec2 grid = uv * 180.0;
+  float star = step(0.9975, hash01(floor(grid) + 17.0))
+    * smoothstep(0.35, 0.0, length(fract(grid) - 0.5))
+    * smoothstep(-0.1, 0.45, uv.y);
+  col += star * 0.3 * (1.0 - min(a + b, 1.0));
+
+  col *= 1.0 - 0.35 * dot(uv * vec2(0.55, 1.0), uv * vec2(0.55, 1.0));
+  return col;
+}
+`,
+};
+
+/**
+ * Satin in morning light: slow folds of pale cloth, ice-blue in the
+ * shadows and faintly warm where the light catches them.
+ */
+const silk: Scene = {
+  id: 'silk',
+  name: 'Silk',
+  colors: ['#b9cfdd', '#e4ecf1', '#fbfcfd', '#f2c4ae'],
+  base: '#e6edf2',
+  speed: 0.2,
+  resolution: 0.4,
+  fragment: /* glsl */ `
+float folds(vec2 p, float t) {
+  vec2 w = p + 0.38 * vec2(noiseFast(0.6 * p + vec2(0.0, 0.1 * t)),
+                           noiseFast(0.6 * p + vec2(4.3, -0.08 * t)));
+  return 0.7 * sin(2.4 * w.x + 1.6 * w.y + 0.3 * t)
+       + 0.22 * sin(-1.0 * w.x + 2.2 * w.y - 0.22 * t)
+       + 0.08 * sin(4.4 * w.x + 2.6 * w.y + 0.17 * t);
+}
+
+vec3 scene(vec2 uv, float t) {
+  vec2 p = uv * 2.1;
+  const float E = 0.01;
+  float h = folds(p, t);
+  vec2 slope = vec2(folds(p + vec2(E, 0.0), t) - h,
+                    folds(p + vec2(0.0, E), t) - h) / E;
+  vec3 n = normalize(vec3(-0.6 * slope, 1.0));
+  vec3 sun = normalize(vec3(-0.55, 0.5, 0.55));
+
+  float diffuse = clamp(dot(n, sun), 0.0, 1.0);
+  float sheen = pow(clamp(dot(n, normalize(sun + vec3(0.0, 0.0, 1.0))), 0.0, 1.0), 24.0);
+
+  vec3 col = mix(uColors[0], uColors[1], smoothstep(0.0, 0.6, diffuse));
+  col = mix(col, uColors[2], smoothstep(0.6, 0.95, diffuse));
+  col = mix(col, uColors[3], 0.3 * smoothstep(0.4, 0.9, diffuse) * smoothstep(-0.7, 0.7, uv.x - uv.y));
+  col += 0.08 * sheen;
+  col *= 1.0 - 0.12 * dot(uv * vec2(0.6, 1.0), uv * vec2(0.6, 1.0));
+  return col;
+}
+`,
+};
+
+export const SCENES: readonly Scene[] = [
+  tarn,
+  ember,
+  bloom,
+  wave,
+  aurora,
+  silk,
+];
 
 export const DEFAULT_SCENE_ID = tarn.id;
 
 /**
- * A still CSS gradient of a scene, built from its own colors: the settings
- * thumbnail, and the background when WebGL is unavailable.
+ * A still CSS gradient of a scene, built from its own colors: the background
+ * when WebGL is unavailable, and under the thumbnail while it loads.
  */
 export function sceneStill(scene: Scene): string {
   const [a, b, c, d] = scene.colors;
   return `radial-gradient(120% 90% at 80% 100%, ${d} 0%, transparent 55%),
     radial-gradient(90% 80% at 20% 90%, ${c} 0%, transparent 60%),
     linear-gradient(160deg, ${a} 0%, ${b} 100%)`;
+}
+
+/**
+ * A scene's settings thumbnail: a real frame of it (`public/scenes/`, made
+ * by `scripts/scene-previews.mjs`, ~2-4 KB each) over its still gradient.
+ */
+export function scenePreview(scene: Scene): string {
+  return `url('/scenes/${scene.id}.webp') center / cover no-repeat,
+    ${sceneStill(scene)}`;
 }
 
 export function sceneById(id: string): Scene {
