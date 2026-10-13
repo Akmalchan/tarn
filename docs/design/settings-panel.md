@@ -19,11 +19,11 @@ browser's side panel has its own).
 ```
 Settings (home)
 ├── Search                         finds every setting, on any page
-├── Background                     the first 4 scenes as thumbnails
-│   └── All backgrounds ›          appears once there are more than 4
-├── Clock                          faces: Classic, Bold, Minimal, None
+├── Background                     a card: 3 scenes + a "Show All" tile
+│   └── Backgrounds                the current one large (with the clock),
+│                                  then every scene
+├── Clock                          a card: Classic, Bold, Minimal, None
 ├── Widgets ›                      on your tab (size, remove) + add
-├── Use Tarn for new tabs          a switch
 ├── Advanced ›                     always last
 └── Signature                      wordmark, "for Google Chrome™", version,
                                    Privacy · Source code
@@ -39,11 +39,13 @@ Advanced
 ## Rules
 
 1. **Home holds what most people change.** Today that's the background,
-   the clock, widgets and turning Tarn on or off. Anything else goes one
-   level down.
-2. **Show a few, then "more".** A section shows up to four choices; the
-   rest go behind a row that opens a page (`HOME_SCENES` in the panel). The
-   first screen never grows just because the catalog does.
+   the clock and widgets. Anything else goes one level down.
+2. **Show a few, then "Show All".** A picker is a card of four tiles, like
+   the wallpaper picker in macOS. When there are more choices than fit, the
+   fourth tile is "Show All" (a mosaic of the choices) and opens a page
+   with all of them (`HOME_SCENES` in the panel). The current choice is
+   always among the tiles. The first screen never grows just because the
+   catalog does.
 3. **Pictures, not names.** Scenes and clock faces are picked from
    thumbnails drawn on the user's real background.
 4. **Advanced is last and is called Advanced.** Not "Developer": it holds
@@ -54,9 +56,10 @@ Advanced
    page and highlights the row. `/` focuses search; Escape clears it.
 6. **Changes are live.** No Save button. Removing a widget or resetting
    shows a toast with Undo.
-7. **Turning Tarn on or off only happens through its switch.** It goes
-   through `setTarnEnabled`; import, reset and `settings.json` never change
-   it.
+7. **The panel doesn't turn Tarn off.** The owner removed the "Use Tarn
+   for new tabs" switch on 2026-10-13 as not needed; the browser's
+   extensions page does that. Import, reset and `settings.json` never
+   change `enabled` either.
 8. **No fake features.** Nothing in the panel says "Soon". Add a row when
    the feature ships.
 
@@ -104,8 +107,9 @@ Advanced
   a control under its title, like widget sizes). No per-row exceptions, no
   measuring in script. Controls on the right stay vertically centered.
   Hairlines start where the text does.
-- The ta mark in the Tarn row is a tile like any other (`MARK_TILE` in
-  `glyphs.ts`): it turns white in dark mode with the rest.
+- Picker tiles are square (16:10 on the Backgrounds page), and their clock
+  text is sized in container units, so a thumbnail is a true small copy at
+  any panel width.
 - Text is Google Sans Flex (bundled, see
   `src/styles/global.css`).
 
