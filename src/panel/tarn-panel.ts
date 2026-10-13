@@ -917,7 +917,7 @@ export class TarnPanel extends LitElement {
                     <span class="sub"
                       >${
                         tabIcon === 'none'
-                          ? 'No icon. The tab never changes, even for a moment.'
+                          ? 'No icon in the tab.'
                           : 'Chrome’s own new-tab icon.'
                       }</span
                     ></span

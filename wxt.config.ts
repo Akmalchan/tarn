@@ -6,6 +6,8 @@ const DEV_ICON_DIR = 'docs/brand/assets/png/extension-dev';
 const DEV_ICONS: Record<string, string> = {
   'action/16.png': 'action-16.png',
   'action/32.png': 'action-32.png',
+  'icon/16.png': 'action-16.png',
+  'icon/32.png': 'action-32.png',
   'icon/48.png': 'icon-48.png',
   'icon/96.png': 'icon-96.png',
   'icon/128.png': 'icon-128.png',
