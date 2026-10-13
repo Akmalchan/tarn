@@ -31,8 +31,8 @@ self.onmessage = (
       {
         onFirstFrame: () => post({type: 'firstFrame'}),
         onUnavailable: () => post({type: 'unavailable'}),
-        onClock: (clock, at, running, quality) =>
-          post({type: 'clock', clock, at, running, quality}),
+        onClock: (clock, at, running, quality, rate) =>
+          post({type: 'clock', clock, at, running, quality, rate}),
       },
     );
   } else if (message.type === 'ghost') {
