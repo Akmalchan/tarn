@@ -133,6 +133,23 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
 
 ## Rendering performance
 
+- **Pace** (`backdrop/pace.ts`, `renderer.ts`): the scene is `active`
+  (full speed, 30 fps) while the page is used; `calm` (a third of the speed
+  at 10 fps, so each frame moves exactly as far as at 30 fps and the lower
+  rate is never felt) after 30 s without input or while another app is in
+  front; `still` after 3 min: it glides to a stop and nothing runs until
+  real input (synthetic pointermoves under a resting cursor are ignored).
+  Speed eases (0.6 s); frame rate drops only after the speed has, and rises
+  before it. Settings open keeps it active. Hidden tabs stop as before.
+- Between frames the loop sleeps on a timer and rejoins the display's frame
+  callbacks ~12 ms before a frame is due, instead of waking at every
+  refresh (120 Hz) to skip. Frames stay evenly spaced (measured: 30.3/s,
+  gaps 32-36 ms).
+- Ghost snapshots are skipped when the moment hasn't changed (still), and
+  taken less often at slower paces.
+- Measured idle cost (M4, headed Chrome, % of one core, page / graphics):
+  active 5.0-5.8 / 9.4-10.6; calm 2.6 / 4.8; still ~0 / ~0.
+
 - The shader prelude offers the same gradient noise two ways: `noise`/`fbm`
   (computed per pixel, exact) and `noiseFast`/`fbmFast` (one fetch from a
   512x512 R16F texture baked from the identical function, an exact port of the

@@ -69,6 +69,8 @@ const CLOCK_WRAP_AFTER_S = TIME_PERIOD_S * 12;
 
 /** Longest step the clock may take between frames, so stalls never jump. */
 const MAX_STEP_MS = 100;
+/** Between frames, wake this long before the next is due (timer slack). */
+const WAKE_EARLY_MS = 12;
 
 /**
  * How lively the scene is. `active` while someone is using the page; `calm`
@@ -82,15 +84,15 @@ export const PACES: readonly Pace[] = ['active', 'calm', 'still'];
 /** Animation speed at each pace, relative to the scene's own speed. */
 const PACE_RATE: Readonly<Record<Pace, number>> = {
   active: 1,
-  calm: 0.5,
+  calm: 1 / 3,
   still: 0,
 };
 /**
- * Calm and still draw at most 15 frames a second. With the motion at half
- * speed, each frame moves the picture exactly as far as at 30 fps, so the
- * lower frame rate is never felt.
+ * Calm and still draw at most 10 frames a second. With the motion at a
+ * third of its speed, each frame moves the picture exactly as far as at
+ * 30 fps, so the lower frame rate is never felt.
  */
-const SLOW_FRAME_MS = 1000 / 15;
+const SLOW_FRAME_MS = 1000 / 10;
 /** How quickly the speed eases toward a new pace (time constant, s). */
 const PACE_EASE_S = 0.6;
 
@@ -148,6 +150,9 @@ export class Renderer {
   private visible = true;
   private reducedMotion = false;
   private frameId = 0;
+  /** The loop is running (waiting for a frame callback or on its timer). */
+  private looping = false;
+  private waitTimer: ReturnType<typeof setTimeout> | 0 = 0;
   private lastFrameAt = 0;
   /** Trades resolution and frame rate for smoothness on weak devices. */
   private governor = new QualityGovernor(
@@ -247,8 +252,17 @@ export class Renderer {
     // While the scene animates, the next frame picks the tiles up (at most
     // one draw per display frame, however many updates arrive). Otherwise
     // nothing else would draw, so draw now.
-    if (this.frameId) this.tilesMoved = true;
-    else this.draw();
+    if (this.looping) {
+      this.tilesMoved = true;
+      // Asleep between frames: wake now so the frost keeps up.
+      if (this.waitTimer) {
+        clearTimeout(this.waitTimer);
+        this.waitTimer = 0;
+        this.frameId = requestFrame(this.tick);
+      }
+    } else {
+      this.draw();
+    }
   }
 
   /** Eases the animation toward a new pace; see {@link Pace}. */
@@ -367,15 +381,34 @@ export class Renderer {
     }
     this.draw();
     if (this.frozen) return;
-    if (!this.frameId) {
+    if (!this.looping) {
+      this.looping = true;
       this.clockAt = performance.now();
       this.frameId = requestFrame(this.tick);
       this.reportClock(true);
     }
   }
 
+  /**
+   * Waits for the next frame. Between frames the loop sleeps on a timer and
+   * only rejoins the display's frame callbacks just before a frame is due,
+   * instead of waking at every refresh (up to 120 times a second) to skip
+   * it. The frame itself is still drawn in step with the display.
+   */
+  private scheduleNext(delayMs: number): void {
+    if (delayMs > WAKE_EARLY_MS * 2) {
+      this.waitTimer = setTimeout(() => {
+        this.waitTimer = 0;
+        if (this.looping) this.frameId = requestFrame(this.tick);
+      }, delayMs - WAKE_EARLY_MS);
+    } else {
+      this.frameId = requestFrame(this.tick);
+    }
+  }
+
   private tick = (now: number): void => {
-    this.frameId = requestFrame(this.tick);
+    this.frameId = 0;
+    if (!this.looping) return;
     const target = PACE_RATE[this.pace];
     // Slowing down: speed first, then frame rate. Waking up: frame rate
     // first, then speed. Either way no frame ever moves more than at 30 fps.
@@ -389,9 +422,13 @@ export class Renderer {
       // leave the animation clock and the quality governor alone.
       this.tilesMoved = false;
       this.draw();
+      this.scheduleNext(interval - sinceLastFrame);
       return;
     }
-    if (sinceLastFrame < interval - 2) return;
+    if (sinceLastFrame < interval - 2) {
+      this.scheduleNext(interval - sinceLastFrame);
+      return;
+    }
     this.tilesMoved = false;
     this.lastFrameAt = now;
     // Only full-speed frames tell the governor how the device is coping.
@@ -411,6 +448,7 @@ export class Renderer {
       return;
     }
     if (now - this.clockReportedAt > 1000) this.reportClock(true);
+    this.scheduleNext(interval);
   };
 
   private reportClock(running: boolean): void {
@@ -425,11 +463,14 @@ export class Renderer {
   }
 
   private stopLoop(): void {
-    if (this.frameId) {
-      cancelFrame(this.frameId);
+    if (this.looping) {
+      if (this.frameId) cancelFrame(this.frameId);
+      clearTimeout(this.waitTimer);
       this.reportClock(false);
     }
+    this.looping = false;
     this.frameId = 0;
+    this.waitTimer = 0;
   }
 
   private draw(): void {

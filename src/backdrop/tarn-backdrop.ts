@@ -13,6 +13,7 @@ import {
   resumeClock,
 } from '../app/first-paint';
 import {rememberedTiles} from '../app/tile-memory';
+import {decidePace, nextPaceCheckMs} from './pace';
 import {
   applyCommand,
   type GhostRequest,
@@ -58,10 +59,6 @@ const GHOST_RELEASE_MS = 500;
  */
 const STILL_AFTER_MS = 2500;
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
-/** No mouse, keyboard or scrolling for this long: the scene turns calm. */
-const CALM_AFTER_MS = 30_000;
-/** ...and after this long, it glides to a stop until the page is used. */
-const STOP_AFTER_MS = 3 * 60_000;
 
 const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -530,25 +527,17 @@ export class TarnBackdrop extends LitElement {
   /** Works out the pace now and wakes again at the next threshold. */
   private updatePace = () => {
     clearTimeout(this.paceTimer);
-    const quiet = performance.now() - this.lastActivity;
-    const pace: Pace = this.awake
-      ? 'active'
-      : quiet >= STOP_AFTER_MS
-        ? 'still'
-        : quiet >= CALM_AFTER_MS || !document.hasFocus()
-          ? 'calm'
-          : 'active';
+    const input = {
+      awake: this.awake,
+      quietMs: performance.now() - this.lastActivity,
+      focused: document.hasFocus(),
+    };
+    const pace = decidePace(input);
     if (pace !== this.pace) {
       this.pace = pace;
       this.send({type: 'pace', pace});
     }
-    if (this.awake) return;
-    const next =
-      quiet < CALM_AFTER_MS
-        ? CALM_AFTER_MS - quiet
-        : quiet < STOP_AFTER_MS
-          ? STOP_AFTER_MS - quiet
-          : null;
+    const next = nextPaceCheckMs(input);
     if (next !== null) {
       this.paceTimer = window.setTimeout(this.updatePace, next + 50);
     }
