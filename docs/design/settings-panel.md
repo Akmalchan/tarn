@@ -19,12 +19,16 @@ browser's side panel has its own).
 ```
 Settings (home)
 ├── Search                         finds every setting, on any page
-├── Background                     the first 4 scenes as thumbnails
-│   └── All backgrounds ›          appears once there are more than 4
-├── Clock                          faces: Classic, Bold, Minimal, None
-├── Widgets ›                      on your tab (size, order, remove) + add
-├── Tarn                           Use Tarn for new tabs
-└── Advanced ›                     always last
+├── Background                     4 big tiles: 3 scenes + "Show All"
+│   └── Backgrounds                every scene
+├── Clock                          a card: Classic, Minimal, None + "Show All"
+│   └── Clock                      every face (Classic, Bold, Minimal, None)
+├── Widgets ›                      on your tab (size, remove) + add
+├── Advanced ›                     always last
+└── Signature                      wordmark, "for Google Chrome™", version,
+                                   Privacy · Source code
+
+Advanced
     ├── Tab icon                   (Chromium only)
     ├── Keyboard                   the shortcuts that exist
     ├── Backup                     export, import, reset
@@ -35,11 +39,15 @@ Settings (home)
 ## Rules
 
 1. **Home holds what most people change.** Today that's the background,
-   the clock, widgets and turning Tarn on or off. Anything else goes one
-   level down.
-2. **Show a few, then "more".** A section shows up to four choices; the
-   rest go behind a row that opens a page (`HOME_SCENES` in the panel). The
-   first screen never grows just because the catalog does.
+   the clock and widgets. Anything else goes one level down.
+2. **Show a few, then "Show All".** A picker shows three choices and a
+   fourth tile, "Show All" (a background, blurred and faded, with a grid icon), that opens a page
+   with all of them (`HOME_SCENES`, `HOME_FACES` in the panel). Backgrounds
+   are big 16:10 tiles on the page, the main tool; the clock is a card of
+   square tiles under them. Sub-pages are just the grid: no preview, the
+   tab next to the panel already shows the result. The current choice is
+   always among the tiles. The first screen never grows just because the
+   catalog does.
 3. **Pictures, not names.** Scenes and clock faces are picked from
    thumbnails drawn on the user's real background.
 4. **Advanced is last and is called Advanced.** Not "Developer": it holds
@@ -50,9 +58,10 @@ Settings (home)
    page and highlights the row. `/` focuses search; Escape clears it.
 6. **Changes are live.** No Save button. Removing a widget or resetting
    shows a toast with Undo.
-7. **Turning Tarn on or off only happens through its switch.** It goes
-   through `setTarnEnabled`; import, reset and `settings.json` never change
-   it.
+7. **The panel doesn't turn Tarn off.** The owner removed the "Use Tarn
+   for new tabs" switch on 2026-10-13 as not needed; the browser's
+   extensions page does that. Import, reset and `settings.json` never
+   change `enabled` either.
 8. **No fake features.** Nothing in the panel says "Soon". Add a row when
    the feature ships.
 
@@ -73,22 +82,41 @@ Settings (home)
   ignored; see `SidePanelUtil::GetTitleText` in Chromium). So `short_name`
   is "Settings" ("Dev Settings" in dev, both within the 12-character
   limit), and the extension's `name` stays "Tarn" everywhere else (store,
-  install dialog, extensions page). The home page opens on search and ends on a signature: the `tarn`
-  wordmark, large and faded, with the version (`src/ui/wordmark.ts`); sub-pages show "‹ Settings" and a 20px
-  title.
+  install dialog, extensions page). The home page opens on search and ends on the
+  signature (`src/ui/wordmark.ts`); sub-pages open with the bar described
+  below.
 - **Desktop proportions, like macOS System Settings:** 13.5px titles, 12px
   descriptions, 24px icon tiles with 15px glyphs, 10px group corners, a 32px
   search field. Switches are 34×20, like Safari's settings, not phone-sized.
   The sizes are tokens at the top of the panel's styles (`--title`,
   `--icon`, `--row-x`...); change them there, not per row.
+- **One line per row; explanations go under the box.** Like iOS and macOS
+  settings, a row is an icon, a title and a control or value (Widgets ›
+  shows "3"). What a setting does is a short note below its group, not a
+  second line in the row. Only "Add a widget" keeps a description line,
+  because there it is the point.
+- **Widgets are moved on the tab, not in the panel.** While the panel is
+  open the tab is in edit mode, and dragging there is direct; the panel
+  only sizes and removes them.
+- **The signature closes home, centered:** the wordmark faded, "for" and
+  the browser's own name (only names a browser reports: "Google Chrome™"
+  per BRAND.md, Edge, Opera, Brave, Vivaldi, Firefox; nothing otherwise),
+  the version, then Privacy (`PRIVACY.md`) and Source code links. A plain
+  line, never Google's logo or colors.
 - **One icon rule for every row.** The icon's box is exactly as tall as a
   title plus one description line, so it sits centered beside one or two
   lines and stays top-left once a description wraps further (or a row holds
   a control under its title, like widget sizes). No per-row exceptions, no
   measuring in script. Controls on the right stay vertically centered.
   Hairlines start where the text does.
-- The ta mark in the Tarn row is a tile like any other (`MARK_TILE` in
-  `glyphs.ts`): it turns white in dark mode with the rest.
+- Sub-pages open with an iOS-style bar: "‹ Settings" on the left, the
+  page's name centered, search under it.
+- **Corners are concentric.** A selected tile's ring sits 4px outside it,
+  so a tile inside a 10px card has a 6px radius and its ring traces the
+  card's corner. Change the card radius and the tile radius together.
+- Clock tiles are square (16:10 on the Clock page), and their clock
+  text is sized in container units, so a thumbnail is a true small copy at
+  any panel width.
 - Text is Google Sans Flex (bundled, see
   `src/styles/global.css`).
 
