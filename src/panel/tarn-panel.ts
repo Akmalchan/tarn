@@ -463,9 +463,12 @@ export class TarnPanel extends LitElement {
     }
 
     /* Pickers. Backgrounds are four big tiles on the page; the clock is a
-       card of four square tiles. Either way the last tile is "Show All", a
-       mosaic that opens the page with every choice. Clock text is sized in
-       container units, so a thumbnail is a true small copy at any width. */
+       card of four square tiles. Either way the last tile is "Show All",
+       which opens the page with every choice. Clock text is sized in
+       container units, so a thumbnail is a true small copy at any width.
+       Corners are concentric: the selection ring sits 4px out, so a tile
+       in the card has the card's radius minus 4, and the ring traces the
+       card's corner exactly. */
     .scenes {
       --ring-gap: var(--bg);
       display: grid;
@@ -514,7 +517,7 @@ export class TarnPanel extends LitElement {
 
     .tiles .thumb {
       aspect-ratio: 1;
-      border-radius: 9px;
+      border-radius: 6px;
     }
 
     .pick:hover .thumb {
@@ -526,8 +529,8 @@ export class TarnPanel extends LitElement {
 
     .pick[aria-checked='true'] .thumb {
       box-shadow:
-        0 0 0 2.5px var(--ring-gap),
-        0 0 0 4.5px var(--ink);
+        0 0 0 2px var(--ring-gap),
+        0 0 0 4px var(--ink);
     }
 
     .thumb.more {
@@ -580,7 +583,8 @@ export class TarnPanel extends LitElement {
     }
 
     .thumb .d {
-      font-size: 9cqi;
+      font-size: 7.5cqi;
+      white-space: nowrap;
       opacity: 0.75;
     }
 
@@ -1524,7 +1528,12 @@ function clockPreview(scene: Scene): ClockPreview {
     time: now
       .toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
       .replace(/\s?[AP]M$/i, ''),
-    date: now.toLocaleDateString([], {weekday: 'short', day: 'numeric'}),
+    // The same format as the clock on the tab (widgets/tarn-clock.ts).
+    date: now.toLocaleDateString([], {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    }),
   };
 }
 

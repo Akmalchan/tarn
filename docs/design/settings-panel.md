@@ -111,6 +111,9 @@ Advanced
   Hairlines start where the text does.
 - Sub-pages open with an iOS-style bar: "‹ Settings" on the left, the
   page's name centered, search under it.
+- **Corners are concentric.** A selected tile's ring sits 4px outside it,
+  so a tile inside a 10px card has a 6px radius and its ring traces the
+  card's corner. Change the card radius and the tile radius together.
 - Clock tiles are square (16:10 on the Clock page), and their clock
   text is sized in container units, so a thumbnail is a true small copy at
   any panel width.

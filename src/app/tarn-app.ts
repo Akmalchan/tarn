@@ -83,7 +83,9 @@ export class TarnApp extends LitElement {
     }
 
     /* The clock and widgets: one group a little above the middle. Free space
-       splits 2 : 3 above and below; a crowded page scrolls instead. */
+       splits 2 : 3 above and below; a crowded page scrolls instead, and
+       always keeps at least 40px above the clock and below the widgets
+       (an empty spacer would otherwise shrink to nothing). */
     .page {
       position: fixed;
       inset: 0;
@@ -98,11 +100,13 @@ export class TarnApp extends LitElement {
     .page::before {
       content: '';
       flex: 2 1 40px;
+      min-height: 40px;
     }
 
     .page::after {
       content: '';
       flex: 3 1 96px;
+      min-height: 40px;
     }
 
     .group {
