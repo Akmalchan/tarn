@@ -29,6 +29,7 @@ import {
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
+import {wordmark} from '../ui/wordmark';
 
 /**
  * The pages of the panel. Home shows what most people change; each section
@@ -159,8 +160,14 @@ export class TarnPanel extends LitElement {
       fill: currentColor;
     }
 
-    /* Sub-page titles only. Home has none: Chrome's side panel header
-       already names the panel (the extension's short_name). */
+    /* Chrome's side panel header says "Settings" (the manifest's
+       short_name), so home shows the wordmark and sub-pages their title. */
+    .wordmark svg {
+      display: block;
+      width: auto;
+      height: 26px;
+    }
+
     h1 {
       margin: -2px 0 0;
       font-size: 21px;
@@ -718,7 +725,7 @@ export class TarnPanel extends LitElement {
           <div class="top">
             ${
               this.page === 'home'
-                ? nothing
+                ? html`<span class="wordmark">${wordmark()}</span>`
                 : html`<button class="back" @click=${() => this.go('home')}>
                       ${glyph('back')}Settings
                     </button>

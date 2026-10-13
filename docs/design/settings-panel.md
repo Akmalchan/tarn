@@ -67,12 +67,15 @@ Settings (home)
 - **Filled icons**, drawn for Tarn in `src/ui/glyphs.ts`: one solid shape
   with details cut out, readable at 17px in a 28px tile. Never outline
   icons, never emoji.
-- **No title on the home page.** Chrome draws the side panel's header
-  itself: the extension's icon and its manifest `short_name` (falling back
-  to `name`), and nothing else can change it (no API, and `document.title`
-  is ignored; see `SidePanelUtil::GetTitleText` in Chromium). That header
-  already says "Tarn", so home opens straight on search. Sub-pages show
-  "‹ Settings" and a 21px title.
+- **Chrome's header says "Settings"; the panel shows the wordmark.**
+  Chrome draws the side panel header itself, from the extension's icon and
+  its manifest `short_name` (no API changes it, and `document.title` is
+  ignored; see `SidePanelUtil::GetTitleText` in Chromium). So `short_name`
+  is "Settings" ("Dev Settings" in dev, both within the 12-character
+  limit), and the extension's `name` stays "Tarn" everywhere else (store,
+  install dialog, extensions page). The home page opens on the `tarn`
+  wordmark (`src/ui/wordmark.ts`); sub-pages show "‹ Settings" and a 21px
+  title.
 - Rows are at least 46px tall; text is the system font.
 
 ## Adding a setting
@@ -100,11 +103,9 @@ setting, and Advanced stays out of sight.
 - **"Developer" section:** the name scares off normal users. It's
   "Advanced".
 - **A close button:** the side panel already has one.
-- **The wordmark in the panel:** it sat right under Chrome's own "Tarn"
-  header and read twice. A big "Settings" title had the same problem.
-- **Renaming Chrome's header to "Settings"** through `short_name`: it would
-  also rename Tarn in Chrome's side panel list and pin button, where a bare
-  "Settings" looks like Chrome's own settings. "Tarn Settings" is over the
-  12-character limit.
+- **"Tarn" in Chrome's header with the wordmark below it:** the name read
+  twice. Chrome's header now says "Settings" instead.
+- **"Tarn Settings" as the short name:** 13 characters, over Chrome's
+  limit of 12.
 - **A clock on/off switch:** the clock is picked by face, and "None" is one
   of the faces.

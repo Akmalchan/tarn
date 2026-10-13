@@ -29,6 +29,9 @@ re-proposes it.
 | The wordmark (artwork only)         | **tarn** (lowercase, from the SVG file)                        |
 | Never                               | TARN, TaRN, Tarn™ in running text, "Tarn for Chrome" as a name |
 
+- Manifest `short_name` is **Settings** ("Dev Settings" in dev): Chrome
+  uses it only to title Tarn's side panel and its pin button. The `name`
+  stays **Tarn**.
 - _tarn_ (n.): a small, still mountain lake. From Old Norse _tjörn_.
 - Store title: **Tarn: Calm New Tab**.
 - Compatibility line, descriptions only: "Works with Google Chrome™,
