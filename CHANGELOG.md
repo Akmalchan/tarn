@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Weather widget: now, the next hours and the week ahead, in four sizes.
+  Search for a city or use your location; forecasts from Open-Meteo (free,
+  no account) or Google with your own API key. Opt-in: nothing is sent
+  until you add it.
 - Your setup survives updates: a save only changes what you changed, so an
   older Tarn on another computer never erases a newer one's widgets or
   choices; renamed options get proper upgrades; every update first keeps a

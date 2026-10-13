@@ -27,6 +27,17 @@ owner's taste. The essentials:
   apps, including shaders; use them as inspiration only.
 - **Network:** none by default. A feature that needs the network is an
   explicit, opt-in decision; document it in README and here before building.
+  The only one so far is **weather** (owner-approved 2026-10-13,
+  `src/weather/`): nothing is sent until a Weather widget exists and has a
+  place. City search goes to Open-Meteo's geocoding API; forecasts come
+  from Open-Meteo (free, no key, non-commercial use, CC BY 4.0, credited in
+  the widget) or Google's Weather API with the user's own key (kept in
+  storage.local, never synced or exported; credited "Includes weather data
+  from Google"). Only rounded coordinates (~1 km) are sent, at most every
+  30 minutes per place, only while a tab is visible; the last forecast is
+  cached for first paint. All requests omit credentials and referrer, and
+  need no host permission (both APIs allow CORS). "Use my location" asks
+  for the optional `geolocation` permission at that moment.
 - **Permissions:** `storage`, `offscreen` (see Arrival), `sidePanel`, and
   `favicon` (Chrome's own new-tab icon in the tab; later, site icons without
   network requests). Its install warning is "Read the icons of the websites

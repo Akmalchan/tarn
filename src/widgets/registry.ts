@@ -9,6 +9,7 @@ import './tarn-favorites';
 import './tarn-focus';
 import './tarn-notes';
 import './tarn-tasks';
+import './tarn-weather';
 
 /**
  * Every widget, in one place. A widget is a self-contained custom element
@@ -34,6 +35,7 @@ export const WIDGETS: Readonly<Record<WidgetKind, WidgetDefinition>> = {
   notes: {name: 'Notes', tag: 'tarn-notes'},
   tasks: {name: 'Tasks', tag: 'tarn-tasks'},
   focus: {name: 'Focus timer', tag: 'tarn-focus'},
+  weather: {name: 'Weather', tag: 'tarn-weather'},
 };
 
 /**

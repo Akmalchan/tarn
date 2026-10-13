@@ -28,6 +28,7 @@ describe('normalizeSettings', () => {
         tabIcon: 'none',
         clock: 'none',
         widgets,
+        weather: {provider: 'google', units: 'fahrenheit'},
       }),
     ).toEqual({
       enabled: false,
@@ -35,6 +36,7 @@ describe('normalizeSettings', () => {
       tabIcon: 'none',
       clock: 'none',
       widgets,
+      weather: {provider: 'google', units: 'fahrenheit'},
     });
   });
 

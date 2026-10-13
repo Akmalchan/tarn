@@ -40,12 +40,13 @@ export const CLOCK_STYLES: readonly ClockStyle[] = [
   'none',
 ];
 
-export type WidgetKind = 'favorites' | 'notes' | 'tasks' | 'focus';
+export type WidgetKind = 'favorites' | 'notes' | 'tasks' | 'focus' | 'weather';
 export const WIDGET_KINDS: readonly WidgetKind[] = [
   'favorites',
   'notes',
   'tasks',
   'focus',
+  'weather',
 ];
 
 /** The sizes each widget offers: only those its content looks right at. */
@@ -56,6 +57,7 @@ export const WIDGET_SIZE_OPTIONS: Readonly<
   notes: ['m', 'l', 'xl'],
   tasks: ['m', 'l', 'xl'],
   focus: ['s', 'm'],
+  weather: ['s', 'm', 'l', 'xl'],
 };
 
 /** Size when first added. */
@@ -64,6 +66,7 @@ export const DEFAULT_WIDGET_SIZE: Readonly<Record<WidgetKind, WidgetSize>> = {
   notes: 'm',
   tasks: 'm',
   focus: 's',
+  weather: 'm',
 };
 
 /** `size` if the widget offers it, otherwise the nearest size it does. */
@@ -102,6 +105,29 @@ export interface WidgetEntry {
 /** More than a page needs; keeps a corrupted list from growing forever. */
 export const MAX_WIDGETS = 24;
 
+/**
+ * Where forecasts come from. 'google' needs the user's own API key, kept on
+ * this computer only (weather/config.ts), never synced.
+ */
+export type WeatherProvider = 'open-meteo' | 'google';
+export const WEATHER_PROVIDERS: readonly WeatherProvider[] = [
+  'open-meteo',
+  'google',
+];
+
+/** 'auto' follows the language: °F where that's usual, °C elsewhere. */
+export type WeatherUnits = 'auto' | 'celsius' | 'fahrenheit';
+export const WEATHER_UNITS: readonly WeatherUnits[] = [
+  'auto',
+  'celsius',
+  'fahrenheit',
+];
+
+export interface WeatherSettings {
+  readonly provider: WeatherProvider;
+  readonly units: WeatherUnits;
+}
+
 /** Everything the user can change. Small and serializable; synced across devices. */
 export interface Settings {
   /** Whether new tabs show Tarn, or hand off to the browser's own page. */
@@ -111,6 +137,7 @@ export interface Settings {
   readonly clock: ClockStyle;
   /** In the user's order. Empty by default: a calm page is the default. */
   readonly widgets: readonly WidgetEntry[];
+  readonly weather: WeatherSettings;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -119,6 +146,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tabIcon: 'chrome',
   clock: 'center',
   widgets: [],
+  weather: {provider: 'open-meteo', units: 'auto'},
 };
 
 /**
@@ -150,6 +178,20 @@ export function normalizeSettings(raw: unknown): Settings {
     tabIcon,
     clock,
     widgets: normalizeWidgets(value.widgets),
+    weather: normalizeWeather(value.weather),
+  };
+}
+
+function normalizeWeather(raw: unknown): WeatherSettings {
+  const value = isRecord(raw) ? raw : {};
+  const fallback = DEFAULT_SETTINGS.weather;
+  return {
+    provider: WEATHER_PROVIDERS.includes(value.provider as WeatherProvider)
+      ? (value.provider as WeatherProvider)
+      : fallback.provider,
+    units: WEATHER_UNITS.includes(value.units as WeatherUnits)
+      ? (value.units as WeatherUnits)
+      : fallback.units,
   };
 }
 

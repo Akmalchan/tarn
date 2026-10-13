@@ -8,7 +8,8 @@
 
 <p align="center">
   An open-source new tab page with living, GPU-rendered backgrounds.<br />
-  Calm by default. No accounts, no tracking, no network calls.
+  Calm by default. No accounts, no tracking, no network calls unless you
+  add the Weather widget.
 </p>
 
 ---
@@ -27,8 +28,13 @@
 - **One-click switch.** Tarn's toolbar button turns it on or off. If another
   new-tab extension (like Momentum) is in the way, Tarn can switch it off
   for you, and back on when you turn Tarn off.
+- **Widgets.** Favorites, notes, tasks, a focus timer and weather, on a
+  calm grid you arrange while settings is open.
 - **Private.** Nothing leaves your browser. Settings sync through your
-  browser's own account, if you use one.
+  browser's own account, if you use one. The one exception is the Weather
+  widget, and only once you add it and choose a place: it asks Open-Meteo
+  (free, no account), or Google with your own API key, for that place's
+  forecast, at most every 30 minutes. See [PRIVACY.md](PRIVACY.md).
 
 ## Install from source
 
