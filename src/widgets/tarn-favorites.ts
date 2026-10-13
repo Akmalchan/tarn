@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {LitElement, css, html, nothing} from 'lit';
+import {LitElement, css, html, nothing, type PropertyValues} from 'lit';
 import {
   loadWidgetData,
   peekWidgetData,
@@ -64,14 +64,17 @@ function nameOf(url: string): string {
 /**
  * Your sites, one click away. Icons come from the browser's own icon cache
  * (the favicon permission), so showing them makes no network request.
+ * While settings is open, a site opens its editor and there's an Add tile;
+ * otherwise the tile is only links.
  */
 export class TarnFavorites extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
     editing: {attribute: false},
+    heading: {attribute: false},
     sites: {state: true},
     icons: {state: true},
-    adding: {state: true},
+    editor: {state: true},
     error: {state: true},
   };
 
@@ -79,32 +82,27 @@ export class TarnFavorites extends LitElement {
     widgetStyles,
     css`
       .sites {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+        gap: 10px 6px;
+        align-content: start;
+        padding-top: 5px;
+        margin-top: -5px;
+        overflow: hidden;
         /* A row that doesn't fit fades out instead of being cut. */
         mask-image: linear-gradient(
           to bottom,
           #000 calc(100% - 14px),
           transparent
         );
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
-        gap: 10px 6px;
-        flex: 1;
-        min-height: 0;
-        padding-top: 5px;
-        margin-top: -5px;
-        overflow: hidden;
-        align-content: start;
       }
 
       /* Arranging a full tile: scroll to reach Add. */
       :host([editing]) .sites {
         overflow-y: auto;
         scrollbar-width: none;
-      }
-
-      /* Arranging: sites don't open, so a press anywhere drags the tile. */
-      :host([editing]) .link {
-        pointer-events: none;
       }
 
       .site {
@@ -117,9 +115,18 @@ export class TarnFavorites extends LitElement {
         flex-direction: column;
         align-items: center;
         gap: 6px;
+        width: 100%;
+        padding: 0;
+        font: inherit;
         color: inherit;
         text-decoration: none;
+        background: transparent;
+        border: 0;
         border-radius: 12px;
+      }
+
+      button.link {
+        cursor: pointer;
       }
 
       .chip {
@@ -191,10 +198,10 @@ export class TarnFavorites extends LitElement {
         padding: 0;
         font-size: 12px;
         line-height: 1;
-        border: 0;
-        border-radius: 50%;
         color: var(--ink);
         background: var(--chip-strong);
+        border: 0;
+        border-radius: 50%;
         cursor: pointer;
         transition: transform 150ms ease;
       }
@@ -220,10 +227,106 @@ export class TarnFavorites extends LitElement {
         color: var(--ink-dim);
       }
 
+      .empty {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ink-dim);
+      }
+
+      /* Large tiles: bigger icons, four across in a 2x2 tile. */
+      @container (min-height: 250px) {
+        .sites {
+          grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+          margin-top: -1px;
+        }
+        .chip {
+          width: 52px;
+          height: 52px;
+          border-radius: 14px;
+          font-size: 20px;
+        }
+        .chip img {
+          width: 38px;
+          height: 38px;
+        }
+      }
+
+      /* Short tiles: icons only, no names or heading. */
+      @container (max-height: 140px) {
+        .name,
+        h3 {
+          display: none;
+        }
+      }
+
+      /* A small (1x1) tile: four icons in a neat 2x2, like a folder. */
+      @container (max-width: 200px) and (max-height: 140px) {
+        :host {
+          padding: 18px;
+        }
+        .sites {
+          grid-template-columns: repeat(2, 44px);
+          gap: 10px;
+          justify-content: center;
+          align-content: safe center;
+          margin: 0;
+          padding: 0;
+          mask-image: none;
+        }
+        .remove {
+          top: -6px;
+          right: -6px;
+        }
+      }
+
+      /* The editor: a small sheet over the page, like Safari's. */
+      dialog {
+        width: min(340px, calc(100vw - 32px));
+        padding: 20px;
+        color: var(--ink);
+        text-shadow: none;
+        background: var(--tile-held, rgb(20 25 34 / 0.92));
+        border: 1px solid var(--tile-line);
+        border-radius: 18px;
+        box-shadow: 0 24px 64px rgb(0 0 0 / 0.35);
+        /* Only while it's open, so blurring the moving scene costs nothing
+           the rest of the time. */
+        backdrop-filter: blur(28px) saturate(1.2);
+      }
+
+      dialog[open] {
+        animation: sheet-in 180ms ease-out both;
+      }
+
+      dialog::backdrop {
+        background: rgb(0 0 0 / 0.4);
+      }
+
+      @keyframes sheet-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.98);
+        }
+      }
+
       form {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
+      }
+
+      h4 {
+        margin: 0 0 2px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 12px;
+        color: var(--ink-dim);
       }
 
       input {
@@ -238,56 +341,68 @@ export class TarnFavorites extends LitElement {
         outline: none;
       }
 
+      input::placeholder {
+        color: var(--ink-faint);
+      }
+
       input:focus {
         border-color: var(--focus-ring);
       }
 
       .error {
+        margin: -4px 0 0;
         font-size: 12px;
         color: var(--ink-dim);
       }
 
-      .empty {
+      .buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .buttons button {
+        padding: 7px 16px;
         font-size: 13px;
-        color: var(--ink-dim);
+        font-weight: 500;
+        border: 0;
+        border-radius: 999px;
+        background: var(--chip);
+        cursor: pointer;
+        transition: background-color 150ms ease;
       }
 
-      /* Large tiles: bigger icons, four across in a 2x2 tile. */
-      @container (min-height: 250px) {
-        .sites {
-          grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-          gap: 10px 6px;
-          margin-top: 4px;
-        }
-        .chip {
-          width: 52px;
-          height: 52px;
-          border-radius: 14px;
-          font-size: 20px;
-        }
-        .chip img {
-          width: 38px;
-          height: 38px;
-        }
+      .buttons button:hover {
+        background: var(--chip-hover);
       }
 
-      /* Small tiles: icons only, no names. */
-      @container (max-height: 140px) {
-        .name {
-          display: none;
-        }
-        h3 {
-          display: none;
+      .buttons .primary {
+        color: var(--tile-held, #141922);
+        background: var(--ink);
+      }
+
+      .buttons .primary:hover {
+        background: var(--ink);
+        opacity: 0.9;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        dialog[open] {
+          animation: none;
         }
       }
     `,
   ];
 
   declare widgetId: string;
-  /** The settings panel is open: show add and remove. */
+  /** The settings panel is open: sites open their editor, Add shows. */
   declare editing: boolean;
+  /** The widget's name: the user's, or the default. */
+  declare heading: string;
   declare sites: Site[];
-  declare adding: boolean;
+  /** The site being edited (its index), 'new' while adding, or null. */
+  declare editor: number | 'new' | null;
   declare error: string;
   /** Resolved icon per site URL: an image URL, or null for a letter tile. */
   declare icons: ReadonlyMap<string, string | null>;
@@ -299,8 +414,9 @@ export class TarnFavorites extends LitElement {
     super();
     this.widgetId = '';
     this.editing = false;
+    this.heading = 'Favorites';
     this.sites = [];
-    this.adding = false;
+    this.editor = null;
     this.error = '';
     this.icons = new Map();
   }
@@ -317,112 +433,156 @@ export class TarnFavorites extends LitElement {
     this.unwatch();
   }
 
-  override willUpdate(changed: Map<string, unknown>): void {
+  override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has('editing')) {
       this.toggleAttribute('editing', this.editing);
-      if (!this.editing) this.adding = false;
+      if (!this.editing) this.editor = null;
+    }
+  }
+
+  override updated(changed: PropertyValues<this>): void {
+    if (!changed.has('editor')) return;
+    const dialog = this.renderRoot.querySelector('dialog');
+    if (!dialog) return;
+    if (this.editor !== null && !dialog.open) {
+      dialog.showModal();
+      const field = this.editor === 'new' ? 'url' : 'title';
+      dialog.querySelector<HTMLInputElement>(`input[name=${field}]`)?.select();
+    } else if (this.editor === null && dialog.open) {
+      dialog.close();
     }
   }
 
   override render() {
-    if (this.adding) return this.renderForm();
-    if (!this.sites.length && !this.editing) {
-      return html`
-        <h3>Favorites</h3>
-        <p class="empty">Open settings to add your sites.</p>
-      `;
-    }
+    const empty = !this.sites.length && !this.editing;
     return html`
-      <h3>Favorites</h3>
-      <div class="sites">
-        ${this.sites.map(
-          (site, i) => html`
-            <div class="site">
-              <a
-                class="link"
-                href=${this.editing ? nothing : site.url}
-                title=${site.title}
-                tabindex=${this.editing ? '-1' : nothing}
-              >
-                ${this.chip(site)}
-                <span class="name">${site.title}</span>
-              </a>
+      <h3>${this.heading}</h3>
+      ${
+        empty
+          ? html`<p class="empty">Open settings to add your sites.</p>`
+          : html`<div class="sites">
+              ${this.sites.map((site, i) => this.siteTile(site, i))}
               ${
-                this.editing
+                this.editing && this.sites.length < MAX_SITES
                   ? html`<button
-                      class="remove"
+                      class="add"
                       data-edit
-                      aria-label="Remove ${site.title}"
-                      @click=${(event: Event) => this.removeSite(event, i)}
+                      title="Add a site"
+                      @click=${() => this.open('new')}
                     >
-                      ×
+                      <span class="chip" aria-hidden="true">+</span>
+                      <span class="name">Add</span>
                     </button>`
                   : nothing
               }
-            </div>
-          `,
-        )}
-        ${
-          this.editing && this.sites.length < MAX_SITES
-            ? html`
-                <button class="add" data-edit @click=${this.startAdding}>
-                  <span class="chip" aria-hidden="true">+</span>
-                  <span class="name">Add</span>
-                </button>
-              `
-            : nothing
-        }
-      </div>
+            </div>`
+      }
+      ${this.editing ? this.renderEditor() : nothing}
     `;
   }
 
-  private renderForm() {
+  private siteTile(site: Site, index: number) {
+    if (!this.editing) {
+      return html`<div class="site">
+        <a class="link" href=${site.url} title=${site.title}>
+          ${this.chip(site)}
+          <span class="name">${site.title}</span>
+        </a>
+      </div>`;
+    }
+    return html`<div class="site">
+      <button
+        class="link"
+        data-edit
+        title="Edit ${site.title}"
+        @click=${() => this.open(index)}
+      >
+        ${this.chip(site)}
+        <span class="name">${site.title}</span>
+      </button>
+      <button
+        class="remove"
+        data-edit
+        aria-label="Remove ${site.title}"
+        title="Remove"
+        @click=${() => this.save(this.sites.filter((_, i) => i !== index))}
+      >
+        ×
+      </button>
+    </div>`;
+  }
+
+  private renderEditor() {
+    const site =
+      typeof this.editor === 'number' ? this.sites[this.editor] : null;
     return html`
-      <h3>Add a site</h3>
-      <form data-edit @submit=${this.onSubmit}>
-        <input
-          name="url"
-          type="text"
-          inputmode="url"
-          placeholder="example.com"
-          aria-label="Site address"
-          autocomplete="off"
-          spellcheck="false"
-          @keydown=${this.onKeyDown}
-        />
-        ${this.error ? html`<div class="error">${this.error}</div>` : nothing}
-      </form>
+      <dialog data-edit @close=${this.onClose}>
+        <form method="dialog" @submit=${this.onSubmit}>
+          <h4>${site ? 'Edit Site' : 'Add a Site'}</h4>
+          <label>
+            Name
+            <input
+              name="title"
+              autocomplete="off"
+              maxlength="60"
+              placeholder="Shown under the icon"
+              .value=${site?.title ?? ''}
+            />
+          </label>
+          <label>
+            Address
+            <input
+              name="url"
+              type="text"
+              inputmode="url"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="example.com"
+              .value=${site?.url ?? ''}
+              @input=${() => (this.error = '')}
+            />
+          </label>
+          ${this.error ? html`<p class="error">${this.error}</p>` : nothing}
+          <div class="buttons">
+            <button type="button" @click=${() => (this.editor = null)}>
+              Cancel
+            </button>
+            <button class="primary">${site ? 'Save' : 'Add'}</button>
+          </div>
+        </form>
+      </dialog>
     `;
   }
 
-  private startAdding = async () => {
-    this.adding = true;
+  private open(editor: number | 'new'): void {
     this.error = '';
-    await this.updateComplete;
-    this.renderRoot.querySelector('input')?.focus();
+    this.editor = editor;
+  }
+
+  private onClose = () => {
+    this.editor = null;
   };
 
-  private onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') this.adding = false;
-  };
-
-  private onSubmit = (event: Event) => {
+  private onSubmit = (event: SubmitEvent) => {
     event.preventDefault();
-    const input = this.renderRoot.querySelector('input');
-    const url = toUrl(input?.value);
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    const url = toUrl(data.get('url'));
     if (!url) {
       this.error = 'That doesn’t look like a web address.';
       return;
     }
-    this.save([...this.sites, {url, title: nameOf(url)}]);
-    this.adding = false;
+    const typed = String(data.get('title') ?? '')
+      .trim()
+      .slice(0, 60);
+    const site = {url, title: typed || nameOf(url)};
+    const sites =
+      typeof this.editor === 'number'
+        ? this.sites.map((s, i) => (i === this.editor ? site : s))
+        : [...this.sites, site];
+    this.save(sites);
+    this.editor = null;
   };
-
-  private removeSite(event: Event, index: number): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.save(this.sites.filter((_, i) => i !== index));
-  }
 
   /** Shows sites now and fills in their icons as Chrome provides them. */
   private show = (sites: Site[]) => {

@@ -82,6 +82,8 @@ export interface WidgetEntry {
   readonly id: string;
   readonly kind: WidgetKind;
   readonly size: WidgetSize;
+  /** The user's name for it ("Project A"); the kind's name when unset. */
+  readonly name?: string;
 }
 
 /** More than a page needs; keeps a corrupted list from growing forever. */
@@ -142,7 +144,7 @@ function normalizeWidgets(raw: unknown): WidgetEntry[] {
   const widgets: WidgetEntry[] = [];
   for (const item of raw) {
     if (!isRecord(item)) continue;
-    const {id, kind, size} = item;
+    const {id, kind, size, name} = item;
     if (
       typeof id !== 'string' ||
       !/^[a-z0-9-]{1,40}$/.test(id) ||
@@ -152,6 +154,7 @@ function normalizeWidgets(raw: unknown): WidgetEntry[] {
       continue;
     }
     seen.add(id);
+    const label = typeof name === 'string' ? name.trim().slice(0, 40) : '';
     widgets.push({
       id,
       kind: kind as WidgetKind,
@@ -161,6 +164,7 @@ function normalizeWidgets(raw: unknown): WidgetEntry[] {
           ? (size as WidgetSize)
           : DEFAULT_WIDGET_SIZE[kind as WidgetKind],
       ),
+      ...(label ? {name: label} : {}),
     });
     if (widgets.length === MAX_WIDGETS) break;
   }

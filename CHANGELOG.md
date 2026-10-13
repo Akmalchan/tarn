@@ -8,6 +8,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Edit mode: a holder on each widget's top edge to rename it (two
+  Favorites can be "Project A" and "Project B") or remove it. Widgets can
+  be renamed in the settings panel too.
+- Favorites: add and edit sites in a small sheet with a name and an
+  address, with Cancel; a small tile shows four icons in a neat 2x2.
 - Tasks widget: a short to-do list (medium, large or extra large). Type in
   the top row to add; the round button checks a task off and it leaves a
   moment later (click again to undo).

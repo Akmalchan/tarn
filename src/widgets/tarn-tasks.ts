@@ -52,6 +52,7 @@ const CHECK = svg`<path d="M5 10.4l3.1 3.1L15 6.6" fill="none" stroke="currentCo
 export class TarnTasks extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
+    heading: {attribute: false},
     tasks: {state: true},
     done: {state: true},
     fading: {state: true},
@@ -175,6 +176,8 @@ export class TarnTasks extends LitElement {
   ];
 
   declare widgetId: string;
+  /** The widget's name: the user's, or the default. */
+  declare heading: string;
   declare tasks: Task[];
   /** Checked tasks waiting to leave, by id. */
   declare done: ReadonlySet<string>;
@@ -189,6 +192,7 @@ export class TarnTasks extends LitElement {
   constructor() {
     super();
     this.widgetId = '';
+    this.heading = 'Tasks';
     this.tasks = [];
     this.done = new Set();
     this.fading = new Set();
@@ -217,7 +221,7 @@ export class TarnTasks extends LitElement {
   override render() {
     const full = this.tasks.length >= MAX_TASKS;
     return html`
-      <h3 id="title">Tasks</h3>
+      <h3 id="title">${this.heading}</h3>
       <ul aria-labelledby="title">
         ${
           full

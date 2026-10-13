@@ -84,6 +84,19 @@ describe('normalizeSettings', () => {
     expect(widgets.map(w => w.size)).toEqual(['m', 'm', 'l']);
   });
 
+  it('keeps a trimmed custom name, and drops an empty one', () => {
+    const {widgets} = normalizeSettings({
+      widgets: [
+        {id: 'favorites-1', kind: 'favorites', size: 'l', name: '  Work  '},
+        {id: 'notes-2', kind: 'notes', size: 'm', name: '   '},
+        {id: 'tasks-3', kind: 'tasks', size: 'm', name: 'x'.repeat(60)},
+      ],
+    });
+    expect(widgets[0]!.name).toBe('Work');
+    expect(widgets[1]).not.toHaveProperty('name');
+    expect(widgets[2]!.name).toHaveLength(40);
+  });
+
   it('caps the widget list', () => {
     const widgets = Array.from({length: 40}, (_, i) => ({
       id: `notes-${i}`,

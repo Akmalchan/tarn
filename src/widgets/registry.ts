@@ -38,11 +38,21 @@ export const WIDGETS: Readonly<Record<WidgetKind, WidgetDefinition>> = {
 
 /**
  * The widget's element, bound to its stored content by id. `editing` is
- * true while widgets are being arranged (the settings panel is open).
+ * true while widgets are being arranged (the settings panel is open);
+ * `name` is the user's name for it, shown as its heading.
  */
-export function renderWidget(kind: WidgetKind, id: string, editing = false) {
+export function renderWidget(
+  kind: WidgetKind,
+  id: string,
+  editing = false,
+  name?: string,
+) {
   const definition = WIDGETS[kind];
   if (!definition) return html``;
   const tag = unsafeStatic(definition.tag);
-  return html`<${tag} .widgetId=${id} .editing=${editing}></${tag}>`;
+  return html`<${tag}
+    .widgetId=${id}
+    .editing=${editing}
+    .heading=${name ?? definition.name}
+  ></${tag}>`;
 }

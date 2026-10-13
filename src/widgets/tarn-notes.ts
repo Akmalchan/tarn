@@ -22,6 +22,7 @@ const normalize = (raw: unknown): string =>
 export class TarnNotes extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
+    heading: {attribute: false},
     text: {state: true},
   };
 
@@ -58,6 +59,8 @@ export class TarnNotes extends LitElement {
   ];
 
   declare widgetId: string;
+  /** The widget's name: the user's, or the default. */
+  declare heading: string;
   declare text: string;
   private unwatch: () => void = () => {};
   private save = debounce((text: string) => {
@@ -67,6 +70,7 @@ export class TarnNotes extends LitElement {
   constructor() {
     super();
     this.widgetId = '';
+    this.heading = 'Notes';
     this.text = '';
   }
 
@@ -92,7 +96,7 @@ export class TarnNotes extends LitElement {
 
   override render() {
     return html`
-      <h3 id="title">Notes</h3>
+      <h3 id="title">${this.heading}</h3>
       <textarea
         aria-labelledby="title"
         placeholder="Write something…"
