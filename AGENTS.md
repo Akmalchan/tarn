@@ -102,6 +102,15 @@ How a page arrives on screen matters more than how fast it does
 
 Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
 
+- A widget is its own custom element (code, styles, storage by `widgetId`)
+  plus one entry in `widgets/registry.ts`. Modules load eagerly on purpose:
+  a reload must draw every widget in its first frame.
+- **Edit mode:** while the settings side panel is open (`watchSidePanel`),
+  widgets can be dragged (Pointer Events + capture) or moved with arrow
+  keys. Positions come from the layout engine, never free placement;
+  `widgets/geometry.ts` (`nearestIndex`) picks the slot under the pointer.
+  Widget contents are `inert` meanwhile.
+
 - `layout/bands.ts` places widgets (pure function, ~12 µs for 9 widgets,
   ~42 µs for 30; columns are always 2, 4 or 6);
   `widgets/tarn-board.ts` positions tiles with transforms and animates moves

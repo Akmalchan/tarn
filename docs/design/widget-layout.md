@@ -132,8 +132,10 @@ because nothing moves.
 ## What's next
 
 1. Snapshots and export for settings, so nothing is ever lost.
-2. Drag to reorder, with keyboard support.
-3. More widgets.
+2. More widgets.
+
+Done: drag to reorder while the settings panel is open, with keyboard
+support (arrow keys, Home, End) and screen-reader announcements.
 
 ## Open questions
 
