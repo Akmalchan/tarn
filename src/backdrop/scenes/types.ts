@@ -28,4 +28,11 @@ export interface Scene {
    * at a fraction of the cost; detailed ones need more.
    */
   readonly resolution: number;
+  /**
+   * A photo of the user's (`photo:<id>`, from IndexedDB) instead of an
+   * animation: drawn once at its own size and left still.
+   */
+  readonly photo?: {readonly width: number; readonly height: number};
+  /** Overrides the tone worked out from `base` (a photo knows its own). */
+  readonly tone?: 'light' | 'dark';
 }

@@ -8,7 +8,8 @@ import {GLASS_FRAGMENT, GLASS_VERTEX, MAX_TILES} from './glass';
 import {createNoiseTexture} from './noise-texture';
 import {QualityGovernor, initialQualityLevel} from './quality';
 import {VERTEX_SHADER, fragmentSource} from './scenes/glsl';
-import {sceneTone} from './scenes';
+import {getWallpaperImage} from '../wallpapers/store';
+import {DEFAULT_SCENE_ID, sceneById, sceneTone} from './scenes';
 import type {Hex, Scene} from './scenes/types';
 
 export type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
@@ -29,6 +30,8 @@ export interface GhostFrame {
 export interface RendererEvents {
   /** The first frame at the real size has been drawn. */
   onFirstFrame?: () => void;
+  /** A frame of this scene is on screen (a photo may take a moment). */
+  onSceneShown?: (id: string) => void;
   /** WebGL2 is unavailable (disabled or blocked GPU); nothing will draw. */
   onUnavailable?: () => void;
   /**
@@ -94,7 +97,16 @@ interface CompiledScene {
   uResolution: WebGLUniformLocation | null;
   uTime: WebGLUniformLocation | null;
   uColors: WebGLUniformLocation | null;
+  uPhotoSize: WebGLUniformLocation | null;
   colors: Float32Array;
+}
+
+/** A photo scene's image, uploaded once at the size the screen needs. */
+interface PhotoTexture {
+  id: string;
+  texture: WebGLTexture;
+  width: number;
+  height: number;
 }
 
 interface GlassProgram {
@@ -119,6 +131,8 @@ interface FrameTarget {
 
 /** Texture unit for the glass pass; unit 0 holds the noise texture. */
 const FRAME_UNIT = 1;
+/** Texture unit for a photo scene's image. */
+const PHOTO_UNIT = 2;
 
 const requestFrame: (cb: FrameRequestCallback) => number =
   typeof requestAnimationFrame === 'function'
@@ -176,6 +190,11 @@ export class Renderer {
   /** Tiles moved since the last frame: draw the next one without waiting. */
   private tilesMoved = false;
   private frame: FrameTarget | null = null;
+  private photo: PhotoTexture | null = null;
+  /** The photo being decoded, if any. */
+  private photoLoading: string | null = null;
+  /** The scene whose frame is on screen, for `onSceneShown`. */
+  private shownSceneId: string | null = null;
 
   /**
    * @param startClock Animation time to start from, e.g. where the previous
@@ -198,6 +217,8 @@ export class Renderer {
       this.compiled.clear();
       this.glass = null;
       this.frame = null;
+      this.photo = null;
+      this.photoLoading = null;
     });
     canvas.addEventListener('webglcontextrestored', () => {
       this.initContext();
@@ -208,6 +229,7 @@ export class Renderer {
 
   setScene(scene: Scene): void {
     this.scene = scene;
+    if (!scene.photo) this.freePhoto();
     this.applySize();
     this.refresh();
   }
@@ -217,6 +239,14 @@ export class Renderer {
     this.cssHeight = Math.max(1, cssHeight);
     this.sized = true;
     this.applySize();
+    // A window grown past what the photo was decoded for: decode it again.
+    if (
+      this.scene.photo &&
+      this.photo &&
+      this.photo.width < this.photoWidth() * 0.9
+    ) {
+      this.loadPhoto(this.scene.id);
+    }
     this.refresh();
   }
 
@@ -272,7 +302,7 @@ export class Renderer {
    * Raw, so the next page can paint it synchronously with no image decode.
    */
   async ghost(): Promise<GhostFrame | null> {
-    if (!this.gl || !this.sized) return null;
+    if (!this.gl || !this.sized || !this.ready()) return null;
     // Capture in the same task as the draw, before the buffer is presented.
     this.draw();
     const clock = this.clock;
@@ -319,7 +349,10 @@ export class Renderer {
         gl.deleteFramebuffer(this.frame.framebuffer);
         gl.deleteTexture(this.frame.texture);
       }
+      if (this.photo) gl.deleteTexture(this.photo.texture);
     }
+    this.photo = null;
+    this.photoLoading = null;
     this.compiled.clear();
     this.glass = null;
     this.frame = null;
@@ -361,9 +394,14 @@ export class Renderer {
       this.stopLoop();
       return;
     }
-    if (this.reducedMotion) {
+    // A photo never moves: one frame, then nothing until something changes
+    // (tiles, size). Reduced motion stills a scene the same way.
+    if (this.reducedMotion || this.scene.photo) {
       this.stopLoop();
       this.draw();
+      // Tell the page the (stopped) moment, so it saves one ghost, not one
+      // a second.
+      this.reportClock(false);
       return;
     }
     this.draw();
@@ -456,6 +494,12 @@ export class Renderer {
   private draw(): void {
     const gl = this.gl;
     if (!gl) return;
+    // A photo draws once its image is ready; until then the last frame (or
+    // the page's base color) stays.
+    if (!this.ready()) {
+      this.loadPhoto(this.scene.id);
+      return;
+    }
     const compiled = this.compile(gl, this.scene);
     if (!compiled) return;
 
@@ -474,12 +518,117 @@ export class Renderer {
     gl.uniform2f(compiled.uResolution, width, height);
     gl.uniform1f(compiled.uTime, this.clock * this.scene.speed);
     gl.uniform3fv(compiled.uColors, compiled.colors);
+    if (this.scene.photo && this.photo) {
+      gl.activeTexture(gl.TEXTURE0 + PHOTO_UNIT);
+      gl.bindTexture(gl.TEXTURE_2D, this.photo.texture);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.uniform2f(compiled.uPhotoSize, this.photo.width, this.photo.height);
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     if (glass && target) this.drawGlass(gl, glass, target);
     if (!this.firstFrameDrawn) {
       this.firstFrameDrawn = true;
       this.events.onFirstFrame?.();
     }
+    if (this.shownSceneId !== this.scene.id) {
+      this.shownSceneId = this.scene.id;
+      this.events.onSceneShown?.(this.scene.id);
+    }
+  }
+
+  /** Whether the current scene can draw: a photo needs its image. */
+  private ready(): boolean {
+    return !this.scene.photo || this.photo?.id === this.scene.id;
+  }
+
+  /** The width a photo needs to cover the canvas without upscaling. */
+  private photoWidth(): number {
+    const size = this.scene.photo;
+    if (!size) return 0;
+    const cover = Math.max(
+      this.canvas.width / size.width,
+      this.canvas.height / size.height,
+    );
+    return Math.ceil(size.width * Math.min(1, cover));
+  }
+
+  /**
+   * Decodes a photo off the page (in the worker, in production) at the
+   * size the screen needs, and uploads it once. A photo that's gone shows
+   * the default scene instead.
+   */
+  private loadPhoto(id: string): void {
+    const size = this.scene.photo;
+    if (!size || this.photoLoading === id || !this.sized) return;
+    this.photoLoading = id;
+    const width = this.photoWidth();
+    const height = Math.ceil((width * size.height) / size.width);
+    void getWallpaperImage(id)
+      .then(blob =>
+        blob
+          ? createImageBitmap(blob, {
+              resizeWidth: width,
+              resizeHeight: height,
+              resizeQuality: 'high',
+            })
+          : null,
+      )
+      .catch(() => null)
+      .then(bitmap => {
+        if (this.photoLoading !== id) {
+          bitmap?.close();
+          return;
+        }
+        this.photoLoading = null;
+        const gl = this.gl;
+        if (!bitmap) {
+          if (this.scene.id === id) this.setScene(sceneById(DEFAULT_SCENE_ID));
+          return;
+        }
+        if (!gl) {
+          bitmap.close();
+          return;
+        }
+        this.uploadPhoto(gl, id, bitmap);
+        if (this.scene.id === id) this.refresh();
+      });
+  }
+
+  private uploadPhoto(
+    gl: WebGL2RenderingContext,
+    id: string,
+    bitmap: ImageBitmap,
+  ): void {
+    const texture = gl.createTexture();
+    if (!texture) {
+      bitmap.close();
+      return;
+    }
+    gl.activeTexture(gl.TEXTURE0 + PHOTO_UNIT);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      bitmap,
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.activeTexture(gl.TEXTURE0);
+    if (this.photo) gl.deleteTexture(this.photo.texture);
+    this.photo = {id, texture, width: bitmap.width, height: bitmap.height};
+    bitmap.close();
+  }
+
+  /** Frees the photo's GPU memory once another scene shows. */
+  private freePhoto(): void {
+    if (this.photo) this.gl?.deleteTexture(this.photo.texture);
+    this.photo = null;
+    this.photoLoading = null;
   }
 
   private drawGlass(
@@ -593,10 +742,12 @@ export class Renderer {
       uResolution: gl.getUniformLocation(program, 'uResolution'),
       uTime: gl.getUniformLocation(program, 'uTime'),
       uColors: gl.getUniformLocation(program, 'uColors'),
+      uPhotoSize: gl.getUniformLocation(program, 'uPhotoSize'),
       colors: new Float32Array(scene.colors.flatMap(hexToRgb)),
     };
     gl.useProgram(program);
     gl.uniform1i(gl.getUniformLocation(program, 'uNoise'), 0);
+    gl.uniform1i(gl.getUniformLocation(program, 'uPhoto'), PHOTO_UNIT);
     this.compiled.set(scene.id, compiled);
     return compiled;
   }

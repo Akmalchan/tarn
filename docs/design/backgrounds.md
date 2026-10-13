@@ -152,9 +152,19 @@ didn't catch these):
 Silk needed stronger normals and fewer, longer folds than the first try;
 weak shading read as a blurry cloud, and three equal sine waves looked busy.
 
+## Your own photos
+
+Since 2026-10-13 people can add their own photos (Settings > Wallpapers >
+Add Photo…). A photo is a scene like any other (`photo:<id>`), built by
+`photoScene()`: still (speed 0), cover-fit, drawn at the screen's pixel
+density up to 2x, base color and tone from the photo itself. It's drawn
+once and then nothing runs: page ~0% CPU, graphics ~1.7% while idle. The
+frosted glass behind widgets works the same; it redraws only when tiles
+move. Storage, thumbnails and the panel are in `src/wallpapers/store.ts`
+and the settings panel.
+
 ## Ideas not built yet
 
 - Light/dark twins that follow the system theme (BRAND.md: light first).
   Bloom and Silk are the light scenes so far.
-- User photo or video backgrounds: keep originals in IndexedDB, ease in on
-  open, ghost on reload, never block first paint (see `AGENTS.md`).
+- Video backgrounds, following the photo path (see `AGENTS.md`).

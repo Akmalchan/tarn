@@ -97,9 +97,19 @@ How a page arrives on screen matters more than how fast it does
 - An offscreen document (`entrypoints/background.ts`, reason LOCAL_STORAGE)
   mirrors synced settings into localStorage and keeps Tarn's renderer warm,
   which cut first paint after idle from ~85ms to ~52ms.
-- Future background sources (user photo, video) follow the same rules: keep
+- Background sources other than shaders follow the same rules: keep
   originals in IndexedDB, ease in on open, ghost on reload, never block first
-  paint on async storage.
+  paint on async storage. **Photos do this now** (`photo:<id>` scenes;
+  `wallpapers/store.ts` keeps the original, a display copy and a thumbnail;
+  `photoScene()` in `scenes/index.ts`). First paint knows a photo's base
+  color and tone synchronously from the `tarn.photos` localStorage index.
+  The renderer decodes the display copy in the worker at the size the
+  screen needs (cover fit, full pixel density up to 2x), draws one frame and
+  stops: a still photo costs ~0% while idle (measured: page ~0%, graphics
+  ~1.7% vs 8-11% for a shader). Scene switches wait for the photo's first
+  frame (`sceneShown`) before fading in. A photo missing on this computer
+  (synced from another, or deleted) shows the default scene. Video, if ever
+  added, should follow the same path.
 
 ## Widgets
 

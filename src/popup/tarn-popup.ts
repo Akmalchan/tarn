@@ -168,9 +168,6 @@ export class TarnPopup extends LitElement {
               In Firefox, turn Tarn off from Add-ons and themes (about:addons).
             </p>`
       }
-      <p class="note">
-        Tip: pin Tarn from the puzzle menu to keep this one click away.
-      </p>
     `;
   }
 

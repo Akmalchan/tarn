@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {Scene} from './types';
+import {
+  isPhotoId,
+  photoMirror,
+  type PhotoMirrorEntry,
+} from '../../wallpapers/store';
+import type {Hex, Scene} from './types';
 
 /**
  * Domain-warped noise: slow, deep, like light moving through still water.
@@ -247,7 +252,52 @@ export function scenePreview(scene: Scene): string {
     ${sceneStill(scene)}`;
 }
 
+/**
+ * A photo, covering the screen like CSS `background-size: cover`. Photo
+ * rows run top-down, so y is flipped.
+ */
+const PHOTO_FRAGMENT = /* glsl */ `
+uniform sampler2D uPhoto;
+uniform vec2 uPhotoSize;
+
+vec3 scene(vec2 uv, float t) {
+  vec2 p = gl_FragCoord.xy / uResolution;
+  float screen = uResolution.x / uResolution.y;
+  float image = uPhotoSize.x / uPhotoSize.y;
+  vec2 fit = screen > image ? vec2(1.0, image / screen) : vec2(screen / image, 1.0);
+  vec2 q = (p - 0.5) * fit + 0.5;
+  return texture(uPhoto, vec2(q.x, 1.0 - q.y)).rgb;
+}
+`;
+
+/**
+ * The scene for one of the user's photos. Still (speed 0), drawn at the
+ * screen's full pixel density so it stays sharp.
+ */
+export function photoScene(id: string, entry: PhotoMirrorEntry): Scene {
+  const base = entry.base as Hex;
+  return {
+    id,
+    name: 'Photo',
+    fragment: PHOTO_FRAGMENT,
+    colors: [base, base, base, base],
+    base,
+    speed: 0,
+    resolution: Math.min(globalThis.devicePixelRatio || 1, 2),
+    photo: {width: entry.w, height: entry.h},
+    tone: entry.tone,
+  };
+}
+
+/**
+ * The scene for a `scene` setting. A photo this computer doesn't have
+ * (synced from another, or deleted) shows the default scene instead.
+ */
 export function sceneById(id: string): Scene {
+  if (isPhotoId(id)) {
+    const entry = photoMirror()[id];
+    return entry ? photoScene(id, entry) : tarn;
+  }
   return SCENES.find(s => s.id === id) ?? tarn;
 }
 
@@ -256,6 +306,7 @@ export function sceneById(id: string): Scene {
  * scenes get dark text and a stronger frost on widgets.
  */
 export function sceneTone(scene: Scene): 'light' | 'dark' {
+  if (scene.tone) return scene.tone;
   const n = Number.parseInt(scene.base.slice(1), 16);
   const channel = (v: number) => {
     const c = v / 255;
