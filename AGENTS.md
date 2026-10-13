@@ -135,13 +135,14 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
 
 - **Pace** (`backdrop/pace.ts`, `renderer.ts`): the scene never stops while
   visible. It is `active` (full speed, 30 fps) while the page is used, and
-  `calm` (half speed, 15 fps) after 1 min without input or while another app
-  is in front. The frame rate follows the speed continuously (frame interval
-  = normal interval / speed), so each frame moves the same distance and the
-  change is never felt as a step. Calming eases over ~10 s (measured fps per
-  second: 30 30 29 25 22 20 19 18 17 17 16 15); waking eases back in ~1.5 s.
+  `calm` (40% speed, 20 fps) after 1 min without input. Another app being in
+  front does not count (owner, 2026-10-13: on a wide display Tarn stays in
+  view beside other apps); only a hidden tab (minimized, covered, switched
+  away) stops. The frame rate follows the speed, less than in proportion,
+  so each calm frame moves the picture 60% as far as an active one: 15 fps
+  at half speed still felt choppy. Calming eases over ~10 s; waking ~1.5 s.
   Synthetic pointermoves under a resting cursor are ignored. Settings open
-  keeps it active. Hidden tabs stop as before.
+  keeps it active.
 - Between frames the loop sleeps on a timer and rejoins the display's frame
   callbacks ~12 ms before a frame is due, instead of waking at every
   refresh (120 Hz) to skip. Frames stay evenly spaced (measured: 30.3/s,
@@ -149,7 +150,7 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
 - Ghost snapshots are skipped when the moment hasn't changed, and taken less
   often at slower paces.
 - Measured idle cost (M4, headed Chrome, % of one core, page / graphics):
-  active 4.1-5.8 / 7.5-10.6; calm 2.7 / 5.8.
+  active 4.1-5.8 / 7.5-10.6; calm (at 15 fps, before the move to 20) 2.7 / 5.8.
 - The shader prelude offers the same gradient noise two ways: `noise`/`fbm`
   (computed per pixel, exact) and `noiseFast`/`fbmFast` (one fetch from a
   512x512 R16F texture baked from the identical function, an exact port of the

@@ -185,8 +185,6 @@ export class TarnBackdrop extends LitElement {
     for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel']) {
       window.addEventListener(type, this.onActivity, {passive: true});
     }
-    window.addEventListener('focus', this.updatePace);
-    window.addEventListener('blur', this.updatePace);
     this.updatePace();
 
     if (this.remember) {
@@ -304,8 +302,6 @@ export class TarnBackdrop extends LitElement {
     for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel']) {
       window.removeEventListener(type, this.onActivity);
     }
-    window.removeEventListener('focus', this.updatePace);
-    window.removeEventListener('blur', this.updatePace);
     this.resizeObserver?.disconnect();
     this.worker?.terminate();
     this.local?.dispose();
@@ -530,7 +526,6 @@ export class TarnBackdrop extends LitElement {
     const input = {
       awake: this.awake,
       quietMs: performance.now() - this.lastActivity,
-      focused: document.hasFocus(),
     };
     const pace = decidePace(input);
     if (pace !== this.pace) {

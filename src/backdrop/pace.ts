@@ -13,14 +13,12 @@ export interface PaceInput {
   awake: boolean;
   /** Time since the last real input. */
   quietMs: number;
-  /** Whether this window has focus (false: another app is in front). */
-  focused: boolean;
 }
 
 /** How lively the scene should be right now. */
-export function decidePace({awake, quietMs, focused}: PaceInput): Pace {
+export function decidePace({awake, quietMs}: PaceInput): Pace {
   if (awake) return 'active';
-  return quietMs >= CALM_AFTER_MS || !focused ? 'calm' : 'active';
+  return quietMs >= CALM_AFTER_MS ? 'calm' : 'active';
 }
 
 /** When to look again: when the page would turn calm, or null if never. */

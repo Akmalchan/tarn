@@ -6,11 +6,7 @@
 import {describe, expect, it} from 'vitest';
 import {CALM_AFTER_MS, decidePace, nextPaceCheckMs} from './pace';
 
-const at = (quietMs: number, focused = true, awake = false) => ({
-  awake,
-  quietMs,
-  focused,
-});
+const at = (quietMs: number, awake = false) => ({awake, quietMs});
 
 describe('decidePace', () => {
   it('is active while someone is using the page', () => {
@@ -24,12 +20,8 @@ describe('decidePace', () => {
     expect(decidePace(at(CALM_AFTER_MS * 60))).toBe('calm');
   });
 
-  it('turns calm at once when another app is in front', () => {
-    expect(decidePace(at(0, false))).toBe('calm');
-  });
-
   it('stays active while the settings panel is open', () => {
-    expect(decidePace(at(CALM_AFTER_MS * 2, false, true))).toBe('active');
+    expect(decidePace(at(CALM_AFTER_MS * 2, true))).toBe('active');
   });
 });
 
@@ -37,6 +29,6 @@ describe('nextPaceCheckMs', () => {
   it('wakes when the page would turn calm, and not after', () => {
     expect(nextPaceCheckMs(at(1000))).toBe(CALM_AFTER_MS - 1000);
     expect(nextPaceCheckMs(at(CALM_AFTER_MS))).toBeNull();
-    expect(nextPaceCheckMs(at(0, true, true))).toBeNull();
+    expect(nextPaceCheckMs(at(0, true))).toBeNull();
   });
 });

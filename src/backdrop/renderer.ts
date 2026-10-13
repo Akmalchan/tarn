@@ -74,13 +74,13 @@ const WAKE_EARLY_MS = 12;
 
 /**
  * How lively the scene is: `active` while someone is using the page, `calm`
- * when nobody has for a while or another app is in front. It never stops.
+ * when nobody has for a while (1 min). It never stops.
  */
 export type Pace = 'active' | 'calm';
 export const PACES: readonly Pace[] = ['active', 'calm'];
 
 /** Animation speed at each pace, relative to the scene's own speed. */
-const PACE_RATE: Readonly<Record<Pace, number>> = {active: 1, calm: 0.5};
+const PACE_RATE: Readonly<Record<Pace, number>> = {active: 1, calm: 0.4};
 /**
  * How quickly the speed eases toward a new pace (time constants, s):
  * settling down is slow (about 10 s from active to calm, nothing you can
@@ -396,10 +396,11 @@ export class Renderer {
     this.frameId = 0;
     if (!this.looping) return;
     const target = PACE_RATE[this.pace];
-    // The frame rate follows the speed: half the speed, half the frames.
-    // Each frame then moves the picture exactly as far as at full speed, so
-    // as the motion settles down, nothing about it ever looks choppier.
-    const interval = this.governor.frameIntervalMs / Math.max(this.rate, 0.1);
+    // The frame rate follows the speed, but less than in proportion: calm
+    // runs at 40% speed and 20 fps, so each frame moves the picture only
+    // 60% as far as at full speed, and settling down never looks choppier.
+    const fps = 2 / 3 + (Math.max(this.rate, 0.4) - 0.4) * (1 / 1.8);
+    const interval = this.governor.frameIntervalMs / fps;
     const sinceLastFrame = now - this.lastFrameAt;
     if (this.tilesMoved && sinceLastFrame < interval - 2) {
       // Tiles are gliding: redraw now so the frost keeps up with them, but
