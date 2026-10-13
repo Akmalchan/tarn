@@ -49,6 +49,10 @@ src/
    attribution. Do not copy shaders from sites or products without a
    license.
 3. Keep it cheap: soft scenes should render at `resolution` 0.5 or lower.
+4. Render its settings thumbnail from the real shader, picking a good
+   moment in `MOMENTS`:
+   `CHROME=/path/to/chrome node scripts/scene-previews.mjs`. It writes
+   `public/scenes/<id>.webp` (a few KB).
 
 ## Style
 
