@@ -8,6 +8,15 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Tasks widget: a short to-do list (medium, large or extra large). Type in
+  the top row to add; the round button checks a task off and it leaves a
+  moment later (click again to undo).
+- Focus timer: click the time and type a new length ("45", "12:30" or
+  "1:30:00"). Small or medium only.
+- Favorites: bigger site icons; add and remove sites while settings is
+  open, so the page stays clean otherwise.
+- Each widget offers only the sizes it looks right at (Notes: medium and
+  up).
 - Foundation: WXT build for Chromium and Firefox, Lit, strict TypeScript,
   ESLint, Prettier, Vitest and CI.
 - WebGL2 background renderer that runs in a worker, caps at 30fps, pauses

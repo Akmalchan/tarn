@@ -4,6 +4,7 @@
  */
 
 import {LitElement, css, html, nothing} from 'lit';
+import {live} from 'lit/directives/live.js';
 import {
   loadWidgetData,
   peekWidgetData,
@@ -12,39 +13,74 @@ import {
 } from './data';
 import {widgetStyles} from './styles';
 
-const DURATION_MS = 25 * 60_000;
-/** Circumference of the progress ring (radius 45 in a 100-unit box). */
-const RING = 2 * Math.PI * 45;
+const DEFAULT_MS = 25 * 60_000;
+const MIN_MS = 10_000;
+const MAX_MS = 10 * 60 * 60_000;
 
 /**
  * Timer state. While running, only the end time is stored, so every open
  * tab shows the same countdown and nothing needs to tick in the background.
  */
 interface FocusState {
+  /** The timer's length, set by clicking the time and typing. */
+  readonly duration: number;
   /** When the running timer ends (epoch ms), or null when paused. */
   readonly endsAt: number | null;
   /** Time left while paused. */
   readonly remaining: number;
 }
 
-const IDLE: FocusState = {endsAt: null, remaining: DURATION_MS};
+const idle = (duration = DEFAULT_MS): FocusState => ({
+  duration,
+  endsAt: null,
+  remaining: duration,
+});
+
+const inRange = (value: unknown, min: number, max: number): value is number =>
+  typeof value === 'number' && value >= min && value <= max;
 
 function normalize(raw: unknown): FocusState {
-  if (typeof raw !== 'object' || raw === null) return IDLE;
-  const {endsAt, remaining} = raw as Record<string, unknown>;
+  if (typeof raw !== 'object' || raw === null) return idle();
+  const {duration, endsAt, remaining} = raw as Record<string, unknown>;
+  const length = inRange(duration, MIN_MS, MAX_MS) ? duration : DEFAULT_MS;
   return {
+    duration: length,
     endsAt:
       typeof endsAt === 'number' && Number.isFinite(endsAt) ? endsAt : null,
-    remaining:
-      typeof remaining === 'number' &&
-      remaining >= 0 &&
-      remaining <= DURATION_MS
-        ? remaining
-        : DURATION_MS,
+    remaining: inRange(remaining, 0, length) ? remaining : length,
   };
 }
 
-/** A 25-minute focus timer. It ticks once a second, only while visible. */
+/** "25:00", or "1:30:00" past an hour. */
+function format(ms: number): string {
+  const total = Math.ceil(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+/**
+ * What the user typed as a length: "45" is minutes, "12:30" minutes and
+ * seconds, "1:30:00" hours too. Null if it isn't a time.
+ */
+export function parseDuration(text: string): number | null {
+  const parts = text.trim().split(':');
+  if (parts.length > 3 || parts.some(p => !/^\d{1,3}$/.test(p))) return null;
+  const [a, b, c] = parts.map(Number) as [number, number?, number?];
+  const ms =
+    parts.length === 1
+      ? a * 60_000
+      : parts.length === 2
+        ? a * 60_000 + b! * 1000
+        : a * 3_600_000 + b! * 60_000 + c! * 1000;
+  return ms >= MIN_MS && ms <= MAX_MS ? ms : null;
+}
+
+/**
+ * A focus timer, 25 minutes unless you click the time and type another.
+ * It ticks once a second, only while running and visible.
+ */
 export class TarnFocus extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
@@ -60,21 +96,32 @@ export class TarnFocus extends LitElement {
         display: none;
       }
 
-      .dial {
-        position: relative;
-        margin-top: auto;
-      }
-
-      .ring {
-        display: none;
-      }
-
       .time {
+        width: 100%;
+        min-width: 0;
+        margin-top: auto;
+        padding: 0;
+        font: inherit;
         font-size: 34px;
         font-weight: 250;
         line-height: 1;
         letter-spacing: -0.03em;
         font-variant-numeric: tabular-nums;
+        color: var(--ink);
+        text-shadow: inherit;
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        outline: none;
+        cursor: text;
+      }
+
+      .time[readonly] {
+        cursor: default;
+      }
+
+      .time:focus:not([readonly]) {
+        background: var(--chip);
       }
 
       .actions {
@@ -110,57 +157,11 @@ export class TarnFocus extends LitElement {
         }
       }
 
-      /* Tall and large tiles: a ring that empties as time runs out. */
-      @container (min-height: 250px) {
-        :host {
-          --ring: 168px;
-          align-items: center;
-        }
-        h3 {
-          display: block;
-          align-self: flex-start;
-        }
-        .dial {
-          display: grid;
-          place-items: center;
-          width: var(--ring);
-          height: var(--ring);
-          margin: auto;
-        }
-        .ring {
-          display: block;
-          position: absolute;
-          inset: 0;
-          transform: rotate(-90deg);
-        }
-        .time {
-          font-size: calc(var(--ring) * 0.22);
-        }
-        .actions {
-          justify-content: center;
-        }
-      }
-
-      @container (min-height: 250px) and (max-width: 200px) {
-        :host {
-          --ring: 100px;
-        }
-      }
-
       /* A small tile has room for one button. */
-      @container (max-width: 200px) and (max-height: 140px) {
+      @container (max-width: 200px) {
         .actions button + button {
           display: none;
         }
-      }
-
-      .track {
-        stroke: var(--chip);
-      }
-
-      .progress {
-        stroke: var(--ink);
-        transition: stroke-dashoffset 1s linear;
       }
     `,
   ];
@@ -174,7 +175,7 @@ export class TarnFocus extends LitElement {
   constructor() {
     super();
     this.widgetId = '';
-    this.state = IDLE;
+    this.state = idle();
     this.now = Date.now();
   }
 
@@ -196,41 +197,28 @@ export class TarnFocus extends LitElement {
   }
 
   override render() {
-    const {endsAt} = this.state;
+    const {endsAt, duration} = this.state;
     const left = this.left();
-    const finished = endsAt !== null && left === 0;
-    const minutes = Math.floor(left / 60_000);
-    const seconds = Math.floor((left % 60_000) / 1000);
-    const label =
-      endsAt !== null ? 'Pause' : left < DURATION_MS ? 'Resume' : 'Start';
+    const running = endsAt !== null;
+    const finished = running && left === 0;
+    const label = running ? 'Pause' : left < duration ? 'Resume' : 'Start';
     return html`
       <h3>Focus</h3>
-      <div class="dial">
-        <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
-          <circle
-            class="track"
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke-width="4"
-          ></circle>
-          <circle
-            class="progress"
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke-width="4"
-            stroke-linecap="round"
-            stroke-dasharray=${RING}
-            stroke-dashoffset=${RING * (1 - left / DURATION_MS)}
-          ></circle>
-        </svg>
-        <div class="time" role="timer" aria-live="off">
-          ${minutes}:${String(seconds).padStart(2, '0')}
-        </div>
-      </div>
+      <input
+        class="time"
+        role="timer"
+        aria-label=${running ? 'Time left' : 'Timer length, editable'}
+        title=${running ? '' : 'Click to change'}
+        inputmode="numeric"
+        autocomplete="off"
+        spellcheck="false"
+        ?readonly=${running}
+        .value=${live(format(left))}
+        @focus=${this.onTimeFocus}
+        @keydown=${this.onTimeKey}
+        @change=${this.onTimeChange}
+        @blur=${this.onTimeBlur}
+      />
       <div class="actions">
         ${
           finished
@@ -238,7 +226,7 @@ export class TarnFocus extends LitElement {
             : html`<button @click=${this.toggle}>${label}</button>`
         }
         ${
-          (left < DURATION_MS && endsAt === null) || finished
+          (left < duration && !running) || finished
             ? html`<button @click=${this.reset}>Reset</button>`
             : nothing
         }
@@ -257,20 +245,50 @@ export class TarnFocus extends LitElement {
     this.schedule();
   }
 
+  private store(state: FocusState): void {
+    this.apply(state);
+    void saveWidgetData(this.widgetId, state);
+  }
+
   private toggle = () => {
     this.now = Date.now();
     const left = this.left();
-    const next: FocusState =
-      this.state.endsAt === null
-        ? {endsAt: this.now + left, remaining: left}
-        : {endsAt: null, remaining: left};
-    this.apply(next);
-    void saveWidgetData(this.widgetId, next);
+    const {duration, endsAt} = this.state;
+    this.store(
+      endsAt === null
+        ? {duration, endsAt: this.now + left, remaining: left}
+        : {duration, endsAt: null, remaining: left},
+    );
   };
 
-  private reset = () => {
-    this.apply(IDLE);
-    void saveWidgetData(this.widgetId, IDLE);
+  private reset = () => this.store(idle(this.state.duration));
+
+  private onTimeFocus = (event: FocusEvent) => {
+    const input = event.target as HTMLInputElement;
+    if (!input.readOnly) input.select();
+  };
+
+  private onTimeKey = (event: KeyboardEvent) => {
+    const input = event.target as HTMLInputElement;
+    if (event.key === 'Enter') input.blur();
+    if (event.key === 'Escape') {
+      input.value = format(this.left());
+      input.blur();
+    }
+  };
+
+  /** A typed length becomes the timer's new length, ready to start. */
+  private onTimeChange = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const duration = parseDuration(input.value);
+    if (duration !== null && this.state.endsAt === null) {
+      this.store(idle(duration));
+    }
+    input.value = format(this.left());
+  };
+
+  private onTimeBlur = (event: FocusEvent) => {
+    (event.target as HTMLInputElement).value = format(this.left());
   };
 
   /** One tick per second while running and visible; nothing otherwise. */

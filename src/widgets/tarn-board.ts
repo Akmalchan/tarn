@@ -356,8 +356,11 @@ export class TarnBoard extends LitElement {
               @pointerdown=${this.onPointerDown}
               @keydown=${this.onTileKey}
             >
-              <div class="content" ?inert=${this.editing}>
-                ${renderWidget(widget.kind, widget.id)}
+              <div
+                class="content"
+                ?inert=${this.editing && !WIDGETS[widget.kind]?.editable}
+              >
+                ${renderWidget(widget.kind, widget.id, this.editing)}
               </div>
             </div>
           `;
@@ -449,6 +452,7 @@ export class TarnBoard extends LitElement {
 
   private onPointerDown = (event: PointerEvent) => {
     if (!this.editing || event.button !== 0 || this.drag) return;
+    if (fromEditControl(event)) return;
     const tile = event.currentTarget as HTMLElement;
     const box = tile.getBoundingClientRect();
     const board = this.getBoundingClientRect();
@@ -565,7 +569,7 @@ export class TarnBoard extends LitElement {
   }
 
   private onTileKey = (event: KeyboardEvent) => {
-    if (!this.editing || this.drag) return;
+    if (!this.editing || this.drag || fromEditControl(event)) return;
     const id = (event.currentTarget as HTMLElement).dataset.id!;
     const list = this.preview ?? [...this.widgets];
     const index = list.findIndex(w => w.id === id);
@@ -632,6 +636,13 @@ function easeOut(t: number): number {
 
 function unsafeEase() {
   return unsafeCSS(EASE);
+}
+
+/** Whether an event started on a widget's own control (`data-edit`). */
+function fromEditControl(event: Event): boolean {
+  return event
+    .composedPath()
+    .some(node => node instanceof HTMLElement && 'edit' in node.dataset);
 }
 
 customElements.define('tarn-board', TarnBoard);
