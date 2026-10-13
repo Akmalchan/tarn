@@ -65,6 +65,9 @@ interface Drag {
   height: number;
   moved: boolean;
   frame: number;
+  /** Where the held tile's center was at the last slot search. */
+  searchedX: number;
+  searchedY: number;
 }
 
 /**
@@ -152,14 +155,13 @@ export class TarnBoard extends LitElement {
       outline-offset: 3px;
     }
 
-    /* Lifted: frosted on its own (the tiles it passes over blur beneath
-       it). The blur only exists while a tile is held. */
+    /* Lifted: a nearly solid card, so tiles it passes over don't show
+       through. No backdrop blur: preparing one when a tile is picked up
+       froze the page for 160-190 ms (measured). */
     .tile[data-dragging] {
       z-index: 2;
       cursor: grabbing;
-      background: var(--tile-fill-solid);
-      backdrop-filter: blur(22px) saturate(1.2);
-      -webkit-backdrop-filter: blur(22px) saturate(1.2);
+      background: var(--tile-held, rgb(20 25 34 / 0.86));
       scale: 1.04;
       transform-origin: 50% 50%;
       border-color: var(--tile-line-strong);
@@ -273,7 +275,7 @@ export class TarnBoard extends LitElement {
     const tiles = [...this.renderRoot.querySelectorAll<HTMLElement>('.tile')];
     const rects: number[] = [];
     for (const tile of tiles) {
-      // The held tile frosts what's under it itself (CSS, only while held).
+      // The held tile is a nearly solid card: no frost to keep up with.
       if (tile.hasAttribute('data-dragging')) continue;
       const box = tile.getBoundingClientRect();
       rects.push(box.x, box.y, box.width, box.height);
@@ -464,6 +466,8 @@ export class TarnBoard extends LitElement {
       height: tile.offsetHeight,
       moved: false,
       frame: 0,
+      searchedX: Infinity,
+      searchedY: Infinity,
     };
     tile.setPointerCapture(event.pointerId);
     tile.addEventListener('pointermove', this.onPointerMove);
@@ -509,6 +513,12 @@ export class TarnBoard extends LitElement {
     if (!drag?.moved || !list) return;
     const centerX = drag.x + drag.width / 2;
     const centerY = drag.y + drag.height / 2;
+    // Barely moved since the last search: the answer can't have changed.
+    if (Math.hypot(centerX - drag.searchedX, centerY - drag.searchedY) < 6) {
+      return;
+    }
+    drag.searchedX = centerX;
+    drag.searchedY = centerY;
     const next = nearestOrder(
       list,
       drag.id,

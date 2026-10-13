@@ -12,6 +12,8 @@ import {layoutBands, type LayoutItem} from '../layout/bands';
 export const CELL = 136;
 export const GAP = 24;
 export const PITCH = CELL + GAP;
+/** How far from the pointer a widget counts as "near" while dragging. */
+const SEARCH_RADIUS = PITCH * 2.5;
 
 export interface TileBox {
   id: string;
@@ -88,11 +90,10 @@ export function swap<T extends {id: string}>(
 
 /**
  * While a tile is dragged: the order that puts it nearest the pointer.
- * Candidates are every position in the order and every swap with another
- * widget (swaps reach spots that moving alone can't, measured: 51 -> 56-58
- * spots in a 9-widget layout). Each candidate is laid out (a few dozen tiny
- * layouts at most) and the one whose slot is closest to the dragged tile's
- * center wins. The current order is kept unless another is closer by
+ * Candidates: landing before, after, or in place of (a swap) each widget
+ * near the pointer. Swaps reach spots that moving alone can't (measured:
+ * 51 -> 56-58 spots in a 9-widget layout). Each candidate is laid out and
+ * the one whose slot is closest to the dragged tile's center wins. The current order is kept unless another is closer by
  * `stickiness` px, so the layout never flips back and forth.
  */
 export function nearestOrder<T extends LayoutItem>(
@@ -111,13 +112,27 @@ export function nearestOrder<T extends LayoutItem>(
       tile.y + tile.height / 2 - centerY,
     );
   };
+  // Only spots near the pointer can win, so only widgets near it are tried:
+  // landing before, after, or in place of each of them. This keeps the
+  // search to a handful of layouts per frame however many widgets there are.
+  const tiles = placeTiles(items, columns).tiles;
+  const near = tiles
+    .filter(
+      t =>
+        t.id !== id &&
+        Math.hypot(t.x + t.width / 2 - centerX, t.y + t.height / 2 - centerY) <
+          SEARCH_RADIUS,
+    )
+    .map(t => t.id);
   const candidates: T[][] = [];
-  for (let index = 0; index < items.length; index++) {
+  for (const other of near) {
+    const index = items.findIndex(item => item.id === other);
     candidates.push(moveTo(items, id, index));
+    candidates.push(moveTo(items, id, index + 1));
+    candidates.push(swap(items, id, other));
   }
-  for (const other of items) {
-    if (other.id !== id) candidates.push(swap(items, id, other.id));
-  }
+  // Past every widget (or before the first): the ends of the order.
+  candidates.push(moveTo(items, id, 0), moveTo(items, id, items.length - 1));
   let best: T[] = [...items];
   let bestDistance = Infinity;
   for (const order of candidates) {

@@ -62,6 +62,8 @@ export class TarnApp extends LitElement {
       --chip: rgb(255 255 255 / 0.14);
       --chip-hover: rgb(255 255 255 / 0.22);
       --chip-strong: rgb(30 34 44 / 0.85);
+      /* A widget being dragged: a nearly solid card. */
+      --tile-held: rgb(20 25 34 / 0.86);
       /* Keeps white text readable over bright patches (Ember's orange). */
       --ink-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
     }
@@ -78,6 +80,7 @@ export class TarnApp extends LitElement {
       --chip: rgb(255 255 255 / 0.45);
       --chip-hover: rgb(255 255 255 / 0.65);
       --chip-strong: rgb(255 255 255 / 0.9);
+      --tile-held: rgb(246 246 251 / 0.88);
       --focus-ring: rgb(22 26 38 / 0.6);
       --ink-shadow: none;
     }
