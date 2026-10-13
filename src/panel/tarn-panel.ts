@@ -28,7 +28,7 @@ import {
   type WidgetKind,
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
-import {GLYPHS, type GlyphName} from '../ui/glyphs';
+import {GLYPHS, MARK_TILE, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
 
 /**
@@ -74,13 +74,25 @@ export class TarnPanel extends LitElement {
       --track: rgb(120 120 128 / 0.22);
       --on: #000000;
       --knob-on: #ffffff;
+      /* Row rhythm, desktop-sized like macOS System Settings. A row is
+         a title line plus an optional description line; the icon's box is
+         exactly that tall, so it centers on one or two lines and stays
+         top-left when a description wraps further. */
+      --title: 13.5px;
+      --title-lh: 18px;
+      --desc: 12px;
+      --desc-lh: 16px;
+      --icon: 24px;
+      --icon-box: calc(var(--title-lh) + var(--desc-lh));
+      --row-x: 12px;
+      --row-gap: 10px;
       display: block;
       height: 100%;
       overflow-y: auto;
       color: var(--ink);
       background: var(--bg);
       font:
-        400 15px/1.35 var(--font-sans),
+        400 var(--title) / var(--title-lh) var(--font-sans),
         system-ui,
         sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -108,9 +120,9 @@ export class TarnPanel extends LitElement {
 
     .page {
       display: grid;
-      gap: 22px;
+      gap: 20px;
       align-content: start;
-      padding: 16px 16px 40px;
+      padding: 14px 14px 36px;
     }
 
     .page.forward {
@@ -137,7 +149,7 @@ export class TarnPanel extends LitElement {
 
     .top {
       display: grid;
-      gap: 12px;
+      gap: 10px;
     }
 
     .back {
@@ -154,23 +166,38 @@ export class TarnPanel extends LitElement {
     }
 
     .back svg {
-      width: 22px;
-      height: 22px;
-      margin-left: -6px;
+      width: 18px;
+      height: 18px;
+      margin-left: -4px;
       fill: currentColor;
     }
 
-    /* Chrome's side panel header says "Settings" (the manifest's
-       short_name) with the ta icon; home shows the tarn wordmark. */
-    .wordmark svg {
+    /* Home ends on a quiet signature: the tarn wordmark, large and faded,
+       with the version. The top is left to search; Chrome's header already
+       says "Settings" with the ta icon. */
+    .signature {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      padding: 30px 0 6px;
+    }
+
+    .signature svg {
       display: block;
       width: auto;
-      height: 26px;
+      height: 46px;
+      color: var(--ink);
+      opacity: 0.14;
+    }
+
+    .signature span {
+      font-size: 12px;
+      color: var(--muted);
     }
 
     h1 {
       margin: -2px 0 0;
-      font-size: 21px;
+      font-size: 20px;
       font-weight: 650;
       letter-spacing: -0.01em;
     }
@@ -179,17 +206,17 @@ export class TarnPanel extends LitElement {
       display: flex;
       align-items: center;
       gap: 6px;
-      height: 36px;
-      padding: 0 10px;
+      height: 32px;
+      padding: 0 9px;
       color: var(--muted);
       background: var(--field);
-      border-radius: 10px;
+      border-radius: 9px;
     }
 
     .search svg {
       flex: none;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       fill: currentColor;
     }
 
@@ -219,12 +246,12 @@ export class TarnPanel extends LitElement {
 
     section {
       display: grid;
-      gap: 7px;
+      gap: 6px;
     }
 
     h2 {
-      margin: 0 0 0 16px;
-      font-size: 13px;
+      margin: 0 0 0 var(--row-x);
+      font-size: 12px;
       font-weight: 400;
       color: var(--muted);
     }
@@ -232,18 +259,18 @@ export class TarnPanel extends LitElement {
     .group {
       overflow: hidden;
       background: var(--group);
-      border-radius: 12px;
+      border-radius: 10px;
     }
 
     .row {
       position: relative;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--row-gap);
       box-sizing: border-box;
       width: 100%;
-      min-height: 46px;
-      padding: 8px 14px 8px 12px;
+      min-height: 44px;
+      padding: 5px var(--row-x);
       font: inherit;
       color: inherit;
       text-align: left;
@@ -256,7 +283,7 @@ export class TarnPanel extends LitElement {
       position: absolute;
       top: 0;
       right: 0;
-      left: 52px;
+      left: calc(var(--row-x) + var(--icon) + var(--row-gap));
       border-top: 0.5px solid var(--hair);
     }
 
@@ -288,55 +315,61 @@ export class TarnPanel extends LitElement {
       display: grid;
       flex: none;
       place-items: center;
-      width: 28px;
-      height: 28px;
+      align-self: flex-start;
+      width: var(--icon);
+      height: var(--icon);
+      margin-block: calc((var(--icon-box) - var(--icon)) / 2);
       overflow: hidden;
       color: var(--tile-ink);
       background: var(--tile);
-      border-radius: 7px;
+      border-radius: 6px;
     }
 
     .ico svg {
-      width: 17px;
-      height: 17px;
+      width: 15px;
+      height: 15px;
       fill: currentColor;
     }
 
-    .ico img {
-      display: block;
-      width: 28px;
-      height: 28px;
+    .ico.mark {
+      color: var(--tile);
+      background: none;
+    }
+
+    .ico.mark svg {
+      width: 100%;
+      height: 100%;
     }
 
     .txt {
       display: grid;
       flex: 1;
-      gap: 1px;
       min-width: 0;
     }
 
     .sub {
-      font-size: 12.5px;
+      font-size: var(--desc);
+      line-height: var(--desc-lh);
       color: var(--muted);
     }
 
     .chev {
       flex: none;
-      width: 16px;
-      height: 16px;
+      width: 13px;
+      height: 13px;
       fill: var(--muted);
     }
 
     .value {
-      font-size: 14px;
+      font-size: var(--title);
       color: var(--muted);
     }
 
     .sw {
       position: relative;
       flex: none;
-      width: 51px;
-      height: 31px;
+      width: 34px;
+      height: 20px;
       padding: 0;
       background: var(--track);
       border: 0;
@@ -350,13 +383,13 @@ export class TarnPanel extends LitElement {
       position: absolute;
       top: 2px;
       left: 2px;
-      width: 27px;
-      height: 27px;
+      width: 16px;
+      height: 16px;
       background: #ffffff;
       border-radius: 50%;
       box-shadow:
-        0 3px 8px rgb(0 0 0 / 0.15),
-        0 1px 1px rgb(0 0 0 / 0.16);
+        0 1px 3px rgb(0 0 0 / 0.18),
+        0 0 0 0.5px rgb(0 0 0 / 0.06);
       transition: transform 250ms cubic-bezier(0.3, 1.3, 0.6, 1);
     }
 
@@ -366,7 +399,7 @@ export class TarnPanel extends LitElement {
 
     .sw[aria-checked='true']::after {
       background: var(--knob-on);
-      transform: translateX(20px);
+      transform: translateX(14px);
     }
 
     .sw:disabled {
@@ -384,8 +417,8 @@ export class TarnPanel extends LitElement {
     }
 
     .seg button {
-      padding: 4px 10px;
-      font: 500 12.5px var(--font-sans);
+      padding: 3px 9px;
+      font: 500 12px var(--font-sans);
       color: var(--ink);
       background: none;
       border: 0;
@@ -476,12 +509,8 @@ export class TarnPanel extends LitElement {
       opacity: 0.75;
     }
 
-    .wrow {
-      align-items: flex-start;
-    }
-
     .wrow .seg {
-      margin-top: 6px;
+      margin: 5px 0 3px;
     }
 
     .tools {
@@ -492,8 +521,8 @@ export class TarnPanel extends LitElement {
     .ib {
       display: grid;
       place-items: center;
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       padding: 0;
       color: var(--muted);
       background: none;
@@ -503,8 +532,8 @@ export class TarnPanel extends LitElement {
     }
 
     .ib svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       fill: currentColor;
     }
 
@@ -520,8 +549,8 @@ export class TarnPanel extends LitElement {
 
     .addmark {
       flex: none;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       fill: var(--ink);
     }
 
@@ -534,8 +563,9 @@ export class TarnPanel extends LitElement {
 
     .note,
     .none {
-      margin: 0 16px;
-      font-size: 12.5px;
+      margin: 0 var(--row-x);
+      font-size: var(--desc);
+      line-height: var(--desc-lh);
       color: var(--muted);
     }
 
@@ -563,13 +593,13 @@ export class TarnPanel extends LitElement {
 
     .status {
       flex: 1;
-      font-size: 12.5px;
+      font-size: var(--desc);
       color: var(--muted);
     }
 
     .text-button {
       padding: 4px 2px;
-      font: 600 15px var(--font-sans);
+      font: 600 var(--title) var(--font-sans);
       color: var(--ink);
       background: none;
       border: 0;
@@ -590,16 +620,16 @@ export class TarnPanel extends LitElement {
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px 16px;
-      font-size: 14px;
+      padding: 11px 14px;
+      font-size: var(--title);
       color: var(--bg);
       background: var(--ink);
-      border-radius: 14px;
+      border-radius: 12px;
       box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.45);
     }
 
     .toast button {
-      font: 600 14px var(--font-sans);
+      font: 600 var(--title) var(--font-sans);
       color: inherit;
       background: none;
       border: 0;
@@ -608,7 +638,7 @@ export class TarnPanel extends LitElement {
 
     /* Dev-only test layouts (widgets/samples.ts). */
     .devtools section h2 {
-      margin: 0 0 0 16px;
+      margin: 0 0 0 var(--row-x);
     }
 
     .devtools .add {
@@ -725,7 +755,7 @@ export class TarnPanel extends LitElement {
           <div class="top">
             ${
               this.page === 'home'
-                ? html`<span class="wordmark">${wordmark()}</span>`
+                ? nothing
                 : html`<button class="back" @click=${() => this.go('home')}>
                       ${glyph('back')}Settings
                     </button>
@@ -774,6 +804,7 @@ export class TarnPanel extends LitElement {
   private renderHome() {
     const {widgets, enabled} = this.settings;
     const names = widgets.map(w => KIND_NAMES[w.kind]);
+    const preview = clockPreview(sceneById(this.settings.scene));
     return html`
       <section data-target="background">
         <h2>Background</h2>
@@ -797,7 +828,7 @@ export class TarnPanel extends LitElement {
       <section data-target="clock">
         <h2>Clock</h2>
         <div class="faces" role="radiogroup" aria-label="Clock">
-          ${CLOCK_STYLES.map(face => this.faceButton(face))}
+          ${CLOCK_STYLES.map(face => this.faceButton(face, preview))}
         </div>
       </section>
 
@@ -815,7 +846,7 @@ export class TarnPanel extends LitElement {
         <h2>Tarn</h2>
         <div class="group">
           <div class="row" data-target="enabled">
-            <span class="ico"><img src="/icon/48.png" alt="" /></span>
+            <span class="ico mark">${MARK_TILE}</span>
             <span class="txt"
               >Use Tarn for new tabs
               <span class="sub"
@@ -846,6 +877,11 @@ export class TarnPanel extends LitElement {
           'advanced',
         )}
       </div>
+
+      <footer class="signature">
+        ${wordmark('Tarn')}
+        <span>Version ${this.version}</span>
+      </footer>
     `;
   }
 
@@ -1102,16 +1138,8 @@ export class TarnPanel extends LitElement {
   }
 
   /** A clock face, drawn on the current background so it previews truly. */
-  private faceButton(face: ClockStyle) {
-    const scene = sceneById(this.settings.scene);
-    const now = new Date();
-    const time = now
-      .toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
-      .replace(/\s?[AP]M$/i, '');
-    const date = now.toLocaleDateString([], {
-      weekday: 'short',
-      day: 'numeric',
-    });
+  private faceButton(face: ClockStyle, preview: ClockPreview) {
+    const {scene, time, date} = preview;
     return html`
       <button
         class="pick"
@@ -1438,6 +1466,24 @@ const PAGE_TITLES: Record<Page, string> = {
   widgets: 'Widgets',
   advanced: 'Advanced',
 };
+
+/** What the clock face thumbnails show: the time now, on the current scene. */
+interface ClockPreview {
+  scene: Scene;
+  time: string;
+  date: string;
+}
+
+function clockPreview(scene: Scene): ClockPreview {
+  const now = new Date();
+  return {
+    scene,
+    time: now
+      .toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+      .replace(/\s?[AP]M$/i, ''),
+    date: now.toLocaleDateString([], {weekday: 'short', day: 'numeric'}),
+  };
+}
 
 const FACE_NAMES: Record<ClockStyle, string> = {
   center: 'Classic',

@@ -65,7 +65,7 @@ Settings (home)
   black in dark). Switches are black when on (white in dark). No brand hue,
   per `docs/brand/BRAND.md`.
 - **Filled icons**, drawn for Tarn in `src/ui/glyphs.ts`: one solid shape
-  with details cut out, readable at 17px in a 28px tile. Never outline
+  with details cut out, readable at 15px in a 24px tile. Never outline
   icons, never emoji.
 - **Chrome's header says "Settings"; the panel shows the wordmark.**
   Chrome draws the side panel header itself, from the extension's icon and
@@ -73,10 +73,23 @@ Settings (home)
   ignored; see `SidePanelUtil::GetTitleText` in Chromium). So `short_name`
   is "Settings" ("Dev Settings" in dev, both within the 12-character
   limit), and the extension's `name` stays "Tarn" everywhere else (store,
-  install dialog, extensions page). The home page opens on the `tarn` wordmark (`src/ui/wordmark.ts`), then
-  search; sub-pages show "‹ Settings" and a 21px
+  install dialog, extensions page). The home page opens on search and ends on a signature: the `tarn`
+  wordmark, large and faded, with the version (`src/ui/wordmark.ts`); sub-pages show "‹ Settings" and a 20px
   title.
-- Rows are at least 46px tall; text is Google Sans Flex (bundled, see
+- **Desktop proportions, like macOS System Settings:** 13.5px titles, 12px
+  descriptions, 24px icon tiles with 15px glyphs, 10px group corners, a 32px
+  search field. Switches are 34×20, like Safari's settings, not phone-sized.
+  The sizes are tokens at the top of the panel's styles (`--title`,
+  `--icon`, `--row-x`...); change them there, not per row.
+- **One icon rule for every row.** The icon's box is exactly as tall as a
+  title plus one description line, so it sits centered beside one or two
+  lines and stays top-left once a description wraps further (or a row holds
+  a control under its title, like widget sizes). No per-row exceptions, no
+  measuring in script. Controls on the right stay vertically centered.
+  Hairlines start where the text does.
+- The ta mark in the Tarn row is a tile like any other (`MARK_TILE` in
+  `glyphs.ts`): it turns white in dark mode with the rest.
+- Text is Google Sans Flex (bundled, see
   `src/styles/global.css`).
 
 ## Adding a setting
@@ -108,6 +121,8 @@ setting, and Advanced stays out of sight.
   twice. Chrome's header now says "Settings" instead.
 - **The ta mark in the panel:** Chrome's header already shows it next to
   "Settings". The panel keeps just the wordmark.
+- **The wordmark at the top:** it pushed search down and competed with
+  Chrome's "Settings" header. It closes the page instead.
 - **"Tarn Settings" as the short name:** 13 characters, over Chrome's
   limit of 12.
 - **A clock on/off switch:** the clock is picked by face, and "None" is one
