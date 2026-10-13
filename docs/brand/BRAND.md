@@ -29,6 +29,9 @@ re-proposes it.
 | The wordmark (artwork only)         | **tarn** (lowercase, from the SVG file)                        |
 | Never                               | TARN, TaRN, Tarn™ in running text, "Tarn for Chrome" as a name |
 
+- Manifest `short_name` is **Settings** ("Dev Settings" in dev): Chrome
+  uses it only to title Tarn's side panel and its pin button. The `name`
+  stays **Tarn**.
 - _tarn_ (n.): a small, still mountain lake. From Old Norse _tjörn_.
 - Store title: **Tarn: Calm New Tab**.
 - Compatibility line, descriptions only: "Works with Google Chrome™,
@@ -97,17 +100,18 @@ live as constants in [`build_logo.py`](build_logo.py).
 
 ### When to use it
 
-| Slot                                          | Use the mark?                                                                                                                         | File                                                                                                       |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Chrome toolbar button (`action.default_icon`) | Yes                                                                                                                                   | `png/extension/action-16.png`, `action-32.png` (small master), shipped as `public/action/16.png`, `32.png` |
-| `chrome://extensions` page and store listing  | Yes                                                                                                                                   | `png/extension/icon-48.png`, `-96.png`, `-128.png`, shipped as `public/icon/48.png`, `96.png`, `128.png`   |
-| Dev build ("Tarn Dev")                        | The white mark, so dev and prod tell apart                                                                                            | `png/extension-dev/*` (swapped in by `wxt.config.ts` in development)                                       |
-| Chrome Web Store icon upload                  | Yes                                                                                                                                   | `png/store/tarn-store-icon-128.png` (96px art + 16px transparent padding, as Google requires)              |
-| Social avatar                                 | Yes                                                                                                                                   | `png/social/tarn-avatar-800.png` (square corners; platforms crop it)                                       |
-| App-style icon, website favicon, large uses   | Yes                                                                                                                                   | `tarn-mark.svg`, `png/mark/tarn-mark-64…1024.png`                                                          |
-| The browser tab's icon                        | **No.** The tab shows Chrome's own icon on purpose; `public/icon/16.png` and `32.png` stay transparent (see `AGENTS.md`, Permissions) | —                                                                                                          |
-| On the new tab page itself                    | **No.** The page belongs to the user; no branding on it                                                                               | —                                                                                                          |
-| Next to the wordmark                          | Only in store art and the README header                                                                                               | —                                                                                                          |
+| Slot                                          | Use the mark?                                                                                                                                    | File                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Chrome toolbar button (`action.default_icon`) | Yes                                                                                                                                              | `png/extension/action-16.png`, `action-32.png` (small master), shipped as `public/action/16.png`, `32.png` |
+| `chrome://extensions` page and store listing  | Yes                                                                                                                                              | `png/extension/icon-48.png`, `-96.png`, `-128.png`, shipped as `public/icon/48.png`, `96.png`, `128.png`   |
+| Dev build ("Tarn Dev")                        | The white mark, so dev and prod tell apart                                                                                                       | `png/extension-dev/*` (swapped in by `wxt.config.ts` in development)                                       |
+| Chrome Web Store icon upload                  | Yes                                                                                                                                              | `png/store/tarn-store-icon-128.png` (96px art + 16px transparent padding, as Google requires)              |
+| Social avatar                                 | Yes                                                                                                                                              | `png/social/tarn-avatar-800.png` (square corners; platforms crop it)                                       |
+| App-style icon, website favicon, large uses   | Yes                                                                                                                                              | `tarn-mark.svg`, `png/mark/tarn-mark-64…1024.png`                                                          |
+| The browser tab's icon                        | Only for the split second before the page exists (opening, reloading); then the page shows Chrome's icon, or none (see `AGENTS.md`, Permissions) | `public/icon/16.png`, `32.png` (small master)                                                              |
+| Chrome's side panel header                    | Yes, next to "Settings" (Chrome reads the same 16/32px icons)                                                                                    | `public/icon/16.png`, `32.png`                                                                             |
+| On the new tab page itself                    | **No.** The page belongs to the user; no branding on it                                                                                          | —                                                                                                          |
+| Next to the wordmark                          | Only in store art and the README header                                                                                                          | —                                                                                                          |
 
 ### Colorways
 
@@ -138,16 +142,16 @@ live as constants in [`build_logo.py`](build_logo.py).
 - **License:** SIL Open Font License 1.1, released by Google on Google Fonts
   in 2025. Its license file declares no Reserved Font Name. Commercial use,
   logos and bundling inside the extension are allowed.
-  - Bundling: ship the woff2 (about 21 KB for Latin with every axis) with
-    `OFL.txt` next to it, for example in `public/fonts/`. Never load it from
-    Google at runtime (Tarn makes no network requests).
+  - Bundled in `public/fonts/`: a Latin subset of the variable font with
+    weight and optical size (about 140 KB), roundness, width and slant pinned
+    to the default, with `OFL.txt` next to it. Never load it from Google at
+    runtime (Tarn makes no network requests).
   - Don't market Tarn as "made with Google's font" or imply that Google
     endorses it.
   - Only use **Google Sans Flex** from Google Fonts. The original "Google
     Sans" files are proprietary.
-- **Product UI:** the plan is to bundle Google Sans Flex for UI text so Tarn
-  looks the same on every OS. Until that lands, `--font-sans` in
-  `src/styles/global.css` is `system-ui`.
+- **Product UI:** Google Sans Flex everywhere, through `--font-sans` in
+  `src/styles/global.css`, with the system font as fallback.
 - **Case:** sentence case for UI text. Never all caps for the name.
 
 ## Color

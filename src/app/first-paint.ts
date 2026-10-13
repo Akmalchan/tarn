@@ -56,12 +56,12 @@ const BASE_KEY = 'tarn.base';
 const CLOCK_RESUME_WINDOW_MS = 30 * 60 * 1000;
 
 /**
- * No tab icon: the extension's packaged 16px icon, which is transparent on
- * purpose. Chrome shows that same packaged icon for the split second before
- * a page exists (opening, reloading), so with this choice the tab never
- * changes at all.
+ * No tab icon: an empty SVG, which draws nothing and needs no fetch. (Chrome
+ * still shows the packaged ta icon for the split second before a page
+ * exists, when opening or reloading; the owner chose that so Chrome's side
+ * panel header, which uses the same packaged icon, isn't blank.)
  */
-const NO_ICON = '/icon/16.png';
+const NO_ICON = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>";
 
 /** Chrome's own icon for its new tab page, served by the favicon API. */
 const NEW_TAB_ICON = `/_favicon/?pageUrl=${encodeURIComponent('chrome://new-tab-page/')}&size=32`;

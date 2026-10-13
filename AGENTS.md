@@ -29,15 +29,16 @@ was already rejected. The essentials:
   `favicon` (Chrome's own new-tab icon in the tab; later, site icons without
   network requests). Its install warning is "Read the icons of the websites
   you visit", a deliberate trade-off. The manifest's 16/32px icons are
-  transparent on purpose: during a reload Chrome briefly shows the extension
-  icon as the tab icon, and the tab must only ever show Chrome's icon. The
-  toolbar button keeps Tarn's icon via `action.default_icon` (popup meta).
-  Measured 2026-10-11: before a page exists Chrome shows that packaged icon
-  (~10ms on reload; while the tab is created on open). Only shipping Google's
-  logo in the package would hide it, which the Web Store treats as
-  impersonation, so it isn't done. Settings > Tab icon offers "Chrome"
-  (default: Chrome's icon via the favicon API, with that brief blank) and
-  "None" (the packaged blank icon throughout: the tab never changes). `management` is
+  the ta mark (small master, docs/brand). Chrome uses them for two things:
+  the side panel header's icon (next to "Settings", the manifest
+  `short_name`), and the tab icon for the split second before a page exists
+  (~10ms on reload; while the tab is created on open, measured 2026-10-11).
+  They used to be transparent so the tab never showed Tarn's icon, but that
+  left the side panel header blank; on 2026-10-13 the owner chose a filled
+  header over that brief flash. The toolbar button uses `action.default_icon`
+  (popup meta). Settings > Tab icon offers "Chrome" (default: Chrome's icon
+  via the favicon API) and "None" (a transparent icon once the page exists).
+  `management` is
   _optional_, requested only when the user asks Tarn to switch off another
   new-tab extension (Chromium only). Adding any permission needs a stated reason.
 - **Performance:** never block first paint; animate only transform/opacity;
