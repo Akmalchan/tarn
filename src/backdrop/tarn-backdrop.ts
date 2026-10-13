@@ -20,7 +20,7 @@ import {
   type WorkerEvent,
   type WorkerInit,
 } from './protocol';
-import type {GhostFrame, Renderer} from './renderer';
+import type {GhostFrame, Pace, Renderer} from './renderer';
 import {DEFAULT_SCENE_ID, sceneById, sceneStill} from './scenes';
 
 /** Scene-to-scene crossfade. */
@@ -58,6 +58,10 @@ const GHOST_RELEASE_MS = 500;
  */
 const STILL_AFTER_MS = 2500;
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+/** No mouse, keyboard or scrolling for this long: the scene turns calm. */
+const CALM_AFTER_MS = 30_000;
+/** ...and after this long, it glides to a stop until the page is used. */
+const STOP_AFTER_MS = 3 * 60_000;
 
 const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -75,6 +79,7 @@ export class TarnBackdrop extends LitElement {
   static override properties = {
     scene: {type: String},
     remember: {type: Boolean},
+    awake: {type: Boolean},
   };
 
   static override styles = css`
@@ -115,6 +120,8 @@ export class TarnBackdrop extends LitElement {
 
   declare scene: string;
   declare remember: boolean;
+  /** Keep the scene fully lively regardless of input (settings are open). */
+  declare awake: boolean;
 
   private worker: Worker | null = null;
   private local: Renderer | null = null;
@@ -128,7 +135,15 @@ export class TarnBackdrop extends LitElement {
     at: number;
     running: boolean;
     quality: number;
+    rate: number;
   } | null = null;
+  private pace: Pace = 'active';
+  private lastActivity = performance.now();
+  private pointerX = NaN;
+  private pointerY = NaN;
+  private paceTimer = 0;
+  /** The scene and moment of the last saved ghost, to skip identical ones. */
+  private lastGhost: {scene: string; clock: number} | null = null;
   private ghostRequests = new Map<number, (ghost: GhostFrame | null) => void>();
   private nextGhostId = 0;
   private firstFrame: () => void = () => {};
@@ -144,6 +159,7 @@ export class TarnBackdrop extends LitElement {
     super();
     this.scene = DEFAULT_SCENE_ID;
     this.remember = false;
+    this.awake = false;
   }
 
   override render() {
@@ -169,6 +185,12 @@ export class TarnBackdrop extends LitElement {
       this.send({type: 'resize', width, height});
     });
     this.resizeObserver.observe(this);
+    for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel']) {
+      window.addEventListener(type, this.onActivity, {passive: true});
+    }
+    window.addEventListener('focus', this.updatePace);
+    window.addEventListener('blur', this.updatePace);
+    this.updatePace();
 
     if (this.remember) {
       window.addEventListener('pagehide', this.saveClock);
@@ -264,6 +286,7 @@ export class TarnBackdrop extends LitElement {
   }
 
   override updated(changed: PropertyValues<this>): void {
+    if (changed.has('awake') && this.isConnected) this.updatePace();
     if (
       changed.has('scene') &&
       this.shownScene !== null &&
@@ -280,6 +303,12 @@ export class TarnBackdrop extends LitElement {
     window.removeEventListener('pagehide', this.saveClock);
     window.removeEventListener('beforeunload', this.saveMoment);
     clearTimeout(this.clockTimer);
+    clearTimeout(this.paceTimer);
+    for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel']) {
+      window.removeEventListener(type, this.onActivity);
+    }
+    window.removeEventListener('focus', this.updatePace);
+    window.removeEventListener('blur', this.updatePace);
     this.resizeObserver?.disconnect();
     this.worker?.terminate();
     this.local?.dispose();
@@ -393,8 +422,8 @@ export class TarnBackdrop extends LitElement {
       this.local = new Renderer(canvas, sceneById(sceneId), startClock, {
         onFirstFrame: () => this.firstFrame(),
         onUnavailable: () => this.markUnavailable(),
-        onClock: (clock, at, running, quality) =>
-          (this.clockState = {clock, at, running, quality}),
+        onClock: (clock, at, running, quality, rate) =>
+          (this.clockState = {clock, at, running, quality, rate}),
       });
     }
     // A reload frosts the widgets' places from the first live frame, as the
@@ -428,9 +457,20 @@ export class TarnBackdrop extends LitElement {
       return;
     }
     const scene = this.shownScene;
+    // Stopped (still pace): the saved ghost already shows this exact moment.
+    const clock = this.currentClock();
+    if (
+      scene &&
+      clock !== null &&
+      this.lastGhost?.scene === scene &&
+      Math.abs(this.lastGhost.clock - clock) < 1e-3
+    ) {
+      return;
+    }
     void this.requestGhost().then(ghost => {
       if (ghost && scene && scene === this.shownScene) {
         rememberGhost(scene, ghost);
+        this.lastGhost = {scene, clock: ghost.clock};
       }
     });
   };
@@ -439,9 +479,13 @@ export class TarnBackdrop extends LitElement {
     const speed = sceneById(this.shownScene ?? this.scene).speed;
     // A device the quality governor has stepped down saves less often.
     const slowdown = 1 + (this.clockState?.quality ?? 0);
+    // A calmer pace moves less, so it needs fewer saves to stay current.
+    const rate = Math.max(this.clockState?.rate ?? 1, 0.01);
     const every =
-      Math.min(SAVE_MAX_MS, Math.max(SAVE_MIN_MS, GHOST_MOTION / speed)) *
-      slowdown;
+      Math.min(
+        SAVE_MAX_MS,
+        Math.max(SAVE_MIN_MS, GHOST_MOTION / (speed * rate)),
+      ) * slowdown;
     this.clockTimer = window.setTimeout(() => {
       this.saveMoment();
       this.scheduleSaves();
@@ -450,13 +494,64 @@ export class TarnBackdrop extends LitElement {
 
   /** Saves the moment on screen right now, for the next page to continue. */
   private saveClock = () => {
+    const clock = this.currentClock();
+    if (clock !== null) rememberClock(clock);
+  };
+
+  /** The animation moment on screen now, from the renderer's last report. */
+  private currentClock(): number | null {
     const state = this.clockState;
-    if (!state) return;
+    if (!state) return null;
     const now = performance.timeOrigin + performance.now();
-    const clock = state.running
-      ? state.clock + Math.max(0, now - state.at) / 1000
+    return state.running
+      ? state.clock + (Math.max(0, now - state.at) / 1000) * state.rate
       : state.clock;
-    rememberClock(clock);
+  }
+
+  // ---- Pace: calmer when nobody is around ------------------------------
+
+  private onActivity = (event?: Event) => {
+    // Chrome sends synthetic pointermoves under a cursor that hasn't moved
+    // (when the page changes beneath it, e.g. the clock ticking over). Only
+    // a real change of position counts as someone being there.
+    if (event?.type === 'pointermove') {
+      const {screenX, screenY} = event as PointerEvent;
+      if (screenX === this.pointerX && screenY === this.pointerY) return;
+      this.pointerX = screenX;
+      this.pointerY = screenY;
+    }
+    const now = performance.now();
+    const wasQuiet = now - this.lastActivity > 1000;
+    this.lastActivity = now;
+    // Cheap on every event; the pace is only re-evaluated after a pause.
+    if (wasQuiet || this.pace !== 'active') this.updatePace();
+  };
+
+  /** Works out the pace now and wakes again at the next threshold. */
+  private updatePace = () => {
+    clearTimeout(this.paceTimer);
+    const quiet = performance.now() - this.lastActivity;
+    const pace: Pace = this.awake
+      ? 'active'
+      : quiet >= STOP_AFTER_MS
+        ? 'still'
+        : quiet >= CALM_AFTER_MS || !document.hasFocus()
+          ? 'calm'
+          : 'active';
+    if (pace !== this.pace) {
+      this.pace = pace;
+      this.send({type: 'pace', pace});
+    }
+    if (this.awake) return;
+    const next =
+      quiet < CALM_AFTER_MS
+        ? CALM_AFTER_MS - quiet
+        : quiet < STOP_AFTER_MS
+          ? STOP_AFTER_MS - quiet
+          : null;
+    if (next !== null) {
+      this.paceTimer = window.setTimeout(this.updatePace, next + 50);
+    }
   };
 
   private async crossfadeTo(sceneId: string): Promise<void> {
@@ -489,6 +584,7 @@ export class TarnBackdrop extends LitElement {
 
   private onVisibilityChange = () => {
     const visible = document.visibilityState === 'visible';
+    if (visible) this.onActivity();
     if (!visible && this.remember) this.saveClock();
     this.send({type: 'visible', visible});
   };

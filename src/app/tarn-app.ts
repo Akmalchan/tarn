@@ -203,6 +203,7 @@ export class TarnApp extends LitElement {
     return html`
       <tarn-backdrop
         remember
+        ?awake=${this.editing}
         .scene=${current}
         @tarn-revealed=${this.onRevealed}
         @tarn-settled=${this.onSettled}

@@ -41,6 +41,7 @@ export interface RendererEvents {
     at: number,
     running: boolean,
     quality: number,
+    rate: number,
   ) => void;
 }
 
@@ -68,6 +69,30 @@ const CLOCK_WRAP_AFTER_S = TIME_PERIOD_S * 12;
 
 /** Longest step the clock may take between frames, so stalls never jump. */
 const MAX_STEP_MS = 100;
+
+/**
+ * How lively the scene is. `active` while someone is using the page; `calm`
+ * when Chrome isn't the focused window or nothing has happened for a while;
+ * `still` after a long quiet spell: the scene glides to a stop and nothing
+ * runs until the page is used again.
+ */
+export type Pace = 'active' | 'calm' | 'still';
+export const PACES: readonly Pace[] = ['active', 'calm', 'still'];
+
+/** Animation speed at each pace, relative to the scene's own speed. */
+const PACE_RATE: Readonly<Record<Pace, number>> = {
+  active: 1,
+  calm: 0.5,
+  still: 0,
+};
+/**
+ * Calm and still draw at most 15 frames a second. With the motion at half
+ * speed, each frame moves the picture exactly as far as at 30 fps, so the
+ * lower frame rate is never felt.
+ */
+const SLOW_FRAME_MS = 1000 / 15;
+/** How quickly the speed eases toward a new pace (time constant, s). */
+const PACE_EASE_S = 0.6;
 
 interface CompiledScene {
   program: WebGLProgram;
@@ -147,6 +172,11 @@ export class Renderer {
   private glassStrength = 0;
   private glassRadius = 24;
   private glass: GlassProgram | null = null;
+  private pace: Pace = 'active';
+  /** Current speed multiplier, easing toward the pace's rate. */
+  private rate = 1;
+  /** Still, and fully stopped: no loop runs until the pace changes. */
+  private frozen = false;
   /** Tiles moved since the last frame: draw the next one without waiting. */
   private tilesMoved = false;
   private frame: FrameTarget | null = null;
@@ -219,6 +249,16 @@ export class Renderer {
     // nothing else would draw, so draw now.
     if (this.frameId) this.tilesMoved = true;
     else this.draw();
+  }
+
+  /** Eases the animation toward a new pace; see {@link Pace}. */
+  setPace(pace: Pace): void {
+    if (pace === this.pace || !PACES.includes(pace)) return;
+    this.pace = pace;
+    if (this.frozen && pace !== 'still') {
+      this.frozen = false;
+      this.refresh();
+    }
   }
 
   setReducedMotion(reduced: boolean): void {
@@ -326,6 +366,7 @@ export class Renderer {
       return;
     }
     this.draw();
+    if (this.frozen) return;
     if (!this.frameId) {
       this.clockAt = performance.now();
       this.frameId = requestFrame(this.tick);
@@ -335,21 +376,40 @@ export class Renderer {
 
   private tick = (now: number): void => {
     this.frameId = requestFrame(this.tick);
+    const target = PACE_RATE[this.pace];
+    // Slowing down: speed first, then frame rate. Waking up: frame rate
+    // first, then speed. Either way no frame ever moves more than at 30 fps.
+    const slow = target <= PACE_RATE.calm && this.rate <= PACE_RATE.calm + 0.02;
+    const interval = slow
+      ? Math.max(this.governor.frameIntervalMs, SLOW_FRAME_MS)
+      : this.governor.frameIntervalMs;
     const sinceLastFrame = now - this.lastFrameAt;
-    if (this.tilesMoved && sinceLastFrame < this.governor.frameIntervalMs - 2) {
+    if (this.tilesMoved && sinceLastFrame < interval - 2) {
       // Tiles are gliding: redraw now so the frost keeps up with them, but
       // leave the animation clock and the quality governor alone.
       this.tilesMoved = false;
       this.draw();
       return;
     }
-    if (sinceLastFrame < this.governor.frameIntervalMs - 2) return;
+    if (sinceLastFrame < interval - 2) return;
     this.tilesMoved = false;
     this.lastFrameAt = now;
-    if (this.governor.record(sinceLastFrame)) this.applySize();
-    this.clock += Math.min(Math.max(now - this.clockAt, 0), MAX_STEP_MS) / 1000;
+    // Only full-speed frames tell the governor how the device is coping.
+    if (!slow && this.rate > 0.98 && this.governor.record(sinceLastFrame)) {
+      this.applySize();
+    }
+    const step = Math.min(Math.max(now - this.clockAt, 0), MAX_STEP_MS) / 1000;
     this.clockAt = now;
+    this.rate += (target - this.rate) * (1 - Math.exp(-step / PACE_EASE_S));
+    if (Math.abs(target - this.rate) < 0.005) this.rate = target;
+    this.clock += step * this.rate;
     this.draw();
+    if (target === 0 && this.rate === 0) {
+      // Glided to a stop: the last frame stays on screen, nothing runs.
+      this.frozen = true;
+      this.stopLoop();
+      return;
+    }
     if (now - this.clockReportedAt > 1000) this.reportClock(true);
   };
 
@@ -360,6 +420,7 @@ export class Renderer {
       performance.timeOrigin + performance.now(),
       running,
       this.governor.index,
+      this.rate,
     );
   }
 
