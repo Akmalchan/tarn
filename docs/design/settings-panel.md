@@ -41,7 +41,7 @@ Advanced
 1. **Home holds what most people change.** Today that's the background,
    the clock and widgets. Anything else goes one level down.
 2. **Show a few, then "Show All".** A picker shows three choices and a
-   fourth tile, "Show All" (a mosaic of the choices), that opens a page
+   fourth tile, "Show All" (a background, blurred and faded, with a grid icon), that opens a page
    with all of them (`HOME_SCENES`, `HOME_FACES` in the panel). Backgrounds
    are big 16:10 tiles on the page, the main tool; the clock is a card of
    square tiles under them. Sub-pages are just the grid: no preview, the
