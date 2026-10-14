@@ -26,14 +26,27 @@ import {
   WIDGET_KINDS,
   WIDGET_SIZE_OPTIONS,
   newWidgetId,
-  normalizeSettings,
   type ClockStyle,
   type Settings,
   type TabIcon,
   type WidgetEntry,
   type WidgetKind,
 } from '../settings/schema';
-import {loadSettings, saveSettings, watchSettings} from '../settings/store';
+import {
+  autoBackups,
+  createBackup,
+  downloadBackup,
+  restoreAutoBackup,
+  restoreBackup,
+  type AutoBackupInfo,
+  type TarnBackup,
+} from '../settings/backup';
+import {
+  loadSettings,
+  replaceSettings,
+  saveSettings,
+  watchSettings,
+} from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
 import {clockTime} from '../widgets/clock-faces';
@@ -77,6 +90,7 @@ export class TarnPanel extends LitElement {
     jsonStatus: {state: true},
     confirmReset: {state: true},
     photos: {state: true},
+    backups: {state: true},
   };
 
   static override styles = css`
@@ -890,6 +904,8 @@ export class TarnPanel extends LitElement {
   declare confirmReset: boolean;
   /** The user's own wallpapers (src/wallpapers/store.ts), newest first. */
   declare photos: WallpaperInfo[];
+  /** Setups Tarn saved before each update, newest first (settings/backup.ts). */
+  declare backups: AutoBackupInfo[];
   /** Object URLs of the photos' thumbnails, by id. */
   private photoUrls = new Map<string, string>();
 
@@ -912,6 +928,7 @@ export class TarnPanel extends LitElement {
     this.jsonStatus = '';
     this.confirmReset = false;
     this.photos = [];
+    this.backups = [];
   }
 
   override connectedCallback(): void {
@@ -926,6 +943,7 @@ export class TarnPanel extends LitElement {
     // Another page added or deleted a photo: its mirror key changed.
     window.addEventListener('storage', this.onStorage);
     void this.loadPhotos();
+    void autoBackups().then(list => (this.backups = list));
   }
 
   override disconnectedCallback(): void {
@@ -1263,11 +1281,11 @@ export class TarnPanel extends LitElement {
             @click=${this.exportSettings}
           >
             ${icon('share')}
-            <span class="txt">Export settings</span>
+            <span class="txt">Export Backup</span>
           </button>
           <button class="row" @click=${this.pickImport}>
             ${icon('tray')}
-            <span class="txt">Import settings</span>
+            <span class="txt">Import Backup</span>
           </button>
           <button class="row" data-target="reset" @click=${this.onReset}>
             ${icon('reset')}
@@ -1280,10 +1298,37 @@ export class TarnPanel extends LitElement {
           </button>
         </div>
         <p class="note">
-          Export saves a .json file you can import later. Reset restores the
-          wallpaper, clock, widgets and tab icon. Neither turns Tarn on or off.
+          A backup is one .json file with your settings and what's in your
+          widgets. Reset restores the wallpaper, clock, widgets and tab icon.
+          None of these turns Tarn on or off.
         </p>
       </section>
+
+      ${
+        this.backups.length
+          ? html`<section data-target="previous">
+              <h2>Previous Setups</h2>
+              <div class="group">
+                ${this.backups.map(
+                  (backup, index) => html`
+                    <button
+                      class="row"
+                      @click=${() => void this.onRestoreAuto(index)}
+                    >
+                      ${icon('reset')}
+                      <span class="txt">${formatWhen(backup.created)}</span>
+                      <span class="value">Tarn ${backup.app}</span>
+                    </button>
+                  `,
+                )}
+              </div>
+              <p class="note">
+                Tarn keeps your setup from before each of its last updates.
+                Click one to go back to it.
+              </p>
+            </section>`
+          : nothing
+      }
 
       <section>
         <h2>settings.json</h2>
@@ -1708,35 +1753,38 @@ export class TarnPanel extends LitElement {
   }
 
   /**
-   * Replaces everything a backup holds. `enabled` is left alone: turning
-   * Tarn on or off goes through setTarnEnabled, never through a file.
+   * After a whole-setup change (import, reset, a restored backup): show the
+   * stored settings and mirror them for first paint. `enabled` never comes
+   * from a file; settings/store.ts keeps it.
    */
-  private replaceSettings(raw: unknown): void {
-    const next = normalizeSettings(raw);
-    const patch: Partial<Settings> = {
-      scene: next.scene,
-      tabIcon: next.tabIcon,
-      clock: next.clock,
-      widgets: next.widgets,
-    };
-    this.settings = {...this.settings, ...patch};
+  private async reloadSettings(): Promise<void> {
+    this.settings = await loadSettings();
     mirrorSettings(this.settings);
-    void saveSettings(patch);
+  }
+
+  /** Restores a backup with Undo; `previous` resolves to what it replaced. */
+  private async restoreWithUndo(
+    previous: Promise<TarnBackup | null>,
+    text: string,
+  ): Promise<void> {
+    const before = await previous;
+    await this.reloadSettings();
+    if (!before) return;
+    this.showToast(text, () => {
+      void restoreBackup(before).then(() => this.reloadSettings());
+    });
   }
 
   // Advanced ----------------------------------------------------------------
 
-  private exportSettings = () => {
-    const blob = new Blob([JSON.stringify(this.settings, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'tarn-settings.json';
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    this.showToast('Settings exported');
+  private exportSettings = async () => {
+    try {
+      await downloadBackup();
+      this.showToast('Backup saved');
+    } catch (error) {
+      console.error('Tarn: export failed', error);
+      this.showToast('The backup couldn’t be saved');
+    }
   };
 
   private pickImport = () => {
@@ -1748,12 +1796,14 @@ export class TarnPanel extends LitElement {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
+    let raw: unknown;
     try {
-      this.replaceSettings(JSON.parse(await file.text()));
-      this.showToast('Settings imported');
+      raw = JSON.parse(await file.text());
     } catch {
-      this.showToast('That file isn’t a Tarn settings file');
+      this.showToast('That file isn’t a Tarn backup');
+      return;
     }
+    await this.restoreWithUndo(restoreBackup(raw), 'Backup imported');
   };
 
   private onReset = () => {
@@ -1767,10 +1817,19 @@ export class TarnPanel extends LitElement {
     }
     clearTimeout(this.resetTimer);
     this.confirmReset = false;
-    const before = this.settings;
-    this.replaceSettings(DEFAULT_SETTINGS);
-    this.showToast('Reset to defaults', () => this.replaceSettings(before));
+    // Settings only: what's in your widgets stays, for Undo or a re-add.
+    void this.restoreWithUndo(
+      createBackup().then(async before => {
+        await replaceSettings(DEFAULT_SETTINGS);
+        return before;
+      }),
+      'Reset to defaults',
+    );
   };
+
+  private async onRestoreAuto(index: number): Promise<void> {
+    await this.restoreWithUndo(restoreAutoBackup(index), 'Setup restored');
+  }
 
   private onJsonInput = (event: Event) => {
     this.jsonDraft = (event.target as HTMLTextAreaElement).value;
@@ -1779,13 +1838,16 @@ export class TarnPanel extends LitElement {
 
   private applyJson = () => {
     if (this.jsonDraft === null) return;
+    let raw: unknown;
     try {
-      this.replaceSettings(JSON.parse(this.jsonDraft));
-      this.jsonDraft = null;
-      this.jsonStatus = 'Applied.';
+      raw = JSON.parse(this.jsonDraft);
     } catch (error) {
       this.jsonStatus = `Not valid JSON: ${(error as Error).message}`;
+      return;
     }
+    this.jsonDraft = null;
+    this.jsonStatus = 'Applied.';
+    void replaceSettings(raw).then(() => this.reloadSettings());
   };
 
   private copyDiagnostics = async () => {
@@ -1852,6 +1914,16 @@ const PAGE_TITLES: Record<Page, string> = {
   widgets: 'Widgets',
   advanced: 'Advanced',
 };
+
+/** "Oct 13, 21:40", in the user's own format. */
+function formatWhen(time: number): string {
+  return new Date(time).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 /** A wallpaper as a thumbnail draws it: a CSS background and its tone. */
 interface Art {
@@ -2014,12 +2086,12 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     words: 'keys hotkeys',
   },
   {
-    label: 'Export and import',
+    label: 'Back up and restore',
     where: 'Advanced',
     page: 'advanced',
     target: 'backup',
     glyph: 'share',
-    words: 'backup file save restore',
+    words: 'backup export import file save restore previous setup update',
   },
   {
     label: 'Reset to defaults',

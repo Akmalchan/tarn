@@ -32,7 +32,9 @@ Settings (home)
 Advanced
     ├── Tab icon                   (Chromium only)
     ├── Keyboard                   the shortcuts that exist
-    ├── Backup                     export, import, reset
+    ├── Backup                     export, import (a full backup: settings
+    │                              and widget content), reset
+    ├── Previous Setups            saved before each update; restore one
     ├── settings.json              view and edit the raw settings
     └── About                      version, copy diagnostics
 ```
