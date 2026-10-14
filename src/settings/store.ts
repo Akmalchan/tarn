@@ -6,6 +6,7 @@
 import {browser} from 'wxt/browser';
 import {SETTINGS_VERSION, migrateSettings, storedVersion} from './migrate';
 import {
+  DEFAULT_SETTINGS,
   WIDGET_ENTRY_FIELDS,
   WIDGET_ID,
   WIDGET_KINDS,
@@ -85,6 +86,28 @@ export function saveSettings(patch: Partial<Settings>): Promise<Settings> {
     await writeStored(written);
     return next;
   });
+}
+
+/** What Reset puts back: the look. Widgets, the language and on/off stay. */
+export const RESET_KEYS = [
+  'scene',
+  'tabIcon',
+  'clock',
+  'clockColor',
+  'search',
+  'weather',
+] as const satisfies readonly (keyof Settings)[];
+
+/**
+ * Reset (Settings, end of home): the wallpaper, clock, search box, weather
+ * and tab icon go back to a new install's. A patch, so the widgets, what's
+ * in them (bookmarks, notes), the language and anything a newer Tarn
+ * stored stay.
+ */
+export function resetSettings(): Promise<Settings> {
+  const patch: Partial<Record<keyof Settings, unknown>> = {};
+  for (const key of RESET_KEYS) patch[key] = DEFAULT_SETTINGS[key];
+  return saveSettings(patch as Partial<Settings>);
 }
 
 /**

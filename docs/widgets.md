@@ -777,8 +777,8 @@ Settings sync between computers that may run different Tarn versions:
   followed, and keeps unknown fields on known entries.
   (`protection.test.ts`: "keeps a newer widget right after the one it
   followed", "library items from a later Tarn survive this one".)
-- `replaceSettings` (Reset, Import, restores) writes the incoming setup as
-  is; backups carry every `widget.*` key, known kind or not.
+- `replaceSettings` (Import, restores) writes the incoming setup as
+  is; Reset never touches widgets (`resetSettings` patches only the look); backups carry every `widget.*` key, known kind or not.
 - Changing what a widget stores must still read every older shape (the
   Bookmarks model reads pre-folder arrays as is). Renaming or moving a
   stored settings value bumps `SETTINGS_VERSION` with a migration step and

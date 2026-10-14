@@ -38,8 +38,13 @@ The rules (pinned by `src/settings/protection.test.ts`):
   (`src/settings/migrate.ts`) with a migration step, plus the old shape
   as a fixture in "every past shape still loads". Never rename an id.
 - **Removed ids map forward** (`REPLACED_SCENES`).
-- **Reset, Import and restores** use `replaceSettings` (a full replace,
-  `enabled` kept).
+- **Import and restores** use `replaceSettings` (a full replace,
+  `enabled` kept). **Reset** is a patch (`resetSettings`, `RESET_KEYS` in
+  `store.ts`): wallpaper, tab icon, clock, clock color, search box and
+  weather go back to the defaults; the widgets, what's in them (bookmarks,
+  notes), the language and anything a newer Tarn stored stay (owner,
+  2026-10-14: "it won't be for bookmarks"). It saves a backup first, for
+  Undo.
 - **Each update saves a backup first** (settings plus widget content,
   last 3), shown in Advanced as Previous Setups. Export/Import use the
   same format (`format: 'tarn-backup'`).
@@ -93,16 +98,19 @@ Settings (home)
 ├── Search ›                       the search box: Show/Hide, Look, Voice,
 │                                  Google Lens, AI Mode (docs/search.md)
 ├── Language ›                     Same as browser + 10 languages
-├── Advanced ›                     always last
+├── Temperature units              Auto / °C / °F, right on home
+├── Advanced ›
+├── Reset Settings                 red, centered; asks first in a dialog
+│                                  (Cancel / Reset), then Undo
 └── Signature                      wordmark, "for <browser>", version,
                                    Privacy · Source code
 
 Advanced
     ├── Tab icon                   the browser's own / None / Your own image
-    ├── Weather                    provider (Open-Meteo or Google + key), units
+    ├── Weather                    provider (Open-Meteo or Google + key)
     ├── Keyboard                   "/" for search
     ├── Backup                     export, import (settings + widget
-    │                              content), reset
+    │                              content)
     ├── Previous Setups            saved before each update; restore one
     ├── settings.json              raw settings, development builds only
     ├── Example setups             five ready-made pages (up to 9 widgets),
@@ -130,8 +138,11 @@ Advanced
 5. **Search finds everything.** Every setting has an entry in
    `SEARCH_INDEX` with the page it lives on. Picking a result opens that
    page and highlights the row. `/` focuses search; Escape clears it. On
-   Wallpapers, Clock, Widgets and Language the field filters that page's
-   choices instead (`SCOPED_SEARCH`); the Search page has no field.
+   Wallpapers, Clock, Widgets, Language and Advanced the field filters
+   that page's choices or sections instead (`SCOPED_SEARCH`; Advanced
+   matches its `SEARCH_INDEX` entries, each with `words` in English and
+   `also`, the labels of its rows, in the current language); the Search
+   page has no field.
 6. **Changes are live.** No Save button. Removing a widget or resetting
    shows a toast with Undo.
 7. **The panel doesn't turn Tarn off.** The owner removed the "Use Tarn

@@ -72,8 +72,9 @@ same pull request** (map: `docs/README.md`).
   changes; values, widgets and fields this version doesn't know (a newer
   Tarn wrote them) are kept, just not shown. Renaming or moving a stored
   value bumps `SETTINGS_VERSION` with a migration step, plus the old shape
-  as a fixture in the "every past shape" test. Reset, Import and restores
-  use `replaceSettings` (a full replace, `enabled` kept). Each update first
+  as a fixture in the "every past shape" test. Import and restores
+  use `replaceSettings` (a full replace, `enabled` kept); Reset is a
+  patch of the look only (`resetSettings`), never widgets or their content. Each update first
   saves an automatic backup (settings plus widget content, last 3), and
   Export/Import carry the same backup format.
 
