@@ -17,6 +17,7 @@ export const ru: Catalog = {
   'widget.tasks': 'Задачи',
   'widget.focus': 'Таймер фокуса',
   'widget.weather': 'Погода',
+  'widget.calendar': 'Календарь',
   'board.hint':
     'Перетащите, чтобы переставить · потяните за угол, чтобы изменить размер',
   'board.movable': 'перемещаемый виджет',
@@ -88,6 +89,9 @@ export const ru: Catalog = {
   'weather.snow': 'Снег',
   'weather.storm': 'Гроза',
   'weather.wind': 'Ветрено',
+  'calendar.previous': 'Предыдущий месяц',
+  'calendar.next': 'Следующий месяц',
+  'calendar.today': 'Сегодня',
   'popup.newTab': 'Новая вкладка Tarn',
   'popup.on': 'Новые вкладки открывают Tarn.',
   'popup.off': 'Новые вкладки открывают стандартную страницу.',
@@ -177,6 +181,7 @@ export const ru: Catalog = {
   'panel.widgetAbout.notes': 'Заметка, которая остаётся на этом компьютере',
   'panel.widgetAbout.tasks': 'Короткий список дел',
   'panel.widgetAbout.weather': 'Сегодня и на неделю вперёд',
+  'panel.widgetAbout.calendar': 'Весь месяц с одного взгляда',
   'panel.widgetAbout.focus': 'Одна задача и таймер',
   'panel.language.auto': 'Как в браузере',
   'panel.language.note':

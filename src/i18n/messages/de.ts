@@ -17,6 +17,7 @@ export const de: Catalog = {
   'widget.tasks': 'Aufgaben',
   'widget.focus': 'Fokus-Timer',
   'widget.weather': 'Wetter',
+  'widget.calendar': 'Kalender',
   'board.hint':
     'Zum Anordnen ziehen · an einer Ecke ziehen, um die Größe zu ändern',
   'board.movable': 'verschiebbares Widget',
@@ -88,6 +89,9 @@ export const de: Catalog = {
   'weather.snow': 'Schnee',
   'weather.storm': 'Gewitter',
   'weather.wind': 'Windig',
+  'calendar.previous': 'Vorheriger Monat',
+  'calendar.next': 'Nächster Monat',
+  'calendar.today': 'Heute',
   'popup.newTab': 'Tarn als neuer Tab',
   'popup.on': 'Neue Tabs öffnen Tarn.',
   'popup.off': 'Neue Tabs öffnen die Standardseite.',
@@ -177,6 +181,7 @@ export const de: Catalog = {
   'panel.widgetAbout.notes': 'Eine Notiz, die auf diesem Computer bleibt',
   'panel.widgetAbout.tasks': 'Eine kurze To-do-Liste',
   'panel.widgetAbout.weather': 'Heute und die Woche',
+  'panel.widgetAbout.calendar': 'Dieser Monat auf einen Blick',
   'panel.widgetAbout.focus': 'Eine Aufgabe und ein Timer',
   'panel.language.auto': 'Wie der Browser',
   'panel.language.note':

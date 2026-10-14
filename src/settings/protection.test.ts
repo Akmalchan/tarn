@@ -34,7 +34,7 @@ const FROM_NEWER = {
   accent: {hue: 210},
   widgets: [
     {id: 'notes-a', kind: 'notes', size: 'm', pinned: true},
-    {id: 'calendar-b', kind: 'calendar', size: 'l'},
+    {id: 'journal-b', kind: 'journal', size: 'l'},
     {id: 'focus-c', kind: 'focus', size: 's'},
   ],
 };
@@ -69,7 +69,7 @@ describe('saving keeps what this version does not understand', () => {
     expect(widgets.map(w => w.id)).toEqual(['notes-a', 'focus-c']);
     await saveSettings({widgets: [...widgets].reverse()});
     const stored = (await storedSettings()).widgets as {id: string}[];
-    expect(stored.map(w => w.id)).toEqual(['focus-c', 'notes-a', 'calendar-b']);
+    expect(stored.map(w => w.id)).toEqual(['focus-c', 'notes-a', 'journal-b']);
   });
 
   it('keeps unknown fields on a widget, and drops a removed one', async () => {
@@ -83,7 +83,7 @@ describe('saving keeps what this version does not understand', () => {
     const stored = (await storedSettings()).widgets;
     expect(stored).toEqual([
       {id: 'notes-a', kind: 'notes', size: 'm', name: 'Ideas', pinned: true},
-      {id: 'calendar-b', kind: 'calendar', size: 'l'},
+      {id: 'journal-b', kind: 'journal', size: 'l'},
     ]);
   });
 

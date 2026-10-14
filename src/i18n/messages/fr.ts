@@ -17,6 +17,7 @@ export const fr: Catalog = {
   'widget.tasks': 'Tâches',
   'widget.focus': 'Minuteur',
   'widget.weather': 'Météo',
+  'widget.calendar': 'Calendrier',
   'board.hint':
     'Faites glisser pour réorganiser · tirez un coin pour redimensionner',
   'board.movable': 'widget déplaçable',
@@ -88,6 +89,9 @@ export const fr: Catalog = {
   'weather.snow': 'Neige',
   'weather.storm': 'Orage',
   'weather.wind': 'Venteux',
+  'calendar.previous': 'Mois précédent',
+  'calendar.next': 'Mois suivant',
+  'calendar.today': 'Aujourd’hui',
   'popup.newTab': 'Nouvel onglet Tarn',
   'popup.on': 'Les nouveaux onglets ouvrent Tarn.',
   'popup.off': 'Les nouveaux onglets ouvrent la page par défaut.',
@@ -177,6 +181,7 @@ export const fr: Catalog = {
   'panel.widgetAbout.notes': 'Une note qui reste sur cet ordinateur',
   'panel.widgetAbout.tasks': 'Une courte liste de tâches',
   'panel.widgetAbout.weather': 'Aujourd’hui et la semaine à venir',
+  'panel.widgetAbout.calendar': 'Ce mois-ci en un coup d’œil',
   'panel.widgetAbout.focus': 'Une tâche et un minuteur',
   'panel.language.auto': 'Comme le navigateur',
   'panel.language.note':

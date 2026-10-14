@@ -17,6 +17,7 @@ export const ja: Catalog = {
   'widget.tasks': 'タスク',
   'widget.focus': '集中タイマー',
   'widget.weather': '天気',
+  'widget.calendar': 'カレンダー',
   'board.hint': 'ドラッグして並べ替え・角をドラッグしてサイズ変更',
   'board.movable': '移動できるウィジェット',
   'board.position':
@@ -87,6 +88,9 @@ export const ja: Catalog = {
   'weather.snow': '雪',
   'weather.storm': '雷雨',
   'weather.wind': '強風',
+  'calendar.previous': '前の月',
+  'calendar.next': '次の月',
+  'calendar.today': '今日',
   'popup.newTab': 'Tarn の新しいタブ',
   'popup.on': '新しいタブで Tarn が開きます。',
   'popup.off': '新しいタブで標準のページが開きます。',
@@ -175,6 +179,7 @@ export const ja: Catalog = {
   'panel.widgetAbout.notes': 'このコンピュータに残るメモ',
   'panel.widgetAbout.tasks': '短いやることリスト',
   'panel.widgetAbout.weather': '今日と、この先 1 週間',
+  'panel.widgetAbout.calendar': '今月をひと目で',
   'panel.widgetAbout.focus': 'ひとつのタスクとタイマー',
   'panel.language.auto': 'ブラウザと同じ',
   'panel.language.note':

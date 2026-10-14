@@ -8,6 +8,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Calendar widget: today (small), this week (medium) or the month with
+  arrows (large), in your language and with your week start. Offline;
+  ready for calendar events later.
 - Resize widgets while settings is open: drag the corner grip and the
   widget snaps through the sizes it offers, with the others making room.
   Plus and minus keys do the same from the keyboard.

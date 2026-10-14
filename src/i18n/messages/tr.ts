@@ -17,6 +17,7 @@ export const tr: Catalog = {
   'widget.tasks': 'Görevler',
   'widget.focus': 'Odak zamanlayıcı',
   'widget.weather': 'Hava durumu',
+  'widget.calendar': 'Takvim',
   'board.hint':
     'Yeniden sıralamak için sürükleyin · boyutlandırmak için bir köşeyi sürükleyin',
   'board.movable': 'taşınabilir widget',
@@ -87,6 +88,9 @@ export const tr: Catalog = {
   'weather.snow': 'Kar',
   'weather.storm': 'Fırtına',
   'weather.wind': 'Rüzgârlı',
+  'calendar.previous': 'Önceki ay',
+  'calendar.next': 'Sonraki ay',
+  'calendar.today': 'Bugün',
   'popup.newTab': 'Tarn yeni sekme',
   'popup.on': "Yeni sekmeler Tarn'ı açar.",
   'popup.off': 'Yeni sekmeler varsayılan sayfayı açar.',
@@ -175,6 +179,7 @@ export const tr: Catalog = {
   'panel.widgetAbout.notes': 'Bu bilgisayarda kalan bir not',
   'panel.widgetAbout.tasks': 'Kısa bir yapılacaklar listesi',
   'panel.widgetAbout.weather': 'Bugün ve önümüzdeki hafta',
+  'panel.widgetAbout.calendar': 'Bu ay tek bakışta',
   'panel.widgetAbout.focus': 'Tek bir görev ve bir zamanlayıcı',
   'panel.language.auto': 'Tarayıcıyla aynı',
   'panel.language.note':

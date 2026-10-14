@@ -43,13 +43,15 @@ export const CLOCK_STYLES: readonly ClockStyle[] = [
   'none',
 ];
 
-export type WidgetKind = 'favorites' | 'notes' | 'tasks' | 'focus' | 'weather';
+export type WidgetKind =
+  'favorites' | 'notes' | 'tasks' | 'focus' | 'weather' | 'calendar';
 export const WIDGET_KINDS: readonly WidgetKind[] = [
   'favorites',
   'notes',
   'tasks',
   'focus',
   'weather',
+  'calendar',
 ];
 
 /** The sizes each widget offers: only those its content looks right at. */
@@ -61,6 +63,7 @@ export const WIDGET_SIZE_OPTIONS: Readonly<
   tasks: ['m', 'l', 'xl'],
   focus: ['s', 'm'],
   weather: ['s', 'm', 'l'],
+  calendar: ['s', 'm', 'l'],
 };
 
 /** Size when first added. */
@@ -70,6 +73,7 @@ export const DEFAULT_WIDGET_SIZE: Readonly<Record<WidgetKind, WidgetSize>> = {
   tasks: 'm',
   focus: 's',
   weather: 'm',
+  calendar: 'l',
 };
 
 /** `size` if the widget offers it, otherwise the nearest size it does. */
