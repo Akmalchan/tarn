@@ -172,6 +172,17 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /**
+ * Scenes that were replaced (2026-10-14), and the nearest of today's, so
+ * whoever picked one keeps a similar background instead of the default.
+ */
+const REPLACED_SCENES: Readonly<Record<string, string>> = {
+  rain: 'window',
+  nebula: 'comet',
+  dunes: 'sora',
+  mist: 'contour',
+};
+
+/**
  * Turns whatever is in storage (missing, old, hand-edited) into valid
  * settings. Unknown values fall back to defaults instead of throwing.
  */
@@ -179,10 +190,15 @@ export function normalizeSettings(raw: unknown): Settings {
   const value = migrateSettings(raw);
   // A user's photo (`photo:<id>`) is kept even if this device doesn't have
   // it; the background falls back to the default scene at render time.
-  const scene =
+  const wanted =
     typeof value.scene === 'string' &&
-    (SCENES.some(s => s.id === value.scene) || isPhotoId(value.scene))
-      ? value.scene
+    Object.hasOwn(REPLACED_SCENES, value.scene)
+      ? REPLACED_SCENES[value.scene]
+      : value.scene;
+  const scene =
+    typeof wanted === 'string' &&
+    (SCENES.some(s => s.id === wanted) || isPhotoId(wanted))
+      ? wanted
       : DEFAULT_SETTINGS.scene;
   const enabled =
     typeof value.enabled === 'boolean'

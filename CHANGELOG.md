@@ -8,8 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Four new backgrounds: Mist, Dunes, Rain and Nebula. Press 1–9 and 0 to
-  switch; Silk is brighter.
+- Eight new backgrounds: Sora (an anime summer sky), Sakura, Comet, Koi,
+  Window (rain at night), Fireflies, Lumen (light through haze) and
+  Contour (a living topographic map). They replace Mist, Dunes, Rain and
+  Nebula; whoever picked one gets its nearest new one. Silk is brighter.
 - A first look: a new install starts with the clock, Favorites, Notes,
   Weather and Focus, with a few examples to try.
 - Calendar widget: today (small), this week (medium) or the month with
