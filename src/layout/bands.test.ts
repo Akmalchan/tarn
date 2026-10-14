@@ -56,11 +56,18 @@ describe('layoutBands', () => {
     );
   });
 
-  it('grows a widget without a partner to fill its column', () => {
-    // Next to a large widget, a lone small or medium fills the band's height.
+  it('keeps a widget without a partner at its own size', () => {
+    // A lone small or medium beside a large one isn't stretched to the
+    // band's height: it keeps the size you chose, on a row of its own.
     const {placements} = layoutBands(items('l', 's', 'm'), 6);
-    expect(placements.find(p => p.id === 'w1')).toMatchObject({w: 1, h: 2});
-    expect(placements.find(p => p.id === 'w2')).toMatchObject({w: 2, h: 2});
+    expect(placements.find(p => p.id === 'w1')).toMatchObject({w: 1, h: 1});
+    expect(placements.find(p => p.id === 'w2')).toMatchObject({w: 2, h: 1});
+    const lone = layoutBands(items('l', 's', 'l'), 6);
+    expect(lone.placements.find(p => p.id === 'w1')).toMatchObject({
+      band: 1,
+      w: 1,
+      h: 1,
+    });
   });
 
   it('lays smalls side by side when stacking would leave a gap', () => {

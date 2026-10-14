@@ -22,7 +22,10 @@ Open it full screen and resize the window.
      for example a small and a medium on top, a medium and a small below.
      Or they stack in pairs (two smalls, or two mediums), whichever keeps
      every widget at its own size and your order best.
-   - A small or medium with no partner grows to fill the space.
+   - A small or medium with no partner keeps the size you chose, on a row
+     of its own (one tile tall), instead of being stretched. It grows to fill
+     the space only when keeping its size would leave a hole (owner,
+     2026-10-13: "I can't make it 1x1").
    - A row of only smalls and mediums that would leave empty space (for
      example two stacked smalls in a narrow window) lies flat instead: side
      by side in a row one tile tall, each at its own size.

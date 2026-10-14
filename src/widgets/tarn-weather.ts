@@ -339,6 +339,54 @@ export class TarnWeather extends LitElement {
         }
       }
 
+      /* Small and stretched to two rows (beside a large tile): now on
+         top, then the next hours as a short list, nothing squeezed. */
+      @container (max-width: 200px) and (min-height: 250px) {
+        .body {
+          gap: 14px;
+        }
+        .now {
+          height: auto;
+          grid-template-rows: auto auto auto;
+          row-gap: 2px;
+        }
+        .temp {
+          align-self: start;
+          font-size: 48px;
+        }
+        .hours {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+          font-size: 13px;
+        }
+        .hour {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+        .hour .icon {
+          width: 18px;
+          height: 18px;
+        }
+        .hour > :last-child {
+          min-width: 2.4em;
+          text-align: end;
+        }
+        .hours .hour:nth-child(n + 5) {
+          display: flex;
+        }
+        .hours .hour:nth-child(n + 7) {
+          display: none;
+        }
+        .days {
+          display: none;
+        }
+        .credit {
+          display: block;
+          font-size: 9px;
+        }
+      }
+
       /* The picker. */
       .search-results {
         display: flex;

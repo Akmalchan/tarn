@@ -150,8 +150,8 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
 - A widget is its own custom element (code, styles, storage by `widgetId`)
   plus one entry in `widgets/registry.ts`.
   Each kind offers only the sizes its content looks right at
-  (`WIDGET_SIZE_OPTIONS` in `settings/schema.ts`: Focus S/M; Notes and
-  Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
+  (`WIDGET_SIZE_OPTIONS` in `settings/schema.ts`: Focus S/M; Weather
+  S/M/L; Notes and Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
   one. A widget marked `editable` (Favorites) stays live in edit mode and
   shows its own controls (add and remove sites) there, marked `data-edit` so
   pressing them doesn't start a drag; its links are off meanwhile.
@@ -174,7 +174,11 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   Widget contents are `inert` meanwhile.
 
 - `layout/bands.ts` places widgets (pure function, ~12 µs for 9 widgets,
-  ~42 µs for 30; columns are always 2, 4 or 6);
+  ~42 µs for 30; columns are always 2, 4 or 6). Its order of priorities:
+  no holes (only the last band may be short), then the sizes the user
+  chose (a small or medium is stretched to fill a two-row band only when
+  keeping its size would leave a hole; otherwise it lies flat on a row of
+  its own, owner 2026-10-13), then the fewest bands, then the user's order;
   `widgets/tarn-board.ts` positions tiles with transforms and animates moves
   with FLIP (transform and opacity only).
 - Nothing runs while idle: the board recalculates only when widgets change
