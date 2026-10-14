@@ -203,6 +203,12 @@ export const en = {
   'panel.face.glass': 'Glass',
   'panel.face.rounded': 'Rounded',
   'panel.face.analog': 'Analog',
+  'panel.face.flip': 'Flip',
+  'panel.face.nixie': 'Nixie',
+  'panel.face.lcd': 'LCD',
+  'panel.face.neon': 'Neon',
+  'panel.face.fraktur': 'Fraktur',
+  'panel.face.gotisch': 'Gotisch',
   'panel.face.none': 'None',
   'panel.face.off': 'Off',
 

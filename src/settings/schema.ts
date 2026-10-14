@@ -35,6 +35,12 @@ export type ClockStyle =
   | 'pixel'
   | 'glass'
   | 'rounded'
+  | 'flip'
+  | 'nixie'
+  | 'lcd'
+  | 'neon'
+  | 'fraktur'
+  | 'gotisch'
   | 'analog'
   | 'none';
 /** In the order settings shows them. */
@@ -48,6 +54,12 @@ export const CLOCK_STYLES: readonly ClockStyle[] = [
   'stacked',
   'outline',
   'pixel',
+  'flip',
+  'nixie',
+  'lcd',
+  'neon',
+  'fraktur',
+  'gotisch',
   'analog',
   'none',
 ];
