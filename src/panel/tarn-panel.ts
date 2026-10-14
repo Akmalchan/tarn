@@ -707,7 +707,6 @@ export class TarnPanel extends LitElement {
       background: var(--field);
     }
 
-    /* Widgets to add: cards that look like something to pick up. */
     .lead {
       margin: -4px var(--row-x) 4px;
       font-size: var(--desc);
@@ -715,104 +714,26 @@ export class TarnPanel extends LitElement {
       color: var(--muted);
     }
 
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .card {
-      position: relative;
-      display: grid;
-      grid-template-columns: auto 1fr;
-      grid-template-rows: auto auto;
-      align-content: start;
-      column-gap: 10px;
-      row-gap: 2px;
-      min-width: 0;
-      padding: 12px 12px 12px 12px;
-      font: inherit;
-      color: var(--ink);
-      text-align: left;
-      background: var(--group);
-      border: 0;
-      border-radius: 14px;
-      box-shadow:
-        inset 0 0 0 0.5px var(--hair),
-        0 1px 2px rgb(0 0 0 / 0.04);
+    /* A widget to add: a row that can be picked up. */
+    .add-row {
       cursor: grab;
-      transition:
-        transform 150ms ease,
-        box-shadow 150ms ease,
-        opacity 150ms ease;
     }
 
-    .card:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow:
-        inset 0 0 0 0.5px var(--hair),
-        0 6px 16px rgb(0 0 0 / 0.1);
-    }
-
-    .card:active:not(:disabled) {
+    .add-row:active:not(:disabled) {
       cursor: grabbing;
-      transform: scale(0.98);
     }
 
-    .card.dragging {
+    .add-row.dragging {
       opacity: 0.4;
     }
 
-    .card:disabled {
-      cursor: default;
-      opacity: 0.45;
-    }
-
-    .card-icon {
-      grid-row: span 2;
-      display: grid;
-      place-items: center;
-      width: 34px;
-      height: 34px;
-      color: var(--tile-ink);
-      background: var(--tile);
-      border-radius: 9px;
-    }
-
-    .card-icon svg {
-      width: 19px;
-      height: 19px;
-      fill: currentColor;
-    }
-
-    .card-name {
-      padding-right: 14px;
-      overflow: hidden;
-      font-size: var(--title);
-      font-weight: 600;
-      line-height: var(--title-lh);
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .card-about {
-      display: -webkit-box;
-      overflow: hidden;
-      font-size: 11.5px;
-      line-height: 15px;
-      color: var(--muted);
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-    }
-
-    .grip {
-      position: absolute;
-      top: 12px;
-      right: 9px;
+    .add-row .grip {
+      flex: none;
       width: 7px;
       height: 11px;
+      margin-left: auto;
       fill: var(--muted);
-      opacity: 0.7;
+      opacity: 0.6;
     }
 
     /* A wallpaper playing inside its card (scene-live.ts). */
@@ -1513,7 +1434,7 @@ export class TarnPanel extends LitElement {
           ? html`<section>
               <h2>${t('panel.widgets.add')}</h2>
               <p class="lead">${t('panel.widgets.addHint')}</p>
-              <div class="cards">
+              <div class="group">
                 ${kinds.map(kind => this.widgetCard(kind, full))}
               </div>
               ${
@@ -1538,13 +1459,13 @@ export class TarnPanel extends LitElement {
   }
 
   /**
-   * A widget to add: a card that looks like something to pick up. Drag it
-   * onto the page to place it there, or click to add it at the end.
+   * A widget to add, as a row: drag it onto the page to place it there
+   * (the grip and the grab cursor say so), or click to add it at the end.
    */
   private widgetCard(kind: WidgetKind, full: boolean) {
     return html`
       <button
-        class="card"
+        class="row add-row"
         ?disabled=${full}
         draggable=${full ? 'false' : 'true'}
         title=${t('panel.widgets.addHint')}
@@ -1553,9 +1474,11 @@ export class TarnPanel extends LitElement {
         @dragend=${(event: DragEvent) =>
           (event.currentTarget as HTMLElement).classList.remove('dragging')}
       >
-        <span class="card-icon">${glyph(KIND_GLYPHS[kind])}</span>
-        <span class="card-name">${t(KIND_NAMES[kind])}</span>
-        <span class="card-about">${t(KIND_NOTES[kind])}</span>
+        ${icon(KIND_GLYPHS[kind])}
+        <span class="txt"
+          >${t(KIND_NAMES[kind])}
+          <span class="sub">${t(KIND_NOTES[kind])}</span></span
+        >
         <svg class="grip" viewBox="0 0 10 16" aria-hidden="true">
           <circle cx="3" cy="3" r="1.3" />
           <circle cx="7" cy="3" r="1.3" />
@@ -1563,6 +1486,9 @@ export class TarnPanel extends LitElement {
           <circle cx="7" cy="8" r="1.3" />
           <circle cx="3" cy="13" r="1.3" />
           <circle cx="7" cy="13" r="1.3" />
+        </svg>
+        <svg class="action" viewBox="0 0 24 24" aria-hidden="true">
+          ${GLYPHS.plus}
         </svg>
       </button>
     `;

@@ -11,7 +11,7 @@ follow [Semantic Versioning](https://semver.org/).
 - Settings, polished: search on Widgets and Language filters that page
   ("german" finds Deutsch); wallpaper cards show a gauge of how much each
   asks of your computer, and play the real animation while you hover;
-  widgets to add are cards you can drag onto your page; example setups
+  widgets to add show a grip and can be dragged onto your page; example setups
   (up to nine widgets, with Undo) for everyone; your own image as the tab
   icon, and the browser option says which browser it is.
 - Weather: "Change place" right on the tile while settings is open.
