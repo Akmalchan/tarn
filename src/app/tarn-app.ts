@@ -228,7 +228,14 @@ export class TarnApp extends LitElement {
     return html`
       <div class="page" @scroll=${this.onScroll}>
         <div class="group" ?data-in-place=${this.resumed}>
-          ${clock === 'none' ? nothing : html`<tarn-clock face=${clock}></tarn-clock>`}
+          ${
+            clock === 'none'
+              ? nothing
+              : html`<tarn-clock
+                  face=${clock}
+                  .weather=${this.settings.weather.clock}
+                ></tarn-clock>`
+          }
           ${
             widgets.length
               ? html`<tarn-board

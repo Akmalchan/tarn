@@ -23,6 +23,8 @@ import {
   DEFAULT_WIDGET_SIZE,
   MAX_WIDGETS,
   TAB_ICONS,
+  WEATHER_PROVIDERS,
+  WEATHER_UNITS,
   WIDGET_KINDS,
   WIDGET_SIZE_OPTIONS,
   newWidgetId,
@@ -30,8 +32,11 @@ import {
   type Settings,
   type TabIcon,
   type WidgetEntry,
+  type WeatherProvider,
+  type WeatherUnits,
   type WidgetKind,
 } from '../settings/schema';
+import {getGoogleKey, setGoogleKey} from '../weather/config';
 import {
   autoBackups,
   createBackup,
@@ -49,7 +54,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
-import {clockTime} from '../widgets/clock-faces';
+import {clockShowsWeather, clockTime} from '../widgets/clock-faces';
 import {
   addWallpaper,
   deleteWallpaper,
@@ -91,6 +96,7 @@ export class TarnPanel extends LitElement {
     confirmReset: {state: true},
     photos: {state: true},
     backups: {state: true},
+    googleKey: {state: true},
   };
 
   static override styles = css`
@@ -426,6 +432,20 @@ export class TarnPanel extends LitElement {
       width: 13px;
       height: 13px;
       fill: var(--muted);
+    }
+
+    /* The API key field: right-aligned, like a value. */
+    .key {
+      flex: 0 1 150px;
+      min-width: 0;
+      padding: 4px 8px;
+      font: inherit;
+      color: var(--ink);
+      text-align: right;
+      background: var(--field);
+      border: 0;
+      border-radius: 6px;
+      outline: none;
     }
 
     /* A widget's name: plain text until clicked, then a field. */
@@ -906,6 +926,8 @@ export class TarnPanel extends LitElement {
   declare photos: WallpaperInfo[];
   /** Setups Tarn saved before each update, newest first (settings/backup.ts). */
   declare backups: AutoBackupInfo[];
+  /** The Google Weather API key, from storage.local (never synced). */
+  declare googleKey: string;
   /** Object URLs of the photos' thumbnails, by id. */
   private photoUrls = new Map<string, string>();
 
@@ -929,6 +951,7 @@ export class TarnPanel extends LitElement {
     this.confirmReset = false;
     this.photos = [];
     this.backups = [];
+    this.googleKey = '';
   }
 
   override connectedCallback(): void {
@@ -944,6 +967,7 @@ export class TarnPanel extends LitElement {
     window.addEventListener('storage', this.onStorage);
     void this.loadPhotos();
     void autoBackups().then(list => (this.backups = list));
+    void getGoogleKey().then(key => (this.googleKey = key));
   }
 
   override disconnectedCallback(): void {
@@ -1076,6 +1100,7 @@ export class TarnPanel extends LitElement {
             ${showAll(preview.art)} Show All
           </button>
         </div>
+        ${this.clockWeatherRow()}
       </section>
 
       <div class="group">
@@ -1255,6 +1280,7 @@ export class TarnPanel extends LitElement {
               </p>
             </section>`
       }
+      ${this.renderWeather()}
 
       <section>
         <h2>Keyboard</h2>
@@ -1379,6 +1405,113 @@ export class TarnPanel extends LitElement {
             </div>`
           : nothing
       }
+    `;
+  }
+
+  /**
+   * "Show weather" beside the clock's date. Stays in place, disabled, for
+   * faces with no room for it, so the list doesn't jump while picking.
+   */
+  private clockWeatherRow() {
+    const {clock} = this.settings;
+    const fits = clockShowsWeather(clock);
+    const on = this.settings.weather.clock;
+    return html`
+      <div class="group">
+        <div class="row" data-target="clock-weather">
+          ${icon('weather')}
+          <span class="txt">Show weather</span>
+          <button
+            class="sw"
+            role="switch"
+            aria-label="Show weather beside the clock"
+            aria-checked=${on && fits}
+            ?disabled=${!fits}
+            @click=${() => this.setWeather({clock: !on})}
+          ></button>
+        </div>
+      </div>
+      ${
+        fits
+          ? nothing
+          : html`<p class="note">
+              Not shown with the ${FACE_NAMES[clock]} face.
+            </p>`
+      }
+    `;
+  }
+
+  /**
+   * Weather: who to ask and in which units. Nothing is fetched until a
+   * Weather widget is added and given a place (src/weather/).
+   */
+  private renderWeather() {
+    const {provider, units} = this.settings.weather;
+    const google = provider === 'google';
+    return html`
+      <section data-target="weather">
+        <h2>Weather</h2>
+        <div class="group">
+          <div class="row">
+            ${icon('weather')}
+            <span class="txt">Provider</span>
+            <span class="seg" role="radiogroup" aria-label="Weather provider">
+              ${WEATHER_PROVIDERS.map(
+                value => html`
+                  <button
+                    role="radio"
+                    aria-checked=${value === provider}
+                    @click=${() => this.setWeather({provider: value})}
+                  >
+                    ${PROVIDER_NAMES[value]}
+                  </button>
+                `,
+              )}
+            </span>
+          </div>
+          ${
+            google
+              ? html`<label class="row">
+                  ${icon('key')}
+                  <span class="txt">API Key</span>
+                  <input
+                    class="key"
+                    type="password"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="Paste key"
+                    .value=${this.googleKey}
+                    @change=${this.onGoogleKey}
+                  />
+                </label>`
+              : nothing
+          }
+          <div class="row">
+            ${icon('thermometer')}
+            <span class="txt">Units</span>
+            <span class="seg" role="radiogroup" aria-label="Temperature units">
+              ${WEATHER_UNITS.map(
+                value => html`
+                  <button
+                    role="radio"
+                    aria-checked=${value === units}
+                    @click=${() => this.setWeather({units: value})}
+                  >
+                    ${UNIT_NAMES[value]}
+                  </button>
+                `,
+              )}
+            </span>
+          </div>
+        </div>
+        <p class="note">
+          ${
+            google
+              ? 'Requests are billed to your key’s Google Cloud project, which needs the Weather API turned on. The key stays on this computer.'
+              : 'Free, no key needed. Weather is only fetched for Weather widgets you add, about every 30 minutes while a tab is open.'
+          }
+        </p>
+      </section>
     `;
   }
 
@@ -1827,6 +1960,23 @@ export class TarnPanel extends LitElement {
     );
   };
 
+  private setWeather(
+    patch: Partial<{
+      provider: WeatherProvider;
+      units: WeatherUnits;
+      clock: boolean;
+    }>,
+  ): void {
+    this.applyPatch({weather: {...this.settings.weather, ...patch}});
+  }
+
+  private onGoogleKey = async (event: Event) => {
+    const key = (event.target as HTMLInputElement).value.trim();
+    await setGoogleKey(key);
+    this.googleKey = key;
+    this.showToast(key ? 'API key saved' : 'API key removed');
+  };
+
   private async onRestoreAuto(index: number): Promise<void> {
     await this.restoreWithUndo(restoreAutoBackup(index), 'Setup restored');
   }
@@ -2005,6 +2155,7 @@ const KIND_NAMES: Record<WidgetKind, string> = {
   favorites: 'Favorites',
   notes: 'Notes',
   tasks: 'Tasks',
+  weather: 'Weather',
   focus: 'Focus timer',
 };
 
@@ -2012,6 +2163,7 @@ const KIND_NOTES: Record<WidgetKind, string> = {
   favorites: 'Your sites, one click away',
   notes: 'A note that stays on this computer',
   tasks: 'A short to-do list',
+  weather: 'Today and the week ahead',
   focus: 'One task and a timer',
 };
 
@@ -2019,7 +2171,19 @@ const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
   favorites: 'star',
   notes: 'note',
   tasks: 'checklist',
+  weather: 'weather',
   focus: 'timer',
+};
+
+const PROVIDER_NAMES: Record<WeatherProvider, string> = {
+  'open-meteo': 'Open-Meteo',
+  google: 'Google',
+};
+
+const UNIT_NAMES: Record<WeatherUnits, string> = {
+  auto: 'Auto',
+  celsius: '°C',
+  fahrenheit: '°F',
 };
 
 const SIZE_NAMES: Record<WidgetSize, string> = {
@@ -2055,7 +2219,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide',
+      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide weather temperature',
   },
   {
     label: 'Widgets',
@@ -2077,6 +2241,15 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
           words: 'favicon chrome none',
         },
       ]),
+  {
+    label: 'Weather',
+    where: 'Advanced',
+    page: 'advanced',
+    target: 'weather',
+    glyph: 'weather',
+    words:
+      'forecast temperature celsius fahrenheit provider google open-meteo api key',
+  },
   {
     label: 'Keyboard shortcuts',
     where: 'Advanced',
