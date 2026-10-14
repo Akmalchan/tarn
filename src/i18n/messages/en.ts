@@ -26,16 +26,17 @@ export const en = {
   'widget.weather': 'Weather',
 
   // Arranging widgets (settings open)
-  'board.hint': 'Drag to rearrange',
+  'board.hint': 'Drag to rearrange · drag a corner to resize',
   'board.movable': 'movable widget',
   'board.position':
-    '{name}, {index} of {count}. Drag, or use the arrow keys, to move it.',
+    '{name}, {index} of {count}. Drag, or use the arrow keys, to move it; plus and minus change its size.',
   'board.moved': '{name} moved to {position} of {count}.',
   'board.removed': '{name} removed.',
   'board.name': 'Name',
   'board.rename': 'Rename',
   'board.removeWidget': 'Remove {name}',
   'board.confirmRemove': 'Confirm removing {name}',
+  'board.resized': 'Size of {name}: {size}.',
 
   // Notes
   'notes.placeholder': 'Write something…',

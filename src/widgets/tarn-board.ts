@@ -1,3 +1,15 @@
+/** A tile being resized from its corner grip. */
+interface Resize {
+  id: string;
+  tile: HTMLElement;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  /** The size when the grip was picked up, and the one shown now. */
+  from: WidgetSize;
+  size: WidgetSize;
+}
+
 /**
  * Copyright 2026 The Tarn Authors
  * SPDX-License-Identifier: Apache-2.0
@@ -13,8 +25,8 @@ import {
 } from 'lit';
 import {live} from 'lit/directives/live.js';
 import {repeat} from 'lit/directives/repeat.js';
-import {MAX_COLUMNS, columnsFor} from '../layout/bands';
-import type {WidgetEntry} from '../settings/schema';
+import {MAX_COLUMNS, SPAN, columnsFor, type WidgetSize} from '../layout/bands';
+import {WIDGET_SIZE_OPTIONS, type WidgetEntry} from '../settings/schema';
 import {CELL, GAP, PITCH, moveTo, nearestOrder, placeTiles} from './geometry';
 import {WIDGETS, renderWidget} from './registry';
 import {LocaleController, t} from '../i18n';
@@ -215,6 +227,43 @@ export class TarnBoard extends LitElement {
       background: rgb(214 64 69 / 0.92);
     }
 
+    /* Arranging: a corner grip resizes the tile, snapping to its sizes. */
+    .grip {
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      color: var(--ink);
+      opacity: 0.45;
+      cursor: nwse-resize;
+      touch-action: none;
+      transition: opacity 150ms ease;
+    }
+
+    .grip svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+    }
+
+    .tile:hover .grip,
+    .tile:focus-visible .grip,
+    :host([resizing]) .grip {
+      opacity: 0.9;
+    }
+
+    :host([resizing]),
+    :host([resizing]) .tile {
+      cursor: nwse-resize;
+    }
+
     @keyframes holder-in {
       from {
         opacity: 0;
@@ -325,6 +374,7 @@ export class TarnBoard extends LitElement {
   private appearedAt = 0;
   private reporting = 0;
   private drag: Drag | null = null;
+  private resizing: Resize | null = null;
   private reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
   constructor() {
@@ -368,6 +418,7 @@ export class TarnBoard extends LitElement {
     cancelAnimationFrame(this.reporting);
     this.reporting = 0;
     this.endDrag(false);
+    this.endResize(false);
     this.dispatchTiles([], 0);
   }
 
@@ -398,7 +449,10 @@ export class TarnBoard extends LitElement {
   override willUpdate(changed: PropertyValues<this>): void {
     // A saved order arrived: the preview has done its job.
     if (changed.has('widgets')) this.preview = null;
-    if (changed.has('editing') && !this.editing) this.endDrag(false);
+    if (changed.has('editing') && !this.editing) {
+      this.endDrag(false);
+      this.endResize(false);
+    }
     // FLIP, first: where each tile is before the change.
     if (
       changed.has('widgets') ||
@@ -458,6 +512,14 @@ export class TarnBoard extends LitElement {
               @keydown=${this.onTileKey}
             >
               ${this.editing ? this.holder(widget, name) : nothing}
+              ${
+                this.editing
+                  ? html`<span class="grip" data-resize aria-hidden="true"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M19 9a10 10 0 0 1-10 10" /></svg
+                    ></span>`
+                  : nothing
+              }
               <div
                 class="content"
                 ?inert=${this.editing && !WIDGETS[widget.kind]?.editable}
@@ -540,6 +602,7 @@ export class TarnBoard extends LitElement {
       this.report();
       const moving =
         this.drag !== null ||
+        this.resizing !== null ||
         performance.now() - this.appearedAt < APPEAR_MS ||
         [...this.renderRoot.querySelectorAll('.tile')].some(
           tile => tile.getAnimations().length > 0,
@@ -553,8 +616,14 @@ export class TarnBoard extends LitElement {
   // ---- Arranging --------------------------------------------------------
 
   private onPointerDown = (event: PointerEvent) => {
-    if (!this.editing || event.button !== 0 || this.drag) return;
+    if (!this.editing || event.button !== 0 || this.drag || this.resizing) {
+      return;
+    }
     if (fromEditControl(event)) return;
+    if (fromGrip(event)) {
+      this.startResize(event);
+      return;
+    }
     const tile = event.currentTarget as HTMLElement;
     const box = tile.getBoundingClientRect();
     const board = this.getBoundingClientRect();
@@ -673,6 +742,17 @@ export class TarnBoard extends LitElement {
   private onTileKey = (event: KeyboardEvent) => {
     if (!this.editing || this.drag || fromEditControl(event)) return;
     const id = (event.currentTarget as HTMLElement).dataset.id!;
+    const step =
+      event.key === '+' || event.key === '='
+        ? 1
+        : event.key === '-' || event.key === '_'
+          ? -1
+          : 0;
+    if (step) {
+      event.preventDefault();
+      this.stepSize(id, step);
+      return;
+    }
     const list = this.preview ?? [...this.widgets];
     const index = list.findIndex(w => w.id === id);
     const target =
@@ -692,6 +772,100 @@ export class TarnBoard extends LitElement {
     this.preview = next;
     this.commit(next, id);
   };
+
+  // ---- Resizing -----------------------------------------------------------
+  // Sizes are whole cells (1x1, 2x1, 2x2, 4x2) and each widget offers a few,
+  // so the corner snaps from one to the next as the pointer travels; the
+  // layout reflows (and animates) only when the size actually changes.
+
+  private startResize(event: PointerEvent): void {
+    const tile = event.currentTarget as HTMLElement;
+    const widget = this.widgets.find(w => w.id === tile.dataset.id);
+    if (!widget) return;
+    this.resizing = {
+      id: widget.id,
+      tile,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      from: widget.size,
+      size: widget.size,
+    };
+    tile.setPointerCapture(event.pointerId);
+    tile.addEventListener('pointermove', this.onResizeMove);
+    tile.addEventListener('pointerup', this.onResizeUp);
+    tile.addEventListener('pointercancel', this.onResizeCancel);
+    window.addEventListener('keydown', this.onResizeKey);
+    this.toggleAttribute('resizing', true);
+    event.preventDefault();
+  }
+
+  private onResizeMove = (event: PointerEvent) => {
+    const resize = this.resizing;
+    if (!resize || event.pointerId !== resize.pointerId) return;
+    const widget = this.widgets.find(w => w.id === resize.id);
+    if (!widget) return;
+    const [columns, rows] = SPAN[resize.from];
+    const size = nearestSize(
+      widget,
+      columns + (event.clientX - resize.startX) / PITCH,
+      rows + (event.clientY - resize.startY) / PITCH,
+    );
+    if (size === resize.size) return;
+    resize.size = size;
+    this.preview = this.widgets.map(w =>
+      w.id === resize.id ? {...w, size} : w,
+    );
+  };
+
+  private onResizeUp = (event: PointerEvent) => {
+    if (this.resizing?.pointerId === event.pointerId) this.endResize(true);
+  };
+
+  private onResizeCancel = () => this.endResize(false);
+
+  private onResizeKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') this.endResize(false);
+  };
+
+  private endResize(commit: boolean): void {
+    const resize = this.resizing;
+    if (!resize) return;
+    const {tile, pointerId} = resize;
+    tile.removeEventListener('pointermove', this.onResizeMove);
+    tile.removeEventListener('pointerup', this.onResizeUp);
+    tile.removeEventListener('pointercancel', this.onResizeCancel);
+    window.removeEventListener('keydown', this.onResizeKey);
+    if (tile.hasPointerCapture(pointerId))
+      tile.releasePointerCapture(pointerId);
+    this.resizing = null;
+    this.toggleAttribute('resizing', false);
+    if (!commit || resize.size === resize.from) {
+      this.preview = null;
+      return;
+    }
+    this.commitSize(resize.id, resize.size);
+  }
+
+  /** + and - on a focused tile: the next size up or down it offers. */
+  private stepSize(id: string, step: number): void {
+    const widget = this.widgets.find(w => w.id === id);
+    if (!widget) return;
+    const options = WIDGET_SIZE_OPTIONS[widget.kind];
+    const next = options[options.indexOf(widget.size) + step];
+    if (next) this.commitSize(id, next);
+  }
+
+  private commitSize(id: string, size: WidgetSize): void {
+    const list = this.widgets.map(w => (w.id === id ? {...w, size} : w));
+    this.preview = list;
+    const widget = list.find(w => w.id === id)!;
+    this.announcement = t('board.resized', {
+      name: widgetName(widget),
+      size: t(`panel.size.${size}`),
+    });
+    this.save(list);
+  }
 
   private holder(widget: WidgetEntry, name: string) {
     const confirming = this.confirming === widget.id;
@@ -837,6 +1011,35 @@ function widgetName(widget: WidgetEntry): string {
 function defaultName(widget: WidgetEntry): string {
   const definition = WIDGETS[widget.kind];
   return definition ? t(definition.nameKey) : widget.kind;
+}
+
+/**
+ * The size a widget offers closest to a span of `columns` x `rows` cells
+ * (fractional while the pointer is between cells).
+ */
+function nearestSize(
+  widget: WidgetEntry,
+  columns: number,
+  rows: number,
+): WidgetSize {
+  let best = widget.size;
+  let bestDistance = Infinity;
+  for (const size of WIDGET_SIZE_OPTIONS[widget.kind]) {
+    const [w, h] = SPAN[size];
+    const distance = (w - columns) ** 2 + (h - rows) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = size;
+    }
+  }
+  return best;
+}
+
+/** Whether an event started on a tile's corner grip. */
+function fromGrip(event: Event): boolean {
+  return event
+    .composedPath()
+    .some(node => node instanceof HTMLElement && 'resize' in node.dataset);
 }
 
 /** Whether an event started on a widget's own control (`data-edit`). */

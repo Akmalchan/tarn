@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Resize widgets while settings is open: drag the corner grip and the
+  widget snaps through the sizes it offers, with the others making room.
+  Plus and minus keys do the same from the keyboard.
+- Tasks: add from a + beside the title, so a small tile shows more tasks.
 - Ten languages: English, Español, Português (Brasil), Français, Deutsch,
   Русский, 日本語, 简体中文, 한국어 and Türkçe. Tarn follows the browser's
   language, or pick one in Settings > Language. Dates, times and the store
