@@ -83,7 +83,7 @@ Settings (home)
 ├── Wallpaper                      3 scenes + "Show All"
 │   └── Wallpapers                 Add Photo…, Your Photos, the live scenes
 │                                  (name on the left, a load gauge on the
-│                                  right; hovering plays the scene)
+│                                  right; still thumbnails)
 ├── Clock                          a card: Classic, Minimal, None + "Show All"
 │   └── Clock                      every face (docs/clocks.md)
 ├── Widgets ›                      on your tab (size, rename, remove), then
@@ -259,7 +259,6 @@ and tone. A small index of colors and sizes is mirrored to localStorage
 - `src/settings/backup.ts`: export/import, automatic backups.
 - `src/settings/enabled.ts`: on/off (toolbar button, hand-off).
 - `src/app/mirror.ts`: the first-paint mirror of settings.
-- `src/panel/tarn-panel.ts`: the panel; `src/panel/scene-live.ts`: hover
-  previews.
+- `src/panel/tarn-panel.ts`: the panel.
 - `src/ui/glyphs.ts`: the panel's icons.
 - `src/i18n/`: languages and catalogs.

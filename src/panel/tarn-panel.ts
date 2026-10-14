@@ -19,7 +19,6 @@ import {
 } from '../backdrop/scenes';
 import {loadLevel, type LoadLevel} from '../backdrop/scenes/load';
 import type {Scene} from '../backdrop/scenes/types';
-import {ScenePlayer} from './scene-live';
 import type {WidgetSize} from '../layout/bands';
 import {
   CLOCK_STYLES,
@@ -750,24 +749,6 @@ export class TarnPanel extends LitElement {
       opacity: 0.6;
     }
 
-    /* A wallpaper playing inside its card (scene-live.ts). */
-    .thumb {
-      position: relative;
-    }
-
-    .thumb canvas.live {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      transition: opacity 220ms ease;
-    }
-
-    .thumb canvas.live.shown {
-      opacity: 1;
-    }
-
     .thumb {
       display: grid;
       place-content: center;
@@ -1046,7 +1027,6 @@ export class TarnPanel extends LitElement {
   /** The user's own tab icon on this computer, if any (a data URL). */
   declare customTabIcon: string | null;
   /** Plays a wallpaper inside its card while the pointer rests on it. */
-  private player = new ScenePlayer();
   declare page: Page;
   declare query: string;
   declare toast: {text: string; undo?: () => void} | null;
@@ -1108,7 +1088,6 @@ export class TarnPanel extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.player.stop();
     this.unwatch();
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('storage', this.onStorage);
@@ -1948,8 +1927,6 @@ export class TarnPanel extends LitElement {
         role="radio"
         aria-checked=${scene.id === this.settings.scene}
         @click=${() => this.selectScene(scene.id)}
-        @pointerenter=${(event: PointerEvent) => this.playScene(event, scene)}
-        @pointerleave=${this.stopScene}
       >
         <span class="thumb" style="background: ${scenePreview(scene)}"></span>
         <span class="meta">
@@ -1959,16 +1936,6 @@ export class TarnPanel extends LitElement {
       </button>
     `;
   }
-
-  /** Resting on a wallpaper plays it inside its card (scene-live.ts). */
-  private playScene(event: PointerEvent, scene: Scene): void {
-    const thumb = (
-      event.currentTarget as HTMLElement
-    ).querySelector<HTMLElement>('.thumb');
-    if (thumb) this.player.play(thumb, scene);
-  }
-
-  private stopScene = () => this.player.stop();
 
   /** A built-in scene or one of the user's photos, by id. */
   private wallpaperButton(id: string) {

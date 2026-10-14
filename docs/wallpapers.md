@@ -43,7 +43,7 @@ explains how the code meets them.
  new tab page (tarn-app)                      settings side panel (tarn-panel)
  ───────────────────────                      ─────────────────────────────────
  first-paint.js (blocking, classic script)    cards: scenePreview() thumbnails
-   start color / ghost canvas                 hover: ScenePlayer (own GL context)
+   start color / ghost canvas                 (still thumbnails, no live preview)
          │                                    gauge: loadLevel()
          ▼
  <tarn-backdrop scene remember awake>
@@ -326,8 +326,7 @@ use `min(devicePixelRatio, 2)`.
 
 The clock decides what a scene shows, so the same moment always shows the
 same picture. That is what makes the ghost and resuming work. The
-thumbnail moments are in `MOMENTS` (`scripts/scene-previews.mjs`); the
-hover preview starts 40 s in (`ScenePlayer.draw`).
+thumbnail moments are in `MOMENTS` (`scripts/scene-previews.mjs`).
 
 ## Frosted glass
 
@@ -458,12 +457,8 @@ Rendering:
   `sceneStill(scene)`, so a card is never blank. Photos use their own
   thumbnail over their base color (`art`); a photo not on this computer
   shows the default scene's art.
-- **Live hover preview** (`src/panel/scene-live.ts`, `ScenePlayer`): one
-  canvas and one WebGL2 context, moved into whichever card is hovered,
-  sized to the card at up to 2x, 30 fps, starting 40 s into the scene; it
-  fades in after its first frame. Nothing runs when no card is hovered.
-  Reduced motion keeps the stills. A scene that fails to compile keeps its
-  still. No glass, no photos.
+- **No live preview.** Cards stay still (the owner removed the hover
+  preview on 2026-10-14: not needed, and a second GL context).
 - **Load gauge** (`src/backdrop/scenes/load.ts`, `loadLevel`): the sum of
   the scene's measured page and GPU percentages in `SCENE_LOAD`. Under 15
   is `light`, 15-17 is `medium`, above 17 is `heavy` (shown as "higher").
@@ -804,7 +799,6 @@ Not built yet:
 | `src/wallpapers/store.ts`                    | User photos in IndexedDB, the `tarn.photos` mirror, add/list/delete/restore                                      |
 | `src/settings/schema.ts`                     | `scene` setting, `REPLACED_SCENES`, `normalizeSettings`                                                          |
 | `src/panel/tarn-panel.ts`                    | Wallpaper cards, Show All page, photos, gauge                                                                    |
-| `src/panel/scene-live.ts`                    | `ScenePlayer`: live hover preview inside a card                                                                  |
 | `scripts/scene-previews.mjs`                 | Renders thumbnails in headless Chrome; `MOMENTS`                                                                 |
 | `scripts/scene-preview-page.ts`              | The page it runs: one frame per scene at 2x, as WebP                                                             |
 | `public/scenes/<id>.webp`                    | The thumbnails                                                                                                   |
