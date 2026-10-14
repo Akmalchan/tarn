@@ -19,7 +19,7 @@ follow [Semantic Versioning](https://semver.org/).
   icons; Focus timer is now Timer.
 
 - Six new backgrounds: Sakura (a blossom branch over falling petals),
-  Comet (an anime twilight over a hillside town), Koi (a pond from above),
+  Comet (twilight over a mountain lake), Koi (a pond from above),
   Window (rain on glass over a city in bokeh), Lumen (light through haze)
   and Contour (a living topographic map, drawn at full screen sharpness).
   They replace Mist, Dunes, Rain and Nebula; whoever picked one gets the

@@ -22,7 +22,7 @@ export const SCENE_LOAD: Readonly<Record<string, Load>> = {
   aurora: {page: 4.8, gpu: 9.0},
   silk: {page: 4.8, gpu: 9.8},
   sakura: {page: 6.5, gpu: 9.1},
-  comet: {page: 4.6, gpu: 8.6},
+  comet: {page: 4.1, gpu: 8.7},
   koi: {page: 6.8, gpu: 9.4},
   window: {page: 7.5, gpu: 9.2},
   lumen: {page: 6.2, gpu: 10.0},
