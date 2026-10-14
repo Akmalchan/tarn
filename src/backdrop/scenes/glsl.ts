@@ -107,8 +107,11 @@ vec3 scene(vec2 uv, float t);
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y;
   vec3 color = scene(uv, uTime);
-  // Dither to hide 8-bit banding in smooth gradients.
-  color += (hash01(gl_FragCoord.xy) - 0.5) / 255.0;
+  // Dither to hide 8-bit banding in smooth gradients: interleaved gradient
+  // noise, float math only (an integer hash per pixel was a large share of
+  // a big frame's cost on GPUs with slow integer math).
+  float dither = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+  color += (dither - 0.5) / 255.0;
   outColor = vec4(color, 1.0);
 }
 `;

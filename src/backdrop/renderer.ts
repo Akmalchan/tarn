@@ -26,6 +26,14 @@ export interface GhostFrame {
   readonly color: string;
 }
 
+/** One step of the GPU shrink for ghost frames. */
+interface ShrinkStep {
+  readonly width: number;
+  readonly height: number;
+  readonly texture: WebGLTexture;
+  readonly framebuffer: WebGLFramebuffer;
+}
+
 /** Lets the page follow the renderer without polling it. */
 export interface RendererEvents {
   /** The first frame at the real size has been drawn. */
@@ -216,6 +224,7 @@ export class Renderer {
       this.gl = null;
       this.compiled.clear();
       this.glass = null;
+      this.shrink = null;
       this.frame = null;
       this.photo = null;
       this.photoLoading = null;
@@ -311,24 +320,21 @@ export class Renderer {
       1,
       Math.round((GHOST_WIDTH * this.canvas.height) / this.canvas.width),
     );
-    // Downscale with drawImage, which clamps at the edges (resizing in
-    // createImageBitmap darkens the border by sampling outside the image).
-    const bitmap = await createImageBitmap(this.canvas);
-    const small = new OffscreenCanvas(width, height);
-    const context = small.getContext('2d', {willReadFrequently: true});
-    if (!context) {
-      bitmap.close();
-      return null;
-    }
-    context.imageSmoothingQuality = 'high';
-    context.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
-    const rgba = context.getImageData(0, 0, width, height).data;
+    // Shrink on the GPU (halving blits, so each step averages 2x2 pixels)
+    // and read back only the small result: reading the full frame back
+    // and scaling it on the CPU was most of the worker's time.
+    const rgba = await this.readSmall(width, height);
+    if (!rgba) return null;
     const pixels = new Uint8Array(width * height * 3);
-    for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
-      pixels[j] = rgba[i]!;
-      pixels[j + 1] = rgba[i + 1]!;
-      pixels[j + 2] = rgba[i + 2]!;
+    // readPixels starts at the bottom row; the ghost is stored top down.
+    for (let y = 0, j = 0; y < height; y++) {
+      const row = (height - 1 - y) * width * 4;
+      for (let x = 0; x < width; x++, j += 3) {
+        const i = row + x * 4;
+        pixels[j] = rgba[i]!;
+        pixels[j + 1] = rgba[i + 1]!;
+        pixels[j + 2] = rgba[i + 2]!;
+      }
     }
     return {
       width,
@@ -339,8 +345,138 @@ export class Renderer {
     };
   }
 
+  /** Framebuffers that shrink a frame step by step, kept between ghosts. */
+  private shrink: {width: number; height: number; steps: ShrinkStep[]} | null =
+    null;
+
+  /**
+   * The frame just drawn, scaled to width x height, as RGBA rows from the
+   * bottom. Each blit halves the size until the next would pass the
+   * target, then a last blit lands on it. The pixels come back through a
+   * pixel buffer once the GPU is done, so the worker never waits on it.
+   */
+  private async readSmall(
+    width: number,
+    height: number,
+  ): Promise<Uint8Array | null> {
+    const gl = this.gl;
+    if (!gl) return null;
+    const source = {width: this.canvas.width, height: this.canvas.height};
+    if (
+      !this.shrink ||
+      this.shrink.width !== source.width ||
+      this.shrink.height !== source.height
+    ) {
+      this.freeShrink();
+      const steps: ShrinkStep[] = [];
+      let w = source.width;
+      let h = source.height;
+      while (w / 2 >= width) {
+        w = Math.max(width, Math.floor(w / 2));
+        h = Math.max(height, Math.floor(h / 2));
+        steps.push(this.shrinkStep(gl, w, h));
+      }
+      if (w !== width || h !== height) {
+        steps.push(this.shrinkStep(gl, width, height));
+      }
+      this.shrink = {...source, steps};
+    }
+    let from: WebGLFramebuffer | null = null;
+    let fromW = source.width;
+    let fromH = source.height;
+    for (const step of this.shrink.steps) {
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, from);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, step.framebuffer);
+      gl.blitFramebuffer(
+        0,
+        0,
+        fromW,
+        fromH,
+        0,
+        0,
+        step.width,
+        step.height,
+        gl.COLOR_BUFFER_BIT,
+        gl.LINEAR,
+      );
+      from = step.framebuffer;
+      fromW = step.width;
+      fromH = step.height;
+    }
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, from);
+    const size = width * height * 4;
+    const buffer = gl.createBuffer();
+    if (!buffer) return null;
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+    gl.bufferData(gl.PIXEL_PACK_BUFFER, size, gl.STREAM_READ);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, 0);
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    const fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    gl.flush();
+    try {
+      // Check back between frames until the copy is done (~1-3 frames).
+      for (let tries = 0; ; tries++) {
+        if (!fence || this.gl !== gl) return null;
+        const status = gl.clientWaitSync(fence, 0, 0);
+        if (
+          status === gl.ALREADY_SIGNALED ||
+          status === gl.CONDITION_SATISFIED
+        ) {
+          break;
+        }
+        if (status === gl.WAIT_FAILED || tries > 100) return null;
+        await new Promise(resolve => setTimeout(resolve, 8));
+      }
+      const rgba = new Uint8Array(size);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+      gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, rgba);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+      return rgba;
+    } finally {
+      if (this.gl === gl) {
+        if (fence) gl.deleteSync(fence);
+        gl.deleteBuffer(buffer);
+      }
+    }
+  }
+
+  private shrinkStep(
+    gl: WebGL2RenderingContext,
+    width: number,
+    height: number,
+  ): ShrinkStep {
+    const texture = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, width, height);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    const framebuffer = gl.createFramebuffer()!;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      texture,
+      0,
+    );
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return {width, height, texture, framebuffer};
+  }
+
+  private freeShrink(): void {
+    const gl = this.gl;
+    if (gl && this.shrink) {
+      for (const step of this.shrink.steps) {
+        gl.deleteFramebuffer(step.framebuffer);
+        gl.deleteTexture(step.texture);
+      }
+    }
+    this.shrink = null;
+  }
+
   dispose(): void {
     this.stopLoop();
+    this.freeShrink();
     const gl = this.gl;
     if (gl) {
       for (const c of this.compiled.values()) gl.deleteProgram(c.program);
@@ -798,7 +934,7 @@ function compileShader(
 }
 
 /** Mean color of RGBA pixels, as #rrggbb. */
-export function averageColor(pixels: Uint8ClampedArray): string {
+export function averageColor(pixels: ArrayLike<number>): string {
   let r = 0;
   let g = 0;
   let b = 0;
