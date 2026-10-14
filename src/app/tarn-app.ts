@@ -210,6 +210,10 @@ export class TarnApp extends LitElement {
       color: var(--ink-dim);
     }
 
+    .keys .plus {
+      font-size: 12px;
+    }
+
     .keys .or {
       margin: 0 4px;
       font-size: 12px;

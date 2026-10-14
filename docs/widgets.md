@@ -572,22 +572,26 @@ a toast with Undo, which brings the user's own list back. The user's
 content is never touched: samples get new ids, and sample content is saved
 under those.
 
-| Example         | Widgets                                                                                       |
-| --------------- | --------------------------------------------------------------------------------------------- |
-| Just bookmarks  | Bookmarks L                                                                                   |
-| Notes and tasks | Bookmarks L, Notes M, Tasks M (one clean 4-column band)                                       |
-| Starter         | the start setup: Bookmarks L, Notes M, Weather S, Timer S                                     |
-| Planner         | Bookmarks L, Tasks L, Weather M, Calendar S, Timer S (one 6-column band)                      |
-| Everything      | Bookmarks XL, Notes L, Timer S, Weather S, Tasks L, Notes M, Calendar M, Bookmarks S, Timer S |
+| Example         | Widgets                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| Just bookmarks  | Bookmarks L                                                                                                     |
+| Notes and tasks | Bookmarks L, Notes M, Tasks M (one clean 4-column band)                                                         |
+| Starter         | the start setup: Bookmarks L, Notes M, Weather S, Timer S                                                       |
+| Planner         | Bookmarks L, Tasks L, Weather M, Calendar S, Timer S (one 6-column band)                                        |
+| Everything      | every kind once: Bookmarks XL, Notes L, Tasks L, Weather M, Timer M, Calendar L (no holes at 2, 4 or 6 columns) |
 
-At most nine widgets each: enough to see a full page, never a wall.
+At most nine widgets each: enough to see a full page, never a wall. No
+kind twice in one example (owner, 2026-10-14: two Timers in Everything
+looked broken). `samples.test.ts` pins both, plus that every size is one
+the kind offers and that no band but the last has a hole at 4 or 6
+columns.
 Presets are layout shapes, so sizes win: a kind that doesn't offer the size
 is swapped for the next kind that does. Sample bookmarks include two
 folders (Work, Learn) and white icons (GitHub, ChatGPT); smaller tiles get
 fewer items, always with a folder.
 
-Provider, units and the Google key for Weather are also in Settings >
-Advanced.
+Weather's provider and Google key are in Settings > Advanced; its units
+are on the panel's main page.
 
 ## 6. Layout rules and owner decisions
 

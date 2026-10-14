@@ -107,17 +107,16 @@ export const EXAMPLES: readonly Example[] = [
     ],
   },
   {
+    // Every kind once (no duplicates, owner 2026-10-14). Two full bands at
+    // 6 columns, three at 4, no holes at any width.
     name: 'panel.examples.everything',
     widgets: [
       ['favorites', 'xl'],
       ['notes', 'l'],
-      ['focus', 's'],
-      ['weather', 's'],
       ['tasks', 'l'],
-      ['notes', 'm'],
-      ['calendar', 'm'],
-      ['favorites', 's'],
-      ['focus', 's'],
+      ['weather', 'm'],
+      ['focus', 'm'],
+      ['calendar', 'l'],
     ],
   },
 ];
