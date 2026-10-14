@@ -341,7 +341,6 @@ export const tr: Catalog = {
   'search.stopListening': 'Dinlemeyi durdur',
   'search.noSpeech': 'Anlayamadım.',
   'search.voiceFailed': 'Sesli arama şu anda çalışmıyor.',
-  'search.tapToTry': 'Tekrar denemek için mikrofona basın.',
   'search.micDenied': 'Tarn mikrofonu kullanamıyor.',
   'search.micDeniedHint':
     'Tarayıcının site ayarlarından Tarn’a izin verin ve tekrar deneyin.',

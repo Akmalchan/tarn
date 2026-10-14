@@ -345,7 +345,6 @@ export const de: Catalog = {
   'search.stopListening': 'Zuhören beenden',
   'search.noSpeech': 'Das habe ich nicht verstanden.',
   'search.voiceFailed': 'Die Sprachsuche funktioniert gerade nicht.',
-  'search.tapToTry': 'Drück das Mikrofon, um es noch einmal zu versuchen.',
   'search.micDenied': 'Tarn kann das Mikrofon nicht nutzen.',
   'search.micDeniedHint':
     'Erlaube es Tarn in den Website-Einstellungen deines Browsers und versuch es noch einmal.',

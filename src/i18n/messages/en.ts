@@ -378,7 +378,6 @@ export const en = {
   'search.stopListening': 'Stop listening',
   'search.noSpeech': 'Didn’t catch that.',
   'search.voiceFailed': 'Voice search isn’t working right now.',
-  'search.tapToTry': 'Press the mic to try again.',
   'search.micDenied': 'Tarn can’t use the microphone.',
   'search.micDeniedHint':
     'Allow it for Tarn in your browser’s site settings, then try again.',

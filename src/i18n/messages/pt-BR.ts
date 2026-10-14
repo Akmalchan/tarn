@@ -342,7 +342,6 @@ export const ptBR: Catalog = {
   'search.stopListening': 'Parar de ouvir',
   'search.noSpeech': 'Não entendi.',
   'search.voiceFailed': 'A pesquisa por voz não está funcionando agora.',
-  'search.tapToTry': 'Toque no microfone para tentar de novo.',
   'search.micDenied': 'O Tarn não pode usar o microfone.',
   'search.micDeniedHint':
     'Permita para o Tarn nas configurações de sites do navegador e tente de novo.',

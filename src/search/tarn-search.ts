@@ -18,8 +18,9 @@ import {toUrl} from '../widgets/favorites-model';
 //   changes the engine.
 // - While typing: a typed address to open, matching bookmarks (offline),
 //   then the search itself, and AI Mode when that's on.
-// - The buttons do something only when pressed. The mic opens a voice
-//   screen and turns speech into text with the browser's recognition
+// - The buttons do something only when pressed. The mic listens right in
+//   the box (it turns red, a voice line follows the level, the words
+//   appear) and turns speech into text with the browser's recognition
 //   (Chrome sends the audio to Google for that, the same as Google's own
 //   voice search). The camera opens a Google Lens box on the page; an
 //   image goes to Google Lens only when the user drops, picks or pastes
@@ -109,6 +110,7 @@ export class TarnSearch extends LitElement {
     lens: {state: true},
     lensError: {state: true},
     dropping: {state: true},
+    levels: {state: true},
   };
 
   static override styles = css`
@@ -519,121 +521,76 @@ export class TarnSearch extends LitElement {
       text-align: center;
     }
 
-    /* ---- Voice: a screen of its own, like Google's ---- */
+    /* ---- Voice: in the box. The mic turns red and a voice line moves
+       where the search icon was, following the voice's level. ---- */
 
-    .voice {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background: rgb(8 12 18 / 0.9);
-      backdrop-filter: blur(16px);
-      animation: fade 160ms ease-out both;
-    }
-
-    @keyframes fade {
-      from {
-        opacity: 0;
-      }
-    }
-
-    .voice-inner {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 48px;
-      max-width: 820px;
-      color: #f4f7fb;
-    }
-
-    .voice-text {
-      flex: 1 1 320px;
-      min-width: 0;
-      font-size: clamp(26px, 4vw, 34px);
-      font-weight: 400;
-      line-height: 1.25;
-    }
-
-    .voice-text.dim {
-      color: rgb(244 247 251 / 0.62);
-    }
-
-    .voice-text small {
-      display: block;
-      margin-top: 10px;
-      font-size: 15px;
-      color: rgb(244 247 251 / 0.62);
-    }
-
-    .mic {
-      position: relative;
-      display: grid;
-      place-items: center;
-      width: 120px;
-      height: 120px;
-      padding: 0;
+    .tool.listening,
+    .tool.listening:hover {
       color: #fff;
-      background: rgb(255 255 255 / 0.12);
-      border: 0;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-
-    .mic svg {
-      width: 44px;
-      height: 44px;
-      stroke-width: 1.6;
-    }
-
-    .mic.on {
       background: var(--listening);
+      animation: breathe 1.6s ease-in-out infinite;
     }
 
-    /* The rings say "I'm listening" the way a phone does. */
-    .mic.on::before,
-    .mic.on::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 2px solid var(--listening);
-      animation: ring 1.6s ease-out infinite;
-    }
-
-    .mic.on::after {
-      animation-delay: 0.8s;
-    }
-
-    @keyframes ring {
-      from {
-        transform: scale(1);
-        opacity: 0.7;
-      }
-      to {
-        transform: scale(1.7);
-        opacity: 0;
+    @keyframes breathe {
+      50% {
+        box-shadow: 0 0 0 6px
+          color-mix(in srgb, var(--listening) 22%, transparent);
       }
     }
 
-    .voice-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      color: #f4f7fb;
+    .wave {
+      display: flex;
+      flex: none;
+      align-items: center;
+      gap: 2px;
+      width: 20px;
+      height: 20px;
     }
 
-    .voice-close:hover {
-      background: rgb(255 255 255 / 0.12);
+    .wave i {
+      flex: 1;
+      height: 100%;
+      border-radius: 2px;
+      background: var(--listening);
+      transform: scaleY(var(--level, 0.2));
+      transition: transform 90ms linear;
+    }
+
+    /* No level to follow (no microphone stream): a gentle made-up one. */
+    .wave.idle i {
+      animation: bars 1s ease-in-out infinite;
+    }
+
+    .wave.idle i:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .wave.idle i:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .wave.idle i:nth-child(4) {
+      animation-delay: 0.45s;
+    }
+
+    @keyframes bars {
+      0%,
+      100% {
+        transform: scaleY(0.25);
+      }
+      50% {
+        transform: scaleY(0.9);
+      }
+    }
+
+    :host([listening]) input::placeholder {
+      color: var(--box-ink);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .mic.on::before,
-      .mic.on::after,
-      .lens,
-      .voice {
+      .tool.listening,
+      .wave.idle i,
+      .lens {
         animation: none;
       }
     }
@@ -654,9 +611,13 @@ export class TarnSearch extends LitElement {
   declare lensError: string;
   /** An image is being dragged over the Lens box. */
   declare dropping: boolean;
+  /** The microphone stream the voice line follows, while listening. */
+  declare levels: {stream: MediaStream; audio: AudioContext} | null;
 
   private lookup = 0;
   private recognition: Recognition | null = null;
+  private levelFrame = 0;
+  private messageTimer = 0;
 
   constructor() {
     super();
@@ -678,6 +639,7 @@ export class TarnSearch extends LitElement {
     this.lens = false;
     this.lensError = '';
     this.dropping = false;
+    this.levels = null;
   }
 
   override connectedCallback(): void {
@@ -690,19 +652,34 @@ export class TarnSearch extends LitElement {
     super.disconnectedCallback();
     document.removeEventListener('keydown', this.onDocumentKey);
     document.removeEventListener('paste', this.onPaste);
-    this.recognition?.abort();
+    this.stopVoice();
   }
 
   override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has('open')) this.toggleAttribute('open', this.open);
+    if (changed.has('voice')) {
+      this.toggleAttribute(
+        'listening',
+        this.voice === 'listening' || this.voice === 'heard',
+      );
+    }
     if (changed.has('settings')) this.setAttribute('look', this.settings.style);
   }
 
   override render() {
     const {voice, lens, ai} = this.settings;
+    const listening = this.voice === 'listening' || this.voice === 'heard';
     return html`
       <div class="field" @click=${this.focusInput}>
-        ${icon('search')}
+        ${
+          listening
+            ? html`<span
+                class="wave ${this.levels ? '' : 'idle'}"
+                aria-hidden="true"
+                ><i></i><i></i><i></i><i></i
+              ></span>`
+            : icon('search')
+        }
         <input
           type="search"
           autocomplete="off"
@@ -713,8 +690,9 @@ export class TarnSearch extends LitElement {
           aria-controls="list"
           aria-autocomplete="list"
           aria-label=${t('search.placeholder')}
-          placeholder=${t('search.placeholder')}
-          .value=${this.query}
+          placeholder=${this.placeholder()}
+          ?readonly=${listening}
+          .value=${listening ? this.heard : this.query}
           @input=${this.onInput}
           @keydown=${this.onKey}
           @focus=${() => (this.open = this.suggestions.length > 0)}
@@ -724,10 +702,17 @@ export class TarnSearch extends LitElement {
           ${
             voice && SpeechRecognitionCtor
               ? html`<button
-                  class="tool"
-                  title=${t('search.voice')}
-                  aria-label=${t('search.voice')}
-                  @click=${this.startVoice}
+                  class=${listening ? 'tool listening' : 'tool'}
+                  title=${
+                    this.voice === 'denied'
+                      ? t('search.micDeniedHint')
+                      : listening
+                        ? t('search.stopListening')
+                        : t('search.voice')
+                  }
+                  aria-label=${listening ? t('search.stopListening') : t('search.voice')}
+                  aria-pressed=${listening}
+                  @click=${listening ? this.finishVoice : this.startVoice}
                 >
                   ${icon('mic')}
                 </button>`
@@ -767,7 +752,6 @@ export class TarnSearch extends LitElement {
           : nothing
       }
       ${this.lens ? this.renderLens() : nothing}
-      ${this.voice !== 'off' ? this.renderVoice() : nothing}
     `;
   }
 
@@ -1069,62 +1053,27 @@ export class TarnSearch extends LitElement {
 
   // ---- Voice ------------------------------------------------------------------
 
-  private renderVoice() {
-    const listening = this.voice === 'listening' || this.voice === 'heard';
-    const message =
-      this.voice === 'heard'
-        ? html`<div class="voice-text">${this.heard}</div>`
-        : this.voice === 'listening'
-          ? html`<div class="voice-text dim">${t('search.speakNow')}</div>`
-          : html`<div class="voice-text">
-              ${t(
-                this.voice === 'denied'
-                  ? 'search.micDenied'
-                  : this.voice === 'noSpeech'
-                    ? 'search.noSpeech'
-                    : 'search.voiceFailed',
-              )}
-              <small
-                >${t(
-                  this.voice === 'denied'
-                    ? 'search.micDeniedHint'
-                    : 'search.tapToTry',
-                )}</small
-              >
-            </div>`;
-    return html`<div
-      class="voice"
-      role="dialog"
-      aria-label=${t('search.voice')}
-      aria-live="polite"
-      @click=${(event: Event) => {
-        if (event.target === event.currentTarget) this.stopVoice();
-      }}
-    >
-      <button
-        class="tool voice-close"
-        title=${t('search.close')}
-        aria-label=${t('search.close')}
-        @click=${this.stopVoice}
-      >
-        ${icon('close')}
-      </button>
-      <div class="voice-inner">
-        ${message}
-        <button
-          class="mic ${listening ? 'on' : ''}"
-          aria-label=${listening ? t('search.stopListening') : t('search.voice')}
-          @click=${listening ? this.finishVoice : this.startVoice}
-        >
-          ${icon('mic')}
-        </button>
-      </div>
-    </div>`;
+  /** What the box says: the usual hint, "Speak now", or what went wrong. */
+  private placeholder(): string {
+    switch (this.voice) {
+      case 'listening':
+      case 'heard':
+        return t('search.speakNow');
+      case 'noSpeech':
+        return t('search.noSpeech');
+      case 'denied':
+        return t('search.micDenied');
+      case 'failed':
+        return t('search.voiceFailed');
+      default:
+        return t('search.placeholder');
+    }
   }
 
   /**
-   * Opens the voice screen and listens: speech becomes text with the
-   * browser's recognition, then it searches like Enter.
+   * Listens in the box: the mic turns red, a voice line follows the level,
+   * and the words appear as they're heard; then it searches like Enter.
+   * The text comes from the browser's speech recognition.
    */
   private startVoice = () => {
     if (!SpeechRecognitionCtor) return;
@@ -1154,6 +1103,7 @@ export class TarnSearch extends LitElement {
     recognition.onend = () => {
       if (this.recognition !== recognition) return;
       this.recognition = null;
+      this.stopLevel();
       if (final) {
         this.voice = 'off';
         this.query = final;
@@ -1161,18 +1111,70 @@ export class TarnSearch extends LitElement {
       } else if (this.voice === 'listening' || this.voice === 'heard') {
         this.voice = 'noSpeech';
       }
+      // A message stays a few seconds, then the box is itself again.
+      if (this.voice !== 'off') {
+        clearTimeout(this.messageTimer);
+        this.messageTimer = window.setTimeout(() => {
+          if (!this.recognition) this.voice = 'off';
+        }, 4000);
+      }
     };
     this.recognition = recognition;
     this.heard = '';
     this.voice = 'listening';
     try {
       recognition.start();
+      void this.followLevel();
     } catch {
       this.voice = 'failed';
     }
   };
 
-  /** The big mic again: stop listening and use what was heard. */
+  /**
+   * The voice line: the microphone's level, read with Web Audio while
+   * listening (the browser already has the microphone for recognition).
+   * Without it, the line moves on its own.
+   */
+  private async followLevel(): Promise<void> {
+    this.stopLevel();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      if (!this.recognition) {
+        for (const track of stream.getTracks()) track.stop();
+        return;
+      }
+      const audio = new AudioContext();
+      const analyser = audio.createAnalyser();
+      analyser.fftSize = 64;
+      audio.createMediaStreamSource(stream).connect(analyser);
+      const bins = new Uint8Array(analyser.frequencyBinCount);
+      const step = () => {
+        analyser.getByteFrequencyData(bins);
+        const bars = this.renderRoot.querySelectorAll<HTMLElement>('.wave i');
+        bars.forEach((bar, i) => {
+          // Speech lives in the low bins; spread four bars across them.
+          const value = (bins[2 + i * 3] ?? 0) / 255;
+          bar.style.setProperty('--level', String(0.2 + 0.8 * value));
+        });
+        this.levelFrame = requestAnimationFrame(step);
+      };
+      this.levels = {stream, audio};
+      this.levelFrame = requestAnimationFrame(step);
+    } catch {
+      this.levels = null;
+    }
+  }
+
+  private stopLevel(): void {
+    cancelAnimationFrame(this.levelFrame);
+    if (this.levels) {
+      for (const track of this.levels.stream.getTracks()) track.stop();
+      void this.levels.audio.close();
+    }
+    this.levels = null;
+  }
+
+  /** The mic again: stop listening and use what was heard. */
   private finishVoice = () => {
     this.recognition?.stop();
   };
@@ -1181,6 +1183,7 @@ export class TarnSearch extends LitElement {
     const recognition = this.recognition;
     this.recognition = null;
     recognition?.abort();
+    this.stopLevel();
     this.voice = 'off';
   };
 }

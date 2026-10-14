@@ -343,7 +343,6 @@ export const ru: Catalog = {
   'search.stopListening': 'Остановить',
   'search.noSpeech': 'Не удалось разобрать.',
   'search.voiceFailed': 'Голосовой поиск сейчас не работает.',
-  'search.tapToTry': 'Нажмите на микрофон, чтобы попробовать снова.',
   'search.micDenied': 'Tarn не может использовать микрофон.',
   'search.micDeniedHint':
     'Разрешите его для Tarn в настройках сайтов браузера и попробуйте снова.',

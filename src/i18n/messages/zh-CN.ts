@@ -330,7 +330,6 @@ export const zhCN: Catalog = {
   'search.stopListening': '停止聆听',
   'search.noSpeech': '没听清。',
   'search.voiceFailed': '语音搜索暂时无法使用。',
-  'search.tapToTry': '点按麦克风再试一次。',
   'search.micDenied': 'Tarn 无法使用麦克风。',
   'search.micDeniedHint':
     '请在浏览器的网站设置中允许 Tarn 使用，然后再试一次。',

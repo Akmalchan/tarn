@@ -43,8 +43,9 @@ owner's taste. The essentials:
   engine (`search` permission: chrome.search / browser.search; Tarn never
   picks or changes the engine). Its suggestions are offline (a typed
   address, the browser's bookmarks). The mic uses the browser's speech
-  recognition, which in Chrome sends the audio to Google, only on its own
-  voice screen. Lens opens a box on the page; an image goes to Google Lens
+  recognition, which in Chrome sends the audio to Google, only while the
+  box listens (red mic, a voice line from Web Audio levels; owner rejected
+  a full-screen listening overlay 2026-10-14). Lens opens a box on the page; an image goes to Google Lens
   (a form post to lens.google.com, or `uploadbyurl` for a link) only when
   the user drops, picks or pastes one. AI Mode opens Google's AI Mode with
   the question (one service on purpose, owner 2026-10-14). No web

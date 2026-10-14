@@ -339,7 +339,6 @@ export const ja: Catalog = {
   'search.stopListening': '聞き取りを停止',
   'search.noSpeech': '聞き取れませんでした。',
   'search.voiceFailed': '音声検索は現在使用できません。',
-  'search.tapToTry': 'マイクを押してもう一度お試しください。',
   'search.micDenied': 'Tarn がマイクを使えません。',
   'search.micDeniedHint':
     'ブラウザのサイト設定で Tarn に許可してから、もう一度お試しください。',

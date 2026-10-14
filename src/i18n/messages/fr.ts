@@ -343,7 +343,6 @@ export const fr: Catalog = {
   'search.stopListening': 'Arrêter l’écoute',
   'search.noSpeech': 'Je n’ai pas compris.',
   'search.voiceFailed': 'La recherche vocale ne fonctionne pas pour le moment.',
-  'search.tapToTry': 'Appuyez sur le micro pour réessayer.',
   'search.micDenied': 'Tarn ne peut pas utiliser le micro.',
   'search.micDeniedHint':
     'Autorisez-le pour Tarn dans les paramètres des sites du navigateur, puis réessayez.',

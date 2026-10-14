@@ -340,7 +340,6 @@ export const es: Catalog = {
   'search.stopListening': 'Dejar de escuchar',
   'search.noSpeech': 'No te he entendido.',
   'search.voiceFailed': 'La búsqueda por voz no funciona ahora.',
-  'search.tapToTry': 'Pulsa el micrófono para volver a intentarlo.',
   'search.micDenied': 'Tarn no puede usar el micrófono.',
   'search.micDeniedHint':
     'Permítelo para Tarn en la configuración de sitios del navegador y vuelve a intentarlo.',

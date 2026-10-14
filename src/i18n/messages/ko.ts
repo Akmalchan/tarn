@@ -336,7 +336,6 @@ export const ko: Catalog = {
   'search.stopListening': '듣기 중지',
   'search.noSpeech': '잘 못 알아들었어요.',
   'search.voiceFailed': '지금은 음성 검색을 쓸 수 없어요.',
-  'search.tapToTry': '마이크를 눌러 다시 시도하세요.',
   'search.micDenied': 'Tarn이 마이크를 사용할 수 없어요.',
   'search.micDeniedHint':
     '브라우저 사이트 설정에서 Tarn에 허용한 뒤 다시 시도하세요.',
