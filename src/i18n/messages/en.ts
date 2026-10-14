@@ -24,6 +24,7 @@ export const en = {
   'widget.tasks': 'Tasks',
   'widget.focus': 'Focus timer',
   'widget.weather': 'Weather',
+  'widget.calendar': 'Calendar',
 
   // Arranging widgets (settings open)
   'board.hint': 'Drag to rearrange · drag a corner to resize',
@@ -106,6 +107,9 @@ export const en = {
   'weather.snow': 'Snow',
   'weather.storm': 'Thunderstorm',
   'weather.wind': 'Windy',
+  'calendar.previous': 'Previous month',
+  'calendar.next': 'Next month',
+  'calendar.today': 'Today',
 
   // Toolbar popup
   'popup.newTab': 'Tarn new tab',
@@ -210,6 +214,7 @@ export const en = {
   'panel.widgetAbout.notes': 'A note that stays on this computer',
   'panel.widgetAbout.tasks': 'A short to-do list',
   'panel.widgetAbout.weather': 'Today and the week ahead',
+  'panel.widgetAbout.calendar': 'This month at a glance',
   'panel.widgetAbout.focus': 'One task and a timer',
 
   // Settings panel: language

@@ -151,7 +151,7 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   plus one entry in `widgets/registry.ts`.
   Each kind offers only the sizes its content looks right at
   (`WIDGET_SIZE_OPTIONS` in `settings/schema.ts`: Focus S/M; Weather
-  S/M/L; Notes and Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
+  S/M/L; Calendar S/M/L; Notes and Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
   one. A widget marked `editable` (Favorites) stays live in edit mode and
   shows its own controls (add and remove sites) there, marked `data-edit` so
   pressing them doesn't start a drag; its links are off meanwhile.
@@ -193,6 +193,14 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   widgets the renderer draws straight to the screen as before. Never fade a
   tile container with opacity; it would break CSS glass in the still
   fallback.
+- **Calendar** (`src/calendar/`, `widgets/tarn-calendar.ts`): offline,
+  dates only (today, this week, or the month with arrows), in the
+  language's words and week start (`Intl.Locale` week info, else by
+  region). Events come only through `calendar/sources.ts`: a source
+  implements `EventSource` and registers, and every calendar shows its
+  events (dots, the next one on the small tile) with no widget change. No
+  source exists yet; a calendar link or provider would be the next network
+  feature and follows the Network rule. It wakes only at midnight.
 - Widget content lives in `storage.local` (`widget.<id>`), apart from synced
   settings; removing a widget keeps its content.
 

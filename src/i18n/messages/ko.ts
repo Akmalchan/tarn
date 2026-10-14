@@ -17,6 +17,7 @@ export const ko: Catalog = {
   'widget.tasks': '할 일',
   'widget.focus': '집중 타이머',
   'widget.weather': '날씨',
+  'widget.calendar': '캘린더',
   'board.hint': '드래그해서 순서 바꾸기 · 모서리를 드래그해서 크기 조절',
   'board.movable': '이동 가능한 위젯',
   'board.position':
@@ -86,6 +87,9 @@ export const ko: Catalog = {
   'weather.snow': '눈',
   'weather.storm': '뇌우',
   'weather.wind': '강풍',
+  'calendar.previous': '이전 달',
+  'calendar.next': '다음 달',
+  'calendar.today': '오늘',
   'popup.newTab': 'Tarn 새 탭',
   'popup.on': '새 탭에서 Tarn이 열려요.',
   'popup.off': '새 탭에서 기본 페이지가 열려요.',
@@ -174,6 +178,7 @@ export const ko: Catalog = {
   'panel.widgetAbout.notes': '이 컴퓨터에 남는 메모',
   'panel.widgetAbout.tasks': '짧은 할 일 목록',
   'panel.widgetAbout.weather': '오늘과 앞으로 일주일',
+  'panel.widgetAbout.calendar': '이번 달을 한눈에',
   'panel.widgetAbout.focus': '하나의 할 일과 타이머',
   'panel.language.auto': '브라우저와 같게',
   'panel.language.note':

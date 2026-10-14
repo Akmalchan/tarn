@@ -17,6 +17,7 @@ export const ptBR: Catalog = {
   'widget.tasks': 'Tarefas',
   'widget.focus': 'Timer de foco',
   'widget.weather': 'Clima',
+  'widget.calendar': 'Calendário',
   'board.hint':
     'Arraste para reorganizar · arraste um canto para redimensionar',
   'board.movable': 'widget móvel',
@@ -88,6 +89,9 @@ export const ptBR: Catalog = {
   'weather.snow': 'Neve',
   'weather.storm': 'Tempestade',
   'weather.wind': 'Ventania',
+  'calendar.previous': 'Mês anterior',
+  'calendar.next': 'Próximo mês',
+  'calendar.today': 'Hoje',
   'popup.newTab': 'Nova guia do Tarn',
   'popup.on': 'Novas guias abrem o Tarn.',
   'popup.off': 'Novas guias abrem a página padrão.',
@@ -177,6 +181,7 @@ export const ptBR: Catalog = {
   'panel.widgetAbout.notes': 'Uma nota que fica neste computador',
   'panel.widgetAbout.tasks': 'Uma pequena lista de tarefas',
   'panel.widgetAbout.weather': 'Hoje e a semana que vem',
+  'panel.widgetAbout.calendar': 'O mês todo de relance',
   'panel.widgetAbout.focus': 'Uma tarefa e um timer',
   'panel.language.auto': 'Igual ao navegador',
   'panel.language.note':
