@@ -137,7 +137,7 @@ export class TarnWeather extends LitElement {
 
       .now {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         grid-template-areas:
           'place icon'
           'temp icon'
@@ -231,7 +231,7 @@ export class TarnWeather extends LitElement {
 
       .day {
         display: grid;
-        grid-template-columns: 3.2em 20px 2.4em 1fr 2.4em;
+        grid-template-columns: 3.2em 20px 2.8em 1fr 2.8em;
         align-items: center;
         gap: 8px;
         min-height: 24px;
@@ -307,9 +307,29 @@ export class TarnWeather extends LitElement {
       @container (min-width: 250px) and (max-height: 140px) {
         .body {
           display: grid;
-          grid-template-columns: 1fr 1.25fr;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
           gap: 10px;
           align-items: center;
+        }
+        /* The glyph beside the place, so the temperature has the column's
+           whole width; a long one ("-40°", "118°") gets a little smaller. */
+        .now {
+          grid-template-areas:
+            'place icon'
+            'temp temp'
+            'cond cond';
+          align-items: center;
+        }
+        .now .icon {
+          width: 24px;
+          height: 24px;
+          margin: 0;
+        }
+        .temp {
+          font-size: min(
+            44px,
+            calc((100cqw - 46px) / 2.25 / (var(--chars) * 0.57))
+          );
         }
         .hours {
           display: grid;
@@ -359,9 +379,21 @@ export class TarnWeather extends LitElement {
           height: 100%;
           grid-template-rows: auto 1fr auto;
         }
+        .now {
+          grid-template-areas:
+            'place icon'
+            'temp temp'
+            'cond cond';
+        }
+        .now .icon {
+          width: 24px;
+          height: 24px;
+          margin: 0;
+        }
+        /* As big as fits: --chars is the temperature's length. */
         .temp {
           align-self: center;
-          font-size: 50px;
+          font-size: min(50px, calc((100cqw - 36px) / (var(--chars) * 0.57)));
         }
         .cond {
           align-self: end;
@@ -394,7 +426,7 @@ export class TarnWeather extends LitElement {
         }
         .temp {
           align-self: start;
-          font-size: 48px;
+          font-size: min(48px, calc((100cqw - 36px) / (var(--chars) * 0.57)));
         }
         .hours {
           display: flex;
@@ -575,6 +607,7 @@ export class TarnWeather extends LitElement {
             : ''
         }`
       : '';
+    const temp = forecast ? deg(forecast.now.temp) : '–°';
     return html`
       <div class="now" title=${this.creditText()}>
         <button
@@ -584,7 +617,7 @@ export class TarnWeather extends LitElement {
         >
           ${placeName(place)}
         </button>
-        <div class="temp">${forecast ? deg(forecast.now.temp) : '–°'}</div>
+        <div class="temp" style="--chars: ${temp.length}">${temp}</div>
         <div class="icon">
           ${forecast ? weatherGlyph(forecast.now.condition, forecast.now.day) : nothing}
         </div>
