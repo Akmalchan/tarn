@@ -19,7 +19,8 @@ describe('scenes', () => {
       expect(color).toMatch(/^#[0-9a-f]{6}$/i);
     }
     expect(scene.resolution).toBeGreaterThan(0);
-    expect(scene.resolution).toBeLessThanOrEqual(1);
+    // Up to 1x, or the screen's density (capped) for hairline scenes.
+    expect(scene.resolution).toBeLessThanOrEqual(2);
     expect(scene.speed).toBeGreaterThan(0);
     expect(scene.fragment).toContain('vec3 scene(vec2 uv, float t)');
   });
