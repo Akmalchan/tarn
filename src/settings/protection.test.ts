@@ -18,6 +18,7 @@ import {
   SETTINGS_KEY,
   loadSettings,
   replaceSettings,
+  resetSettings,
   saveSettings,
   storedSettings,
 } from './store';
@@ -204,6 +205,34 @@ describe('replacing the whole setup', () => {
     await replaceSettings(DEFAULT_SETTINGS);
     expect((await loadSettings()).widgets).toEqual(START_WIDGETS);
     expect((await storedSettings()).widgets).toEqual(START_WIDGETS);
+  });
+});
+
+describe('reset', () => {
+  beforeEach(() => fakeBrowser.reset());
+
+  it('puts the look back and keeps widgets, language and newer values', async () => {
+    await store({
+      ...FROM_NEWER,
+      scene: 'ember',
+      clock: 'bold',
+      clockColor: 'dark',
+      language: 'de',
+      search: {show: false, style: 'glass'},
+      weather: {provider: 'google', units: 'fahrenheit'},
+    });
+    await resetSettings();
+    const stored = await storedSettings();
+    expect(stored).toMatchObject({
+      scene: DEFAULT_SETTINGS.scene,
+      clock: DEFAULT_SETTINGS.clock,
+      clockColor: 'auto',
+      search: DEFAULT_SETTINGS.search,
+      weather: DEFAULT_SETTINGS.weather,
+      language: 'de',
+      accent: {hue: 210},
+    });
+    expect(stored.widgets).toEqual(FROM_NEWER.widgets);
   });
 });
 

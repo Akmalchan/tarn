@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Reset Settings at the end of the settings panel: it asks first, then puts
+  the wallpaper, clock, search box, weather and tab icon back to how Tarn
+  starts, with Undo. Widgets, bookmarks, notes and the language stay.
+- Temperature units right on the settings panel's main page.
 - Clock color: Auto follows the wallpaper as before; Light or Dark keeps
   the clock that color on any wallpaper (Settings > Clock).
 - A search box under the clock, shaped like the browser's own: it searches
@@ -111,6 +115,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Search on the Advanced page finds that page's own settings.
 - A renamed Timer shows its new name, and an empty Weather tile opens its
   place picker while arranging widgets.
 - The Outline clock no longer draws stray lines inside 2, 6 and 9.

@@ -67,6 +67,7 @@ import {
 import {
   loadSettings,
   replaceSettings,
+  resetSettings,
   saveSettings,
   watchSettings,
 } from '../settings/store';
@@ -127,7 +128,6 @@ export class TarnPanel extends LitElement {
     toast: {state: true},
     jsonDraft: {state: true},
     jsonStatus: {state: true},
-    confirmReset: {state: true},
     photos: {state: true},
     backups: {state: true},
     googleKey: {state: true},
@@ -148,6 +148,7 @@ export class TarnPanel extends LitElement {
       --press: rgb(0 0 0 / 0.06);
       --track: rgb(120 120 128 / 0.22);
       --on: #000000;
+      --danger: #ff3b30;
       --knob-on: #ffffff;
       /* Row rhythm, desktop-sized like macOS System Settings. A row is
          a title line plus an optional description line; the icon's box is
@@ -188,6 +189,7 @@ export class TarnPanel extends LitElement {
         --press: rgb(255 255 255 / 0.08);
         --track: rgb(120 120 128 / 0.32);
         --on: #ffffff;
+        --danger: #ff453a;
         --knob-on: #000000;
         color-scheme: dark;
       }
@@ -1003,6 +1005,66 @@ export class TarnPanel extends LitElement {
       cursor: pointer;
     }
 
+    /* Reset: a quiet red row at the end of home, asking once. */
+    .row.danger {
+      justify-content: center;
+      color: var(--danger);
+    }
+
+    .ask {
+      width: min(300px, calc(100% - 32px));
+      padding: 20px 18px 14px;
+      color: var(--ink);
+      text-align: center;
+      background: var(--group);
+      border: 0;
+      border-radius: 14px;
+      box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.5);
+    }
+
+    .ask::backdrop {
+      background: rgb(0 0 0 / 0.35);
+    }
+
+    .ask h2 {
+      margin: 0 0 6px;
+      padding: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .ask p {
+      margin: 0 0 16px;
+      font-size: var(--desc);
+      line-height: var(--desc-lh);
+      color: var(--muted);
+    }
+
+    .ask .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .ask button {
+      padding: 8px 0;
+      font: 500 var(--title) var(--font-sans);
+      color: var(--ink);
+      background: var(--field);
+      border: 0;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+
+    .ask button.go {
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--danger);
+    }
+
     button:focus-visible,
     input:focus-visible,
     textarea:focus-visible {
@@ -1036,7 +1098,6 @@ export class TarnPanel extends LitElement {
   /** The settings.json being edited, or null to show the live settings. */
   declare jsonDraft: string | null;
   declare jsonStatus: string;
-  declare confirmReset: boolean;
   /** The user's own wallpapers (src/wallpapers/store.ts), newest first. */
   declare photos: WallpaperInfo[];
   /** Setups Tarn saved before each update, newest first (settings/backup.ts). */
@@ -1051,7 +1112,6 @@ export class TarnPanel extends LitElement {
   /** A row to scroll to and highlight after the next render. */
   private flashTarget = '';
   private toastTimer = 0;
-  private resetTimer = 0;
   private readonly version = browser.runtime.getManifest().version;
 
   constructor() {
@@ -1063,7 +1123,6 @@ export class TarnPanel extends LitElement {
     this.toast = null;
     this.jsonDraft = null;
     this.jsonStatus = '';
-    this.confirmReset = false;
     this.photos = [];
     this.backups = [];
     this.googleKey = '';
@@ -1095,7 +1154,6 @@ export class TarnPanel extends LitElement {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('storage', this.onStorage);
     clearTimeout(this.toastTimer);
-    clearTimeout(this.resetTimer);
     for (const url of this.photoUrls.values()) URL.revokeObjectURL(url);
     this.photoUrls.clear();
   }
@@ -1279,8 +1337,27 @@ export class TarnPanel extends LitElement {
           'language',
           'language',
         )}
+        ${this.unitsRow()}
         ${this.navRow('sliders', t('panel.page.advanced'), '', 'advanced')}
       </div>
+
+      <div class="group">
+        <button
+          class="row danger"
+          data-target="reset"
+          @click=${() => this.askDialog()?.showModal()}
+        >
+          ${t('panel.reset')}
+        </button>
+      </div>
+      <dialog class="ask" @close=${this.onAskClose}>
+        <h2>${t('panel.reset.ask')}</h2>
+        <p>${t('panel.reset.detail')}</p>
+        <form method="dialog" class="buttons">
+          <button value="cancel" autofocus>${t('common.cancel')}</button>
+          <button value="reset" class="go">${t('panel.reset.go')}</button>
+        </form>
+      </dialog>
 
       <footer class="signature">
         ${wordmark('Tarn')}
@@ -1511,9 +1588,22 @@ export class TarnPanel extends LitElement {
 
   private renderAdvanced() {
     const {tabIcon} = this.settings;
+    // Search filters this page's sections (SEARCH_INDEX, page 'advanced').
+    const query = this.query.trim().toLowerCase();
+    const shown = new Set(
+      SEARCH_INDEX.filter(
+        entry => entry.page === 'advanced' && entryMatches(entry, query),
+      ).map(entry => entry.target),
+    );
+    if (query && !shown.size) {
+      return html`<p class="none">
+        ${t('panel.noSettings', {query: this.query.trim()})}
+      </p>`;
+    }
+    const show = (target: string) => !query || shown.has(target);
     return html`
       ${
-        import.meta.env.FIREFOX
+        import.meta.env.FIREFOX || !show('tab-icon')
           ? nothing
           : html`<section>
               <h2>${t('panel.tab')}</h2>
@@ -1559,51 +1649,45 @@ export class TarnPanel extends LitElement {
               </p>
             </section>`
       }
-      ${this.renderWeather()}
-
-      <section>
-        <h2>${t('panel.keys')}</h2>
-        <div class="group">
-          <div class="row" data-target="keys">
-            ${icon('search')}
-            <span class="txt">${t('panel.searchSettings')}</span>
-            <span class="keys"><kbd>/</kbd></span>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <h2>${t('panel.backup')}</h2>
-        <div class="group">
-          <button
-            class="row"
-            data-target="backup"
-            @click=${this.exportSettings}
-          >
-            ${icon('share')}
-            <span class="txt">${t('panel.backup.export')}</span>
-          </button>
-          <button class="row" @click=${this.pickImport}>
-            ${icon('tray')}
-            <span class="txt">${t('panel.backup.import')}</span>
-          </button>
-          <button class="row" data-target="reset" @click=${this.onReset}>
-            ${icon('reset')}
-            <span class="txt">${t('panel.backup.reset')}</span>
-            ${
-              this.confirmReset
-                ? html`<span class="value ink"
-                    >${t('panel.backup.confirm')}</span
-                  >`
-                : nothing
-            }
-          </button>
-        </div>
-        <p class="note">${t('panel.backup.note')}</p>
-      </section>
-
+      ${show('weather') ? this.renderWeather() : nothing}
       ${
-        this.backups.length
+        show('keys')
+          ? html`<section>
+              <h2>${t('panel.keys')}</h2>
+              <div class="group">
+                <div class="row" data-target="keys">
+                  ${icon('search')}
+                  <span class="txt">${t('panel.searchSettings')}</span>
+                  <span class="keys"><kbd>/</kbd></span>
+                </div>
+              </div>
+            </section>`
+          : nothing
+      }
+      ${
+        show('backup')
+          ? html`<section>
+              <h2>${t('panel.backup')}</h2>
+              <div class="group">
+                <button
+                  class="row"
+                  data-target="backup"
+                  @click=${this.exportSettings}
+                >
+                  ${icon('share')}
+                  <span class="txt">${t('panel.backup.export')}</span>
+                </button>
+                <button class="row" @click=${this.pickImport}>
+                  ${icon('tray')}
+                  <span class="txt">${t('panel.backup.import')}</span>
+                </button>
+              </div>
+              <p class="note">${t('panel.backup.note')}</p>
+            </section>`
+          : nothing
+      }
+      ${
+        this.backups.length && show('previous')
           ? html`<section data-target="previous">
               <h2>${t('panel.previous')}</h2>
               <div class="group">
@@ -1628,7 +1712,7 @@ export class TarnPanel extends LitElement {
       }
       ${
         // Raw settings, for working on Tarn; release builds don't show it.
-        import.meta.env.DEV
+        import.meta.env.DEV && show('json')
           ? html`<section>
               <h2>${t('panel.json.file')}</h2>
               <div class="group" data-target="json">
@@ -1654,35 +1738,41 @@ export class TarnPanel extends LitElement {
             </section>`
           : nothing
       }
-
-      <section data-target="examples">
-        <h2>${t('panel.examples')}</h2>
-        <div class="chips">
-          ${EXAMPLES.map(
-            example =>
-              html`<button @click=${() => void this.tryExample(example)}>
-                ${t(example.name)}
-              </button>`,
-          )}
-        </div>
-        <p class="note">${t('panel.examples.note')}</p>
-      </section>
-
-      <section>
-        <h2>${t('panel.about')}</h2>
-        <div class="group">
-          <div class="row" data-target="about">
-            ${icon('info')}
-            <span class="txt">${t('panel.about.version')}</span>
-            <span class="value">${this.version}</span>
-          </div>
-          <button class="row" @click=${this.copyDiagnostics}>
-            ${icon('doc')}
-            <span class="txt">${t('panel.about.diagnostics')}</span>
-          </button>
-        </div>
-        <p class="note">${t('panel.about.diagnosticsNote')}</p>
-      </section>
+      ${
+        show('examples')
+          ? html`<section data-target="examples">
+              <h2>${t('panel.examples')}</h2>
+              <div class="chips">
+                ${EXAMPLES.map(
+                  example =>
+                    html`<button @click=${() => void this.tryExample(example)}>
+                      ${t(example.name)}
+                    </button>`,
+                )}
+              </div>
+              <p class="note">${t('panel.examples.note')}</p>
+            </section>`
+          : nothing
+      }
+      ${
+        show('about')
+          ? html`<section>
+              <h2>${t('panel.about')}</h2>
+              <div class="group">
+                <div class="row" data-target="about">
+                  ${icon('info')}
+                  <span class="txt">${t('panel.about.version')}</span>
+                  <span class="value">${this.version}</span>
+                </div>
+                <button class="row" @click=${this.copyDiagnostics}>
+                  ${icon('doc')}
+                  <span class="txt">${t('panel.about.diagnostics')}</span>
+                </button>
+              </div>
+              <p class="note">${t('panel.about.diagnosticsNote')}</p>
+            </section>`
+          : nothing
+      }
     `;
   }
 
@@ -1841,7 +1931,7 @@ export class TarnPanel extends LitElement {
   }
 
   private renderWeather() {
-    const {provider, units} = this.settings.weather;
+    const {provider} = this.settings.weather;
     const google = provider === 'google';
     return html`
       <section data-target="weather">
@@ -1885,27 +1975,6 @@ export class TarnPanel extends LitElement {
                 </label>`
               : nothing
           }
-          <div class="row">
-            ${icon('thermometer')}
-            <span class="txt">${t('panel.weather.units')}</span>
-            <span
-              class="seg"
-              role="radiogroup"
-              aria-label=${t('panel.weather.unitsLabel')}
-            >
-              ${WEATHER_UNITS.map(
-                value => html`
-                  <button
-                    role="radio"
-                    aria-checked=${value === units}
-                    @click=${() => this.setWeather({units: value})}
-                  >
-                    ${value === 'auto' ? t('panel.weather.auto') : UNIT_NAMES[value]}
-                  </button>
-                `,
-              )}
-            </span>
-          </div>
         </div>
         <p class="note">
           ${t(
@@ -1920,11 +1989,7 @@ export class TarnPanel extends LitElement {
     const query = this.query.trim().toLowerCase();
     // Matches the words in the current language and in English, so either
     // finds a setting.
-    const hits = SEARCH_INDEX.filter(entry =>
-      `${t(entry.label)} ${t(entry.where)} ${entry.words}`
-        .toLowerCase()
-        .includes(query),
-    );
+    const hits = SEARCH_INDEX.filter(entry => entryMatches(entry, query));
     if (!hits.length) {
       return html`<p class="none">
         ${t('panel.noSettings', {query: this.query.trim()})}
@@ -2404,26 +2469,53 @@ export class TarnPanel extends LitElement {
     await this.restoreWithUndo(restoreBackup(raw), t('panel.backup.imported'));
   };
 
-  private onReset = () => {
-    if (!this.confirmReset) {
-      this.confirmReset = true;
-      this.resetTimer = window.setTimeout(
-        () => (this.confirmReset = false),
-        4000,
-      );
-      return;
-    }
-    clearTimeout(this.resetTimer);
-    this.confirmReset = false;
-    // Settings only: what's in your widgets stays, for Undo or a re-add.
+  private askDialog(): HTMLDialogElement | null {
+    return this.renderRoot.querySelector<HTMLDialogElement>('dialog.ask');
+  }
+
+  /** The Reset dialog closed: reset only on its Reset button. */
+  private onAskClose = (event: Event) => {
+    const dialog = event.target as HTMLDialogElement;
+    const reset = dialog.returnValue === 'reset';
+    dialog.returnValue = '';
+    if (!reset) return;
+    // A backup first, for Undo. Widgets and what's in them stay.
     void this.restoreWithUndo(
       createBackup().then(async before => {
-        await replaceSettings(DEFAULT_SETTINGS);
+        await resetSettings();
         return before;
       }),
-      t('panel.backup.reset'),
+      t('panel.reset.done'),
     );
   };
+
+  /** Temperature units, on home: Auto, °C or °F. */
+  private unitsRow() {
+    const {units} = this.settings.weather;
+    return html`
+      <div class="row" data-target="units">
+        ${icon('thermometer')}
+        <span class="txt">${t('panel.weather.unitsLabel')}</span>
+        <span
+          class="seg"
+          role="radiogroup"
+          aria-label=${t('panel.weather.unitsLabel')}
+        >
+          ${WEATHER_UNITS.map(
+            value => html`
+              <button
+                role="radio"
+                aria-checked=${value === units}
+                @click=${() => this.setWeather({units: value})}
+              >
+                ${value === 'auto' ? t('panel.weather.auto') : UNIT_NAMES[value]}
+              </button>
+            `,
+          )}
+        </span>
+      </div>
+    `;
+  }
 
   private setLanguage(language: LanguageSetting): void {
     this.applyPatch({language});
@@ -2753,6 +2845,7 @@ const SCOPED_SEARCH: Partial<Record<Page, MessageKey>> = {
   clock: 'panel.searchClocks',
   widgets: 'panel.searchWidgets',
   language: 'panel.searchLanguages',
+  advanced: 'panel.searchAdvanced',
 };
 
 const KIND_NAMES: Record<WidgetKind, MessageKey> = {
@@ -2827,7 +2920,20 @@ interface SearchEntry {
   page: Page;
   target: string;
   glyph: GlyphName;
+  /** English words; the labels below are matched in the current language. */
   words: string;
+  /** More labels the setting shows (its rows), in the current language. */
+  also?: readonly MessageKey[];
+}
+
+/** Whether a setting matches a lowercase query, in either language. */
+function entryMatches(entry: SearchEntry, query: string): boolean {
+  return [entry.label, entry.where, ...(entry.also ?? [])]
+    .map(key => t(key))
+    .concat(entry.words)
+    .join(' ')
+    .toLowerCase()
+    .includes(query);
 }
 
 /** What search finds, and where each setting lives. */
@@ -2885,7 +2991,8 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
           page: 'advanced',
           target: 'tab-icon',
           glyph: 'tab',
-          words: 'favicon chrome none',
+          words: 'tab icon favicon chrome edge browser none custom image',
+          also: ['panel.tab', 'panel.tab.change'],
         },
       ] satisfies SearchEntry[])),
   {
@@ -2894,8 +3001,16 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     page: 'advanced',
     target: 'weather',
     glyph: 'weather',
-    words:
-      'forecast temperature celsius fahrenheit provider google open-meteo api key',
+    words: 'weather forecast provider google open-meteo api key',
+    also: ['panel.weather.provider', 'panel.weather.apiKey'],
+  },
+  {
+    label: 'panel.weather.unitsLabel',
+    where: 'common.settings',
+    page: 'home',
+    target: 'units',
+    glyph: 'thermometer',
+    words: 'weather temperature units degrees celsius fahrenheit °c °f',
   },
   {
     label: 'panel.keys.shortcuts',
@@ -2903,7 +3018,8 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     page: 'advanced',
     target: 'keys',
     glyph: 'keyboard',
-    words: 'keys hotkeys',
+    words: 'keyboard keys shortcuts hotkeys slash',
+    also: ['panel.keys', 'panel.searchSettings'],
   },
   {
     label: 'panel.examples',
@@ -2919,15 +3035,24 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     page: 'advanced',
     target: 'backup',
     glyph: 'share',
-    words: 'backup export import file save restore previous setup update',
+    words: 'backup export import file save restore json',
+    also: ['panel.backup', 'panel.backup.export', 'panel.backup.import'],
   },
   {
-    label: 'panel.backup.reset',
+    label: 'panel.previous',
     where: 'panel.page.advanced',
     page: 'advanced',
+    target: 'previous',
+    glyph: 'reset',
+    words: 'previous setups automatic backups restore update undo',
+  },
+  {
+    label: 'panel.reset',
+    where: 'common.settings',
+    page: 'home',
     target: 'reset',
     glyph: 'reset',
-    words: 'reset defaults start over',
+    words: 'reset defaults default start over restore',
   },
   ...(import.meta.env.DEV
     ? ([
@@ -2947,7 +3072,8 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     page: 'advanced',
     target: 'about',
     glyph: 'info',
-    words: 'about version debug copy bug',
+    words: 'about version debug copy bug diagnostics',
+    also: ['panel.about', 'panel.about.version', 'panel.about.diagnostics'],
   },
 ];
 
