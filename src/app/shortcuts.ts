@@ -87,12 +87,15 @@ export function shortcutList(mac = IS_MAC): readonly ShortcutRow[] {
   ];
 }
 
-/** A row's keycaps, with "or" between the alternatives. */
+/** A row's keycaps: "+" inside a chord, "or" between alternatives. */
 export function chordKeys(row: ShortcutRow) {
   return row.chords.map(
     (chord, index) =>
       html`${
         index ? html`<span class="or">${t('keys.or')}</span>` : ''
-      }${chord.map(key => html`<kbd>${key}</kbd>`)}`,
+      }${chord.map(
+        (key, n) =>
+          html`${n ? html`<span class="plus">+</span>` : ''}<kbd>${key}</kbd>`,
+      )}`,
   );
 }

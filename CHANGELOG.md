@@ -123,6 +123,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- The Everything example setup shows each widget once, with no duplicates.
+- Shortcut keys show a + between keys (⌘ + K, ⌥ + 1-9).
 - Search on the Advanced page finds that page's own settings.
 - A renamed Timer shows its new name, and an empty Weather tile opens its
   place picker while arranging widgets.
