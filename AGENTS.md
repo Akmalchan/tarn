@@ -49,8 +49,11 @@ owner's taste. The essentials:
   They used to be transparent so the tab never showed Tarn's icon, but that
   left the side panel header blank; on 2026-10-13 the owner chose a filled
   header over that brief flash. The toolbar button uses `action.default_icon`
-  (popup meta). Settings > Tab icon offers "Chrome" (default: Chrome's icon
-  via the favicon API) and "None" (a transparent icon once the page exists).
+  (popup meta). Settings > Tab icon offers the browser's own icon (default,
+  via the favicon API; labeled with the browser's name: Chrome, Edge...),
+  "None" (a transparent icon once the page exists) and "Your own" (an image
+  the user picks, 64px PNG in localStorage `tarn.tabIcon.custom`, this
+  computer only; first-paint.ts draws it in the first frame).
   `management` is
   _optional_, requested only when the user asks Tarn to switch off another
   new-tab extension (Chromium only). Adding any permission needs a stated
@@ -156,9 +159,11 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   Each kind offers only the sizes its content looks right at
   (`WIDGET_SIZE_OPTIONS` in `settings/schema.ts`: Focus S/M; Weather
   S/M/L; Calendar S/M/L; Notes and Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
-  one. A widget marked `editable` (Favorites) stays live in edit mode and
-  shows its own controls (add and remove sites) there, marked `data-edit` so
-  pressing them doesn't start a drag; its links are off meanwhile.
+  one. A widget marked `editable` (Favorites, Weather) stays live in edit
+  mode and shows its own controls there (add and remove sites; "Change
+  place"), marked `data-edit` so pressing them doesn't start a drag; its
+  links are off meanwhile. Shown names: Favorites is "Bookmarks" and Focus
+  is "Timer" (owner, 2026-10-14); the kinds' ids stay `favorites`/`focus`.
   In edit mode every tile also gets a holder on its top edge: the widget's
   name (click to rename; `WidgetEntry.name`, shown as its heading) and a
   remove button that asks once before removing. The board saves both

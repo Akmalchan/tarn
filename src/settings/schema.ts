@@ -12,11 +12,13 @@ export {LANGUAGE_SETTINGS, type LanguageSetting} from '../i18n/languages';
 import {migrateSettings} from './migrate';
 
 /**
- * The icon in the tab. 'chrome' shows Chrome's own new-tab icon; 'none'
- * shows nothing, which never changes even mid-reload (see first-paint.ts).
+ * The icon in the tab. 'chrome' shows the browser's own new-tab icon;
+ * 'none' shows nothing, which never changes even mid-reload (see
+ * first-paint.ts); 'custom' shows the user's own image, kept on this
+ * computer (a computer without it shows the browser's icon).
  */
-export type TabIcon = 'chrome' | 'none';
-export const TAB_ICONS: readonly TabIcon[] = ['chrome', 'none'];
+export type TabIcon = 'chrome' | 'none' | 'custom';
+export const TAB_ICONS: readonly TabIcon[] = ['chrome', 'none', 'custom'];
 
 /**
  * The clock above the widgets, picked by face. 'center' is the classic thin

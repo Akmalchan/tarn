@@ -19,10 +19,10 @@ export const en = {
   'common.openSettings': 'Open settings',
 
   // Widget names, also their default headings
-  'widget.favorites': 'Favorites',
+  'widget.favorites': 'Bookmarks',
   'widget.notes': 'Notes',
   'widget.tasks': 'Tasks',
-  'widget.focus': 'Focus timer',
+  'widget.focus': 'Timer',
   'widget.weather': 'Weather',
   'widget.calendar': 'Calendar',
 
@@ -248,8 +248,6 @@ export const en = {
   // Settings panel: advanced
   'panel.tab': 'Tab',
   'panel.tab.icon': 'Tab icon',
-  'panel.tab.chrome': 'Chrome',
-  'panel.tab.noteChrome': 'New tabs show Chrome’s own new-tab icon.',
   'panel.tab.noteNone': 'New tabs show no icon.',
   'panel.weather.provider': 'Provider',
   'panel.weather.providerLabel': 'Weather provider',
@@ -265,7 +263,6 @@ export const en = {
   'panel.weather.keySaved': 'API key saved',
   'panel.weather.keyRemoved': 'API key removed',
   'panel.keys': 'Keyboard',
-  'panel.keys.switch': 'Switch wallpaper',
   'panel.keys.shortcuts': 'Keyboard shortcuts',
   'panel.backup': 'Backup',
   'panel.backup.export': 'Export Backup',
@@ -297,6 +294,39 @@ export const en = {
   'panel.about.copied': 'Diagnostics copied',
   'panel.about.cantCopy': 'Couldn’t copy. Use settings.json instead.',
   'panel.about.search': 'Version and diagnostics',
+
+  // Settings polish (2026-10-14)
+  'panel.searchWidgets': 'Search Widgets',
+  'panel.searchLanguages': 'Search Languages',
+  'panel.noWidgets': 'No widgets match “{query}”.',
+  'panel.noLanguages': 'No languages match “{query}”.',
+  'panel.widgets.addHint': 'Drag one onto your page, or click to add it.',
+  'panel.load': 'Load on your computer: {level}',
+  'panel.load.still': 'none, it’s a still image',
+  'panel.load.light': 'light',
+  'panel.load.medium': 'medium',
+  'panel.load.heavy': 'higher',
+  'panel.examples': 'Example setups',
+  'panel.examples.note':
+    'Try a ready-made page with sample content. Undo brings your own widgets back.',
+  'panel.examples.shown': '{name} shown',
+  'panel.examples.bookmarks': 'Just bookmarks',
+  'panel.examples.notes': 'Notes and tasks',
+  'panel.examples.starter': 'Starter',
+  'panel.examples.planner': 'Planner',
+  'panel.examples.everything': 'Everything',
+  'panel.examples.folderWork': 'Work',
+  'panel.examples.folderLearn': 'Learn',
+  'panel.examples.task1': 'Reply to messages',
+  'panel.examples.task2': 'Book the dentist',
+  'panel.examples.task3': 'Water the plants',
+  'panel.tab.browser': 'Browser',
+  'panel.tab.custom': 'Your own',
+  'panel.tab.change': 'Change image',
+  'panel.tab.noteBrowser': 'New tabs show your browser’s own new-tab icon.',
+  'panel.tab.noteCustom':
+    'New tabs show your image. It stays on this computer.',
+  'panel.tab.badImage': 'That image can’t be used.',
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof en;

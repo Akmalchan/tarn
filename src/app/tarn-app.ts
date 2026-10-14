@@ -15,7 +15,7 @@ import type {
   TarnBoard,
   TilesDetail,
 } from '../widgets/tarn-board';
-import {SCENES, sceneById, sceneTone} from '../backdrop/scenes';
+import {sceneById, sceneTone} from '../backdrop/scenes';
 import {
   DEFAULT_SETTINGS,
   MAX_WIDGETS,
@@ -25,6 +25,7 @@ import {
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import {
+  CUSTOM_TAB_ICON_KEY,
   arrival,
   isRememberedOff,
   refreshFavicon,
@@ -198,8 +199,8 @@ export class TarnApp extends LitElement {
     });
     this.unwatch = watchSettings(this.applySettings);
     this.unwatchPanel = watchSidePanel(open => (this.editing = open));
-    window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('dragover', this.onDragOver);
+    window.addEventListener('storage', this.onStorage);
     window.addEventListener('dragleave', this.onDragLeave);
     window.addEventListener('drop', this.onDrop);
     this.schemeQuery.addEventListener('change', this.onSchemeChange);
@@ -209,8 +210,8 @@ export class TarnApp extends LitElement {
     super.disconnectedCallback();
     this.unwatch();
     this.unwatchPanel();
-    window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('dragover', this.onDragOver);
+    window.removeEventListener('storage', this.onStorage);
     window.removeEventListener('dragleave', this.onDragLeave);
     window.removeEventListener('drop', this.onDrop);
     this.schemeQuery.removeEventListener('change', this.onSchemeChange);
@@ -353,6 +354,13 @@ export class TarnApp extends LitElement {
     });
   };
 
+  /** A new image of the user's own was chosen in settings. */
+  private onStorage = (event: StorageEvent) => {
+    if (event.key === CUSTOM_TAB_ICON_KEY) {
+      void refreshFavicon(this.settings.tabIcon);
+    }
+  };
+
   /** The tab icon's tint depends on light or dark mode. */
   private onSchemeChange = () => {
     void refreshFavicon(this.settings.tabIcon);
@@ -375,27 +383,6 @@ export class TarnApp extends LitElement {
     void refreshFavicon(settings.tabIcon);
     void useLanguage(settings.language);
   };
-
-  private selectScene(id: string): void {
-    this.applySettings({...this.settings, scene: id});
-    void saveSettings({scene: id});
-  }
-
-  private onKeyDown = (event: KeyboardEvent) => {
-    if (
-      event.metaKey ||
-      event.ctrlKey ||
-      event.altKey ||
-      isTyping(event.target)
-    )
-      return;
-    // 1-9 pick the first nine wallpapers, 0 the tenth.
-    const digit = /^[0-9]$/.test(event.key) ? Number(event.key) : NaN;
-    const scene = SCENES[digit === 0 ? 9 : digit - 1];
-    if (scene) {
-      this.selectScene(scene.id);
-    }
-  };
 }
 
 /**
@@ -406,14 +393,6 @@ export class TarnApp extends LitElement {
 function keepTarnWarm(): void {
   if (import.meta.env.FIREFOX) return;
   void browser.runtime.sendMessage({type: 'tarn:warm'}).catch(() => {});
-}
-
-function isTyping(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
-  );
 }
 
 customElements.define('tarn-app', TarnApp);

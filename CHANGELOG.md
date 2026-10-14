@@ -8,8 +8,18 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Settings, polished: search on Widgets and Language filters that page
+  ("german" finds Deutsch); wallpaper cards show a gauge of how much each
+  asks of your computer, and play the real animation while you hover;
+  widgets to add show a grip and can be dragged onto your page; example setups
+  (up to nine widgets, with Undo) for everyone; your own image as the tab
+  icon, and the browser option says which browser it is.
+- Weather: "Change place" right on the tile while settings is open.
+- Favorites are now Bookmarks, with folders, drag to arrange and your own
+  icons; Focus timer is now Timer.
+
 - Six new backgrounds: Sakura (a blossom branch over falling petals),
-  Comet (an anime twilight over a hillside town), Koi (a pond from above),
+  Comet (twilight over a mountain lake), Koi (a pond from above),
   Window (rain on glass over a city in bokeh), Lumen (light through haze)
   and Contour (a living topographic map, drawn at full screen sharpness).
   They replace Mist, Dunes, Rain and Nebula; whoever picked one gets the
@@ -81,6 +91,11 @@ follow [Semantic Versioning](https://semver.org/).
   long-lived tabs, self-healing warm process.
 - Take-over page that switches off other new-tab extensions (optional
   `management` permission) and restores them when Tarn is turned off.
+
+### Removed
+
+- The number keys no longer switch wallpapers (typing a number changed it
+  by surprise). The raw settings editor is only in development builds.
 
 ### Fixed
 

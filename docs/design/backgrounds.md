@@ -10,23 +10,26 @@ or adding a scene. The brand side lives in `docs/brand/BRAND.md`
 ## The scenes
 
 Twelve scenes, in `src/backdrop/scenes/index.ts`. Their order in
-`SCENES` is the order in settings; the first ten also have keyboard
-shortcuts (<kbd>1</kbd>–<kbd>9</kbd>, then <kbd>0</kbd> for the tenth).
+`SCENES` is the order in settings. There are no keyboard shortcuts: the
+number keys switched scenes until 2026-10-14, when the owner removed them
+(people typed numbers and the wallpaper changed). Each scene's measured
+cost lives in `src/backdrop/scenes/load.ts` and drives the load gauge on
+its settings card; update it whenever a scene changes.
 
-| Key | Scene   | What it draws                                                                                                                                                                      | Tone  | Speed | Resolution           | Noise                   |
-| --- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | -------------------- | ----------------------- |
-| 1   | Tarn    | Light moving through still water: triple domain-warped noise in navy, teal and pale blue. The default and the brand's signature.                                                   | dark  | 0.22  | 0.5                  | exact `fbm` (must)      |
-| 2   | Ember   | Folding purple-pink-orange color waves under animated film grain.                                                                                                                  | dark  | 0.6   | 0.75                 | `noiseFast`             |
-| 3   | Bloom   | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                                                    | light | 0.18  | 0.35                 | `fbmFast`               |
-| 4   | Wave    | Nine luminous sine ribbons and a glowing sheet over deep blue, after the classic console wave.                                                                                     | dark  | 0.35  | 1                    | none                    |
-| 5   | Aurora  | Northern lights: two tilted curtains with sharp, bright lower edges and streaky rays, teal fading to violet, over a night sky with soft stars.                                     | dark  | 0.25  | 0.5                  | `fbmFast` + `noiseFast` |
-| 6   | Silk    | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights.                                                          | light | 0.2   | 0.4                  | `noiseFast`             |
-| 7   | Sakura  | 6.5%                                                                                                                                                                               | 9.1%  | 0.5   | 1                    | `fbmFast`               |
-| 8   | Comet   | 4.6%                                                                                                                                                                               | 8.6%  | 0.2   | 1                    | `fbmFast` + `noiseFast` |
-| 9   | Koi     | 6.8%                                                                                                                                                                               | 9.4%  | 0.5   | 1                    | `noiseFast` + `noise`   |
-| 0   | Window  | 7.5%                                                                                                                                                                               | 9.2%  | 0.6   | 1                    | `fbmFast` + `hash01`    |
-| –   | Lumen   | 6.2%                                                                                                                                                                               | 10.0% | 0.4   | 0.5                  | `fbmFast` + `noiseFast` |
-| –   | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper. | light | 0.12  | screen density (≤ 2) | exact `noise` (must)    |
+| #   | Scene   | What it draws                                                                                                                                                                                                                                                                                                                                                                                  | Tone  | Speed | Resolution           | Noise                                      |
+| --- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | -------------------- | ------------------------------------------ |
+| 1   | Tarn    | Light moving through still water: triple domain-warped noise in navy, teal and pale blue. The default and the brand's signature.                                                                                                                                                                                                                                                               | dark  | 0.22  | 0.5                  | exact `fbm` (must)                         |
+| 2   | Ember   | Folding purple-pink-orange color waves under animated film grain.                                                                                                                                                                                                                                                                                                                              | dark  | 0.6   | 0.75                 | `noiseFast`                                |
+| 3   | Bloom   | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                                                                                                                                                                                                                                                                | light | 0.18  | 0.35                 | `fbmFast`                                  |
+| 4   | Wave    | Nine luminous sine ribbons and a glowing sheet over deep blue, after the classic console wave.                                                                                                                                                                                                                                                                                                 | dark  | 0.35  | 1                    | none                                       |
+| 5   | Aurora  | Northern lights: two tilted curtains with sharp, bright lower edges and streaky rays, teal fading to violet, over a night sky with soft stars.                                                                                                                                                                                                                                                 | dark  | 0.25  | 0.5                  | `fbmFast` + `noiseFast`                    |
+| 6   | Silk    | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights.                                                                                                                                                                                                                                                                      | light | 0.2   | 0.4                  | `noiseFast`                                |
+| 7   | Sakura  | Cherry blossoms: a canopy out of focus overhead, a branch in focus from the top right with five-petal blossoms (notched tips, pink hearts, stamens) and buds, swaying; soft sun rays; petals falling in three depths.                                                                                                                                                                          | light | 0.5   | 1                    | `fbmFast`                                  |
+| 8   | Comet   | Twilight over a mountain lake: indigo to a warm afterglow, the Milky Way and twinkling stars, a comet with an ion and a dust tail, shooting stars, a plane's blinking light, drifting pink-lit clouds; a rugged range lit warm along its crests, a dark forested shore with a few villages' lights, all mirrored in still water with slow ripples and the lights' long shimmering reflections. | dark  | 0.2   | 1                    | `noise` (ridged) + `fbmFast` + `noiseFast` |
+| 9   | Koi     | A koi pond from above: stones in the silt, caustics, six koi (kohaku, sanke, ogon, showa) at different depths with wet sheen, eyes and rayed translucent fins, shadows below, ripples that bend everything under the surface, glossy mottled lily pads and a lotus.                                                                                                                            | dark  | 0.5   | 1                    | `noiseFast` + `noise`                      |
+| 10  | Window  | Rain on a window at night: a city as layered bokeh (warm and cool, brighter rims, drifting slowly), beads of three sizes and running drops that wipe trails; every drop a lens showing the lights sharper, flipped and shrunk.                                                                                                                                                                 | dark  | 0.6   | 1                    | `fbmFast` + `hash01`                       |
+| 11  | Lumen   | Light through haze: shafts from an opening above that sway, widen and dim on their own, haze rolling through, pulses running down the beams, dust in three depths glinting only in the light.                                                                                                                                                                                                  | dark  | 0.4   | 0.5                  | `fbmFast` + `noiseFast`                    |
+| 12  | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper.                                                                                                                                                                                                             | light | 0.12  | screen density (≤ 2) | exact `noise` (must)                       |
 
 Aurora and Silk were added on 2026-10-13 (PR #14). The owner asked for
 "something new" (they mentioned Luma as a vibe) and loved both. Silk was
@@ -57,7 +60,7 @@ M4 MacBook, Chrome for Testing 155, headed 1440×900, active pace (30 fps),
 | Aurora  | 4.1-5.6%        | 7.7-10.3%   |
 | Silk    | 4.4-5.3%        | 9.1-10.4%   |
 | Sakura  | 6.5%            | 9.1%        |
-| Comet   | 4.6%            | 8.6%        |
+| Comet   | 4.1%            | 8.7%        |
 | Koi     | 6.8%            | 9.4%        |
 | Window  | 7.5%            | 9.2%        |
 | Lumen   | 6.2%            | 10.0%       |
@@ -128,16 +131,16 @@ To compare candidate moments without touching `public/`, pass
 1. Write the shader yourself (never copy shaders from sites or apps).
    Read the brand rules below first.
 2. Add the `Scene` to `SCENES` in `scenes/index.ts`. Its position is its
-   keyboard shortcut. `src/settings/schema.ts` needs nothing: the setting
+   place in settings. `src/settings/schema.ts` needs nothing: the setting
    is validated against `SCENES`.
 3. Look at it while tuning: render candidate frames with the preview
    script (`id@seconds`), then check it full screen in the dev build, in
    motion.
 4. Pick its moment in `MOMENTS` and regenerate `public/scenes/`.
-5. Measure its cost against the table above (switch scenes with the number
-   keys, sample `SystemInfo.getProcessInfo` CPU per process).
-6. Update this file, `README.md` (the scene list and key range) and
-   `CHANGELOG.md`.
+5. Measure its cost against the table above (switch scenes from settings,
+   sample `SystemInfo.getProcessInfo` CPU per process) and add its row to
+   `scenes/load.ts`.
+6. Update this file, `README.md` (the scene list) and `CHANGELOG.md`.
 
 `src/backdrop/scenes/scenes.test.ts` checks every scene automatically
 (four colors, a base, valid speed and resolution, the `scene()`
@@ -207,6 +210,10 @@ Lessons from the 2026-10-14 eight (each took several rendered rounds):
 - **"Not animating enough" means motion you notice within seconds.**
   Lumen's shafts now sway and dim on their own every few seconds, haze
   rolls, light pulses down the beams.
+- **Realism over props.** The owner called Comet's row of little houses
+  with power lines "very much Claude coded". A mirrored lake under ridged
+  mountains, with clustered shore lights and long reflections, reads as
+  real.
 - **No derivatives after an early return.** `fwidth` in a function that
   returns early is undefined at the boundary and drew faint dotted lines;
   use a pixel size from `uResolution` instead.

@@ -98,6 +98,7 @@ export class TarnWeather extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
     heading: {attribute: false},
+    editing: {attribute: false},
     data: {state: true},
     settings: {state: true},
     problem: {state: true},
@@ -159,6 +160,30 @@ export class TarnWeather extends LitElement {
         background: none;
         border: 0;
         cursor: pointer;
+      }
+
+      /* While arranging: an obvious way to pick another place. */
+      .change {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        z-index: 1;
+        padding: 7px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        color: var(--tile-held, #141922);
+        text-shadow: none;
+        background: var(--ink);
+        border: 0;
+        border-radius: 999px;
+        box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+        transform: translateX(-50%);
+        cursor: pointer;
+      }
+
+      .change:hover {
+        opacity: 0.9;
       }
 
       .place:hover {
@@ -508,6 +533,8 @@ export class TarnWeather extends LitElement {
   declare widgetId: string;
   /** The widget's name: the user's, or the default. */
   declare heading: string;
+  /** Widgets are being arranged: the place can be changed from a button. */
+  declare editing: boolean;
   declare data: WeatherData;
   /** Provider and units, from settings (null until loaded). */
   declare settings: WeatherSettings | null;
@@ -532,6 +559,7 @@ export class TarnWeather extends LitElement {
     new LocaleController(this);
     this.widgetId = '';
     this.heading = t('widget.weather');
+    this.editing = false;
     this.data = EMPTY;
     this.settings = null;
     this.problem = '';
@@ -578,7 +606,9 @@ export class TarnWeather extends LitElement {
         <h3>${this.heading}</h3>
         <div class="empty">
           <span>${t('weather.empty')}</span>
-          <button @click=${this.openPicker}>${t('weather.choose')}</button>
+          <button data-edit @click=${this.openPicker}>
+            ${t('weather.choose')}
+          </button>
         </div>
         ${this.renderPicker()}
       `;
@@ -594,6 +624,13 @@ export class TarnWeather extends LitElement {
         ${shown ? this.renderDays(shown) : nothing}
         <div class="credit">${this.credit()}</div>
       </div>
+      ${
+        this.editing
+          ? html`<button class="change" data-edit @click=${this.openPicker}>
+              ${t('weather.change')}
+            </button>`
+          : nothing
+      }
       ${this.renderPicker()}
     `;
   }
@@ -612,6 +649,7 @@ export class TarnWeather extends LitElement {
       <div class="now" title=${this.creditText()}>
         <button
           class="place"
+          data-edit
           title=${t('weather.change')}
           @click=${this.openPicker}
         >

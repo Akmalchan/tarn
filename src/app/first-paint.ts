@@ -46,6 +46,8 @@ const FAVICON_TINTS = {
   light: 'rgb(0 0 0 / 0.62)',
 } as const;
 const TAB_ICON_KEY = 'tarn.tabIcon';
+/** The user's own tab icon (a small PNG data URL), on this computer only. */
+export const CUSTOM_TAB_ICON_KEY = 'tarn.tabIcon.custom';
 const GHOST_KEY = 'tarn.ghost';
 const GHOST_ID = 'tarn-ghost';
 /** Largest ghost accepted from storage, in pixels per side. */
@@ -101,8 +103,12 @@ export function prepareFirstPaint(): void {
       root.dataset.ghostClock = String(ghost.clock);
     }
   }
-  if (read(TAB_ICON_KEY) === 'none') {
+  const tabIcon = read(TAB_ICON_KEY);
+  const custom = tabIcon === 'custom' ? read(CUSTOM_TAB_ICON_KEY) : null;
+  if (tabIcon === 'none') {
     setFavicon(NO_ICON);
+  } else if (custom) {
+    setFavicon(custom);
   } else {
     const cached = read(FAVICON_KEYS[scheme()]);
     if (cached) setFavicon(cached);
@@ -277,6 +283,11 @@ export function resumeClock(now = Date.now()): number | undefined {
 export async function refreshFavicon(icon: string): Promise<void> {
   if (icon === 'none') {
     setFavicon(NO_ICON);
+    return;
+  }
+  const custom = icon === 'custom' ? read(CUSTOM_TAB_ICON_KEY) : null;
+  if (custom) {
+    setFavicon(custom);
     return;
   }
   if (import.meta.env.FIREFOX) return;
