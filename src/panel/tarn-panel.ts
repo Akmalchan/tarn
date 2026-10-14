@@ -2262,6 +2262,7 @@ const KIND_NAMES: Record<WidgetKind, MessageKey> = {
   tasks: 'widget.tasks',
   weather: 'widget.weather',
   focus: 'widget.focus',
+  calendar: 'widget.calendar',
 };
 
 const KIND_NOTES: Record<WidgetKind, MessageKey> = {
@@ -2270,6 +2271,7 @@ const KIND_NOTES: Record<WidgetKind, MessageKey> = {
   tasks: 'panel.widgetAbout.tasks',
   weather: 'panel.widgetAbout.weather',
   focus: 'panel.widgetAbout.focus',
+  calendar: 'panel.widgetAbout.calendar',
 };
 
 const PHOTO_ERRORS: Record<WallpaperErrorCode, MessageKey> = {
@@ -2285,6 +2287,7 @@ const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
   tasks: 'checklist',
   weather: 'weather',
   focus: 'timer',
+  calendar: 'calendar',
 };
 
 const PROVIDER_NAMES: Record<WeatherProvider, string> = {

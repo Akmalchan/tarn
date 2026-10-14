@@ -28,6 +28,7 @@ export const GLYPHS = {
   weather: svg`<circle cx="8.5" cy="8.5" r="4.2"/><path d="M8.5 1.5v1.8M1.5 8.5h1.8M3.6 3.6l1.3 1.3M13.4 3.6l-1.3 1.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M9 21a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 20 13.6 3.8 3.8 0 0 1 19.2 21z"/>`,
   thermometer: svg`<path fill-rule="evenodd" d="M12 2a3.5 3.5 0 0 1 3.5 3.5v8.1a5.5 5.5 0 1 1-7 0V5.5A3.5 3.5 0 0 1 12 2zm-1 6v7.2a2.6 2.6 0 1 0 2 0V8z"/>`,
   key: svg`<path fill-rule="evenodd" d="M8 6.5a5.5 5.5 0 0 1 5.2 7.3L21 21.6V23h-3.5v-2h-2v-2h-2l-1.6-1.6A5.5 5.5 0 1 1 8 6.5zM6.5 9.6a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2z"/>`,
+  calendar: svg`<path fill-rule="evenodd" d="M7 2h2v2h6V2h2v2h1.5A2.5 2.5 0 0 1 21 6.5v12a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5v-12A2.5 2.5 0 0 1 5.5 4H7zM5 9v9.5c0 .3.2.5.5.5h13c.3 0 .5-.2.5-.5V9zm2 2.5h3v3H7z"/>`,
   timer: svg`<path fill-rule="evenodd" d="M9.5 1.5h5v2h-5zM12 4.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5zM11 8v6h2V8z"/>`,
   plus: svg`<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1 5v4H7v2h4v4h2v-4h4v-2h-4V7z"/>`,
   minus: svg`<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zM7 11v2h10v-2z"/>`,

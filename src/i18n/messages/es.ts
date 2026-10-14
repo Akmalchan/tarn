@@ -17,6 +17,7 @@ export const es: Catalog = {
   'widget.tasks': 'Tareas',
   'widget.focus': 'Temporizador',
   'widget.weather': 'Tiempo',
+  'widget.calendar': 'Calendario',
   'board.hint':
     'Arrastra para reordenar · arrastra una esquina para cambiar el tamaño',
   'board.movable': 'widget movible',
@@ -87,6 +88,9 @@ export const es: Catalog = {
   'weather.snow': 'Nieve',
   'weather.storm': 'Tormenta',
   'weather.wind': 'Viento',
+  'calendar.previous': 'Mes anterior',
+  'calendar.next': 'Mes siguiente',
+  'calendar.today': 'Hoy',
   'popup.newTab': 'Nueva pestaña de Tarn',
   'popup.on': 'Las pestañas nuevas abren Tarn.',
   'popup.off': 'Las pestañas nuevas abren la página predeterminada.',
@@ -176,6 +180,7 @@ export const es: Catalog = {
   'panel.widgetAbout.notes': 'Una nota que se queda en este ordenador',
   'panel.widgetAbout.tasks': 'Una lista de tareas corta',
   'panel.widgetAbout.weather': 'Hoy y la semana que viene',
+  'panel.widgetAbout.calendar': 'Este mes de un vistazo',
   'panel.widgetAbout.focus': 'Una tarea y un temporizador',
   'panel.language.auto': 'Igual que el navegador',
   'panel.language.note':

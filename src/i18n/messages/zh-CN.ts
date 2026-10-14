@@ -17,6 +17,7 @@ export const zhCN: Catalog = {
   'widget.tasks': '任务',
   'widget.focus': '专注计时',
   'widget.weather': '天气',
+  'widget.calendar': '日历',
   'board.hint': '拖动以重新排列 · 拖动边角以调整大小',
   'board.movable': '可移动的小组件',
   'board.position':
@@ -85,6 +86,9 @@ export const zhCN: Catalog = {
   'weather.snow': '雪',
   'weather.storm': '雷雨',
   'weather.wind': '大风',
+  'calendar.previous': '上个月',
+  'calendar.next': '下个月',
+  'calendar.today': '今天',
   'popup.newTab': 'Tarn 新标签页',
   'popup.on': '新标签页会打开 Tarn。',
   'popup.off': '新标签页会打开默认页面。',
@@ -170,6 +174,7 @@ export const zhCN: Catalog = {
   'panel.widgetAbout.notes': '留在这台电脑上的便签',
   'panel.widgetAbout.tasks': '简短的待办清单',
   'panel.widgetAbout.weather': '今天和未来一周',
+  'panel.widgetAbout.calendar': '本月一目了然',
   'panel.widgetAbout.focus': '一项任务，一个计时器',
   'panel.language.auto': '与浏览器相同',
   'panel.language.note':
