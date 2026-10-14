@@ -18,18 +18,55 @@ import {saveWidgetData} from './data';
 // widgets, with real-looking content, to check the layout at every count.
 // Only the side panel of a dev build loads this module.
 
-const SAMPLE_SITES = [
-  'github.com',
-  'youtube.com',
-  'mail.google.com',
-  'news.ycombinator.com',
-  'figma.com',
-  'notion.so',
-  'wikipedia.org',
-  'reddit.com',
-  'calendar.google.com',
-  'chatgpt.com',
-].map(host => ({url: `https://${host}/`}));
+const site = (host: string, title: string) => ({
+  url: `https://${host}/`,
+  title,
+});
+
+/**
+ * Sample favorites: GitHub and ChatGPT have white icons (dark chips), and
+ * two folders, one like a student's bookmarks bar.
+ */
+const SAMPLE_FAVORITES = [
+  site('www.youtube.com', 'YouTube'),
+  site('github.com', 'GitHub'),
+  site('chatgpt.com', 'ChatGPT'),
+  site('mail.google.com', 'Gmail'),
+  {
+    title: 'sfsu',
+    sites: [
+      site('advising.sfsu.edu', 'Advising'),
+      site('oip.sfsu.edu', 'Intl Programs'),
+      site('career.sfsu.edu', 'Careers'),
+      site('bursar.sfsu.edu', 'Bursar'),
+      site('registrar.sfsu.edu', 'Registrar'),
+      site('library.sfsu.edu', 'Library'),
+      site('ilearn.sfsu.edu', 'iLearn'),
+      site('cs.sfsu.edu', 'CompSci'),
+      site('sfsu.edu', 'SF State'),
+    ],
+  },
+  {
+    title: 'Work',
+    sites: [
+      site('www.figma.com', 'Figma'),
+      site('www.notion.so', 'Notion'),
+      site('calendar.google.com', 'Calendar'),
+      site('news.ycombinator.com', 'Hacker News'),
+      site('jsfiddle.net', 'JSFiddle'),
+    ],
+  },
+  site('www.wikipedia.org', 'Wikipedia'),
+  site('www.reddit.com', 'Reddit'),
+];
+
+/** Smaller tiles get fewer items, the sfsu folder always among them. */
+function sampleFavorites(size: WidgetSize) {
+  if (size === 's')
+    return [...SAMPLE_FAVORITES.slice(0, 3), SAMPLE_FAVORITES[4]];
+  if (size === 'm') return SAMPLE_FAVORITES.slice(0, 6);
+  return SAMPLE_FAVORITES;
+}
 
 const SAMPLE_NOTES = [
   'Call the landlord\nCS 413 project due Friday\nBuy oat milk\nRead chapter 7',
@@ -150,8 +187,7 @@ export async function buildTestLayout(preset: Preset): Promise<WidgetEntry[]> {
         );
       }
       if (widget.kind === 'favorites') {
-        const count = widget.size === 's' ? 3 : widget.size === 'm' ? 5 : 8;
-        return saveWidgetData(widget.id, SAMPLE_SITES.slice(0, count));
+        return saveWidgetData(widget.id, sampleFavorites(widget.size));
       }
       return Promise.resolve();
     }),
