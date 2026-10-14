@@ -356,9 +356,7 @@ export const es: Catalog = {
   'keys.title': 'Atajos de teclado',
   'keys.search': 'Buscar',
   'keys.sites': 'Abrir un marcador',
-  'keys.timer': 'Iniciar o pausar el temporizador',
-  'keys.notes': 'Escribir una nota',
-  'keys.settings': 'Abrir ajustes',
   'keys.help': 'Ver atajos',
   'keys.leave': 'Salir de un campo de texto',
+  'keys.or': 'o',
 };

@@ -359,9 +359,7 @@ export const fr: Catalog = {
   'keys.title': 'Raccourcis clavier',
   'keys.search': 'Rechercher',
   'keys.sites': 'Ouvrir un favori',
-  'keys.timer': 'Lancer ou mettre en pause le minuteur',
-  'keys.notes': 'Écrire une note',
-  'keys.settings': 'Ouvrir les réglages',
   'keys.help': 'Voir les raccourcis',
   'keys.leave': 'Quitter un champ de texte',
+  'keys.or': 'ou',
 };

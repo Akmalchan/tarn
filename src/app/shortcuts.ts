@@ -3,58 +3,52 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {html} from 'lit';
+import {t} from '../i18n';
+import type {MessageKey} from '../i18n/messages/en';
+
 /**
  * Keyboard shortcuts on the new tab (docs/architecture.md, "Keyboard").
- * Single keys, only while no text field has the cursor, never with Ctrl,
- * Cmd or Alt, so the browser's own shortcuts always win.
+ * Only the ones people already know from other apps: Cmd/Ctrl+K or / to
+ * search (Slack, Linear, GitHub; Google, YouTube), ? for the list (Gmail,
+ * GitHub), Esc to leave. Bookmarks take Alt/Option + 1-9: Cmd/Ctrl + 1-9
+ * switch tabs, and a bare number is too easy to press by accident.
  */
 export type Shortcut =
-  | {kind: 'search'}
-  | {kind: 'site'; number: number}
-  | {kind: 'timer'}
-  | {kind: 'notes'}
-  | {kind: 'settings'}
-  | {kind: 'help'};
+  {kind: 'search'} | {kind: 'site'; number: number} | {kind: 'help'};
 
 /** The parts of a keydown that decide a shortcut. */
 export interface KeyPress {
   key: string;
-  /** The physical key, for letters typed in another alphabet. */
+  /** The physical key: Option + 1 types "¡" on a Mac. */
   code: string;
   ctrlKey: boolean;
   metaKey: boolean;
   altKey: boolean;
+  shiftKey: boolean;
   repeat: boolean;
   isComposing: boolean;
 }
 
-export function shortcutFor(press: KeyPress): Shortcut | null {
-  if (press.ctrlKey || press.metaKey || press.altKey) return null;
+export function shortcutFor(press: KeyPress, mac = IS_MAC): Shortcut | null {
   if (press.repeat || press.isComposing) return null;
-  // On a Russian or Korean layout the T key types another letter; the
-  // physical key still counts.
-  const key = /^[\x20-\x7e]$/.test(press.key)
-    ? press.key
-    : (/^Key([A-Z])$/.exec(press.code)?.[1]?.toLowerCase() ?? press.key);
-  if (key >= '1' && key <= '9' && key.length === 1) {
-    return {kind: 'site', number: Number(key)};
+  const command = mac ? press.metaKey : press.ctrlKey;
+  const other = mac ? press.ctrlKey : press.metaKey;
+  if (other) return null;
+  if (command) {
+    return !press.altKey && !press.shiftKey && press.code === 'KeyK'
+      ? {kind: 'search'}
+      : null;
   }
-  switch (key) {
-    case '/':
-      return {kind: 'search'};
-    case 't':
-    case 'T':
-      return {kind: 'timer'};
-    case 'n':
-    case 'N':
-      return {kind: 'notes'};
-    case ',':
-      return {kind: 'settings'};
-    case '?':
-      return {kind: 'help'};
-    default:
-      return null;
+  if (press.altKey) {
+    const digit = /^Digit([1-9])$/.exec(press.code)?.[1];
+    return digit && !press.shiftKey
+      ? {kind: 'site', number: Number(digit)}
+      : null;
   }
+  if (press.key === '/') return {kind: 'search'};
+  if (press.key === '?') return {kind: 'help'};
+  return null;
 }
 
 /** Whether the key went to something the user types in. */
@@ -70,13 +64,35 @@ export function isTyping(event: Event): boolean {
   );
 }
 
-/** The list the help sheet and the settings panel show, in this order. */
-export const SHORTCUT_LIST = [
-  {keys: ['/'], label: 'keys.search'},
-  {keys: ['1', '–', '9'], label: 'keys.sites'},
-  {keys: ['T'], label: 'keys.timer'},
-  {keys: ['N'], label: 'keys.notes'},
-  {keys: [','], label: 'keys.settings'},
-  {keys: ['?'], label: 'keys.help'},
-  {keys: ['Esc'], label: 'keys.leave'},
-] as const;
+const IS_MAC = /Mac|iPhone|iPad/.test(globalThis.navigator?.platform ?? '');
+
+/** One way to press a shortcut: its keys, as shown on the keycaps. */
+export type Chord = readonly string[];
+
+export interface ShortcutRow {
+  /** Alternatives, shown with "or" between them. */
+  chords: readonly Chord[];
+  label: MessageKey;
+}
+
+/** The list the ? sheet and the settings panel show, in this platform's keys. */
+export function shortcutList(mac = IS_MAC): readonly ShortcutRow[] {
+  const command = mac ? '⌘' : 'Ctrl';
+  const alt = mac ? '⌥' : 'Alt';
+  return [
+    {chords: [[command, 'K'], ['/']], label: 'keys.search'},
+    {chords: [[alt, '1–9']], label: 'keys.sites'},
+    {chords: [['?']], label: 'keys.help'},
+    {chords: [['Esc']], label: 'keys.leave'},
+  ];
+}
+
+/** A row's keycaps, with "or" between the alternatives. */
+export function chordKeys(row: ShortcutRow) {
+  return row.chords.map(
+    (chord, index) =>
+      html`${
+        index ? html`<span class="or">${t('keys.or')}</span>` : ''
+      }${chord.map(key => html`<kbd>${key}</kbd>`)}`,
+  );
+}

@@ -871,7 +871,7 @@ export class TarnSearch extends LitElement {
     }
   };
 
-  /** Puts the cursor in the box (the / shortcut). */
+  /** Puts the cursor in the box (Cmd/Ctrl+K or /). */
   focusBox(): void {
     this.renderRoot.querySelector<HTMLInputElement>('.field input')?.focus();
   }

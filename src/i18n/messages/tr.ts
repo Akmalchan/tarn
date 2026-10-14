@@ -357,9 +357,7 @@ export const tr: Catalog = {
   'keys.title': 'Klavye kısayolları',
   'keys.search': 'Ara',
   'keys.sites': 'Yer işareti aç',
-  'keys.timer': 'Zamanlayıcıyı başlat veya duraklat',
-  'keys.notes': 'Not yaz',
-  'keys.settings': 'Ayarları aç',
   'keys.help': 'Kısayolları göster',
   'keys.leave': 'Metin alanından çık',
+  'keys.or': 'veya',
 };

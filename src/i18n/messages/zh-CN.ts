@@ -345,9 +345,7 @@ export const zhCN: Catalog = {
   'keys.title': '键盘快捷键',
   'keys.search': '搜索',
   'keys.sites': '打开书签',
-  'keys.timer': '开始或暂停计时器',
-  'keys.notes': '写笔记',
-  'keys.settings': '打开设置',
   'keys.help': '显示快捷键',
   'keys.leave': '离开文本框',
+  'keys.or': '或',
 };

@@ -1289,7 +1289,7 @@ export class TarnFavorites extends LitElement {
   // ---- Folders ------------------------------------------------------------
 
   /**
-   * The 1-9 shortcuts: opens the site in that place, or the folder. With a
+   * The Alt/Option + 1-9 shortcuts: opens the site in that place, or the folder. With a
    * folder open, the number counts the sites inside it. Returns whether
    * there was one.
    */

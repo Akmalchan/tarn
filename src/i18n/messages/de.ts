@@ -361,9 +361,7 @@ export const de: Catalog = {
   'keys.title': 'Tastenkürzel',
   'keys.search': 'Suchen',
   'keys.sites': 'Lesezeichen öffnen',
-  'keys.timer': 'Timer starten oder pausieren',
-  'keys.notes': 'Notiz schreiben',
-  'keys.settings': 'Einstellungen öffnen',
   'keys.help': 'Tastenkürzel zeigen',
   'keys.leave': 'Textfeld verlassen',
+  'keys.or': 'oder',
 };

@@ -40,8 +40,7 @@ import {rememberTiles} from './tile-memory';
 import {useLanguage} from '../i18n';
 import {draggedKind} from '../widgets/drag-new';
 import {darkInk, lightInk} from '../ui/ink';
-import {SHORTCUT_LIST, isTyping, shortcutFor} from './shortcuts';
-import {openSidePanel} from './side-panel';
+import {chordKeys, isTyping, shortcutFor, shortcutList} from './shortcuts';
 import {t} from '../i18n';
 
 /** Root of the new tab page. */
@@ -211,6 +210,11 @@ export class TarnApp extends LitElement {
       color: var(--ink-dim);
     }
 
+    .keys .or {
+      margin: 0 4px;
+      font-size: 12px;
+    }
+
     .keys dd {
       margin: 0;
       font-size: 14px;
@@ -336,14 +340,10 @@ export class TarnApp extends LitElement {
       <div class="keys" role="dialog" aria-label=${t('keys.title')}>
         <h2>${t('keys.title')}</h2>
         <dl>
-          ${SHORTCUT_LIST.map(
-            ({keys, label}) => html`
-              <dt>
-                ${keys.map(key =>
-                  key === '–' ? html`<span>–</span>` : html`<kbd>${key}</kbd>`,
-                )}
-              </dt>
-              <dd>${t(label)}</dd>
+          ${shortcutList().map(
+            row => html`
+              <dt>${chordKeys(row)}</dt>
+              <dd>${t(row.label)}</dd>
             `,
           )}
         </dl>
@@ -459,7 +459,7 @@ export class TarnApp extends LitElement {
     return this.renderRoot.querySelector<TarnBoard>('tarn-board');
   }
 
-  /** Single-key shortcuts (app/shortcuts.ts), unless typing or off. */
+  /** Shortcuts (app/shortcuts.ts), unless off; only Cmd/Ctrl+K while typing. */
   private onKey = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return;
     if (event.key === 'Escape') {
@@ -469,9 +469,13 @@ export class TarnApp extends LitElement {
       }
       return;
     }
-    if (!this.settings.shortcuts || isTyping(event)) return;
+    if (!this.settings.shortcuts) return;
     const shortcut = shortcutFor(event);
     if (!shortcut) return;
+    // In a text field, keys are typing (Option + 1 types "¡"); only the
+    // search chord reaches out of it, as in other apps.
+    const chord = event.metaKey || event.ctrlKey;
+    if (isTyping(event) && !(chord && shortcut.kind === 'search')) return;
     const board = this.renderRoot.querySelector('tarn-board');
     // While arranging, widget contents are inert.
     const widget = <K extends keyof HTMLElementTagNameMap>(tag: K) =>
@@ -486,21 +490,6 @@ export class TarnApp extends LitElement {
       }
       case 'site':
         done = widget('tarn-favorites')?.openNumber(shortcut.number) ?? false;
-        break;
-      case 'timer': {
-        const timer = widget('tarn-focus');
-        if (timer) timer.toggleTimer();
-        else done = false;
-        break;
-      }
-      case 'notes': {
-        const notes = widget('tarn-notes');
-        if (notes) notes.write();
-        else done = false;
-        break;
-      }
-      case 'settings':
-        openSidePanel();
         break;
       case 'help':
         this.showKeys = !this.showKeys;

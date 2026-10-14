@@ -106,29 +106,29 @@ only when the user asks:
 
 ## Keyboard
 
-Single-key shortcuts on the new tab (`src/app/shortcuts.ts`, handled by
-`onKey` in `tarn-app.ts`; owner asked for them 2026-10-14):
+Shortcuts on the new tab (`src/app/shortcuts.ts`, handled by `onKey` in
+`tarn-app.ts`). Only keys people already know from other apps (owner,
+2026-10-14: a first set of single letters, T timer, N notes, comma
+settings, bare 1-9, felt "ultra weird" and was replaced):
 
-| Key     | Does                                                                                                   |
-| ------- | ------------------------------------------------------------------------------------------------------ |
-| `/`     | the search box (`TarnSearch.focusBox`)                                                                 |
-| `1`-`9` | the first Bookmarks widget's site or folder in that place; in an open folder, its sites (`openNumber`) |
-| `T`     | starts or pauses the first Timer (`toggleTimer`)                                                       |
-| `N`     | the cursor at the end of the first Notes (`write`)                                                     |
-| `,`     | opens settings (the side panel; a keydown counts as a user gesture)                                    |
-| `?`     | the shortcuts sheet over the page                                                                      |
-| `Esc`   | leaves a text field, closes the sheet                                                                  |
+| Key                       | Does                                                                                                   | Known from                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| Cmd+K (Mac) / Ctrl+K, `/` | the search box (`TarnSearch.focusBox`); Cmd/Ctrl+K works even from a text field                        | Slack, Linear, GitHub; Google, YouTube                 |
+| Option / Alt + 1-9        | the first Bookmarks widget's site or folder in that place; in an open folder, its sites (`openNumber`) | speed dials (Cmd/Ctrl + 1-9 switch tabs, so not those) |
+| `?`                       | the shortcuts sheet over the page                                                                      | Gmail, GitHub, YouTube                                 |
+| Esc                       | leaves a text field, closes the sheet                                                                  | everywhere                                             |
 
-Rules: never while a text field has the cursor (`isTyping`), never with
-Ctrl, Cmd or Alt (the browser's shortcuts win), no held repeats. Letters
-also match by physical key (`event.code`), so they work on Russian or
-Korean layouts. Widget keys do nothing in edit mode (contents are inert).
-A key that does nothing isn't swallowed. Settings > Advanced > Keyboard
-lists them and turns them off (`settings.shortcuts`, default on).
-Limitation: a new tab opens with the cursor in the address bar, so the
-page needs one click first; no extension can change that. Number keys
-for wallpapers were removed on purpose (owner, 2026-10-14); don't bring
-them back.
+Rules: keys match by physical key (`event.code`), so they work on any
+layout (Option + 1 types "¡" on a Mac); labels follow the platform (⌘ ⌥
+on a Mac, Ctrl Alt elsewhere; `shortcutList`). Nothing but Cmd/Ctrl+K
+fires while a text field has the cursor (`isTyping`). Bookmarks do
+nothing in edit mode. A key that does nothing isn't swallowed. Settings >
+Advanced > Keyboard lists them and turns them off (`settings.shortcuts`,
+default on); the panel's own search takes Cmd/Ctrl+K and `/` too. Chrome
+keeps Cmd/Ctrl + T, W, N and the tab numbers for itself. Limitation: a
+new tab opens with the cursor in the address bar, so the page needs one
+click first; no extension can change that. No wallpaper shortcuts (owner
+removed them, 2026-10-14).
 
 ## Languages
 

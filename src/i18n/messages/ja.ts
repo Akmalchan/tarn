@@ -355,9 +355,7 @@ export const ja: Catalog = {
   'keys.title': 'キーボードショートカット',
   'keys.search': '検索',
   'keys.sites': 'ブックマークを開く',
-  'keys.timer': 'タイマーを開始・一時停止',
-  'keys.notes': 'メモを書く',
-  'keys.settings': '設定を開く',
   'keys.help': 'ショートカットを表示',
   'keys.leave': '入力欄から出る',
+  'keys.or': 'または',
 };

@@ -359,9 +359,7 @@ export const ru: Catalog = {
   'keys.title': 'Сочетания клавиш',
   'keys.search': 'Поиск',
   'keys.sites': 'Открыть закладку',
-  'keys.timer': 'Запустить или приостановить таймер',
-  'keys.notes': 'Написать заметку',
-  'keys.settings': 'Открыть настройки',
   'keys.help': 'Показать сочетания',
   'keys.leave': 'Выйти из текстового поля',
+  'keys.or': 'или',
 };

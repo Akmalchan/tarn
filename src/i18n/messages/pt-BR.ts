@@ -358,9 +358,7 @@ export const ptBR: Catalog = {
   'keys.title': 'Atalhos de teclado',
   'keys.search': 'Pesquisar',
   'keys.sites': 'Abrir um favorito',
-  'keys.timer': 'Iniciar ou pausar o timer',
-  'keys.notes': 'Escrever uma nota',
-  'keys.settings': 'Abrir ajustes',
   'keys.help': 'Ver atalhos',
   'keys.leave': 'Sair de um campo de texto',
+  'keys.or': 'ou',
 };
