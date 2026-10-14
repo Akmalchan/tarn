@@ -79,6 +79,7 @@ export const tr: Catalog = {
   'favorites.movedInto': '{title}, {folder} klasörüne taşındı.',
   'weather.empty': 'Bulunduğunuz yerin ya da herhangi bir yerin havası.',
   'weather.choose': 'Yer seç',
+  'weather.add': 'Yer ekle',
   'weather.change': 'Yeri değiştir',
   'weather.city': 'Şehir',
   'weather.search': 'Şehir arayın',

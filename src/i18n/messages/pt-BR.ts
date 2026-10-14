@@ -79,6 +79,7 @@ export const ptBR: Catalog = {
   'favorites.movedInto': '{title} movido para {folder}.',
   'weather.empty': 'Veja o clima onde você está, ou em qualquer lugar.',
   'weather.choose': 'Escolher um lugar',
+  'weather.add': 'Adicionar um local',
   'weather.change': 'Mudar o lugar',
   'weather.city': 'Cidade',
   'weather.search': 'Pesquise uma cidade',

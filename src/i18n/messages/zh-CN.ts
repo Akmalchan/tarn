@@ -77,6 +77,7 @@ export const zhCN: Catalog = {
   'favorites.movedInto': '{title}已移入{folder}。',
   'weather.empty': '看看你所在地或任何地方的天气。',
   'weather.choose': '选择地点',
+  'weather.add': '添加地点',
   'weather.change': '更改地点',
   'weather.city': '城市',
   'weather.search': '搜索城市',

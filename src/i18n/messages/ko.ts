@@ -77,6 +77,7 @@ export const ko: Catalog = {
   'favorites.movedInto': '{title}을(를) {folder}(으)로 옮겼어요.',
   'weather.empty': '지금 있는 곳이나 어디든 날씨를 확인하세요.',
   'weather.choose': '장소 선택',
+  'weather.add': '장소 추가',
   'weather.change': '장소 변경',
   'weather.city': '도시',
   'weather.search': '도시 검색',
