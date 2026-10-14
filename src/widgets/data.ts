@@ -4,6 +4,7 @@
  */
 
 import {browser} from 'wxt/browser';
+import {startContent} from './start';
 
 // A widget's content (notes text, favorite sites, timer state) lives in
 // local storage under its own key, apart from the synced settings: content
@@ -24,9 +25,10 @@ export function peekWidgetData<T>(
   normalize: (raw: unknown) => T,
 ): T {
   try {
-    return normalize(JSON.parse(localStorage.getItem(mirrorKey(id)) ?? 'null'));
+    const raw = localStorage.getItem(mirrorKey(id));
+    return normalize(raw === null ? startContent(id) : JSON.parse(raw));
   } catch {
-    return normalize(undefined);
+    return normalize(startContent(id));
   }
 }
 
@@ -50,10 +52,13 @@ export async function loadWidgetData<T>(
   normalize: (raw: unknown) => T,
 ): Promise<T> {
   const area = localArea();
-  if (!area) return normalize(undefined);
+  if (!area) return normalize(startContent(id));
   const stored = await area.get(key(id));
-  mirror(id, stored[key(id)]);
-  return normalize(stored[key(id)]);
+  const value: unknown = stored[key(id)];
+  // Never saved: a start widget's first content (start.ts), not stored.
+  if (value === undefined) return normalize(startContent(id));
+  mirror(id, value);
+  return normalize(value);
 }
 
 export async function saveWidgetData(

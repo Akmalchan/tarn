@@ -201,6 +201,10 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   events (dots, the next one on the small tile) with no widget change. No
   source exists yet; a calendar link or provider would be the next network
   feature and follows the Network rule. It wakes only at midnight.
+- **Start setup:** a new install (no widget list stored) shows the clock
+  plus `START_WIDGETS` (Favorites L, Notes M, Tasks M; `settings/schema.ts`)
+  with example content from `widgets/start.ts`, shown until the user edits
+  it and never stored before. A stored empty list stays empty.
 - Widget content lives in `storage.local` (`widget.<id>`), apart from synced
   settings; removing a widget keeps its content.
 

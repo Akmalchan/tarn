@@ -186,8 +186,8 @@ vec3 scene(vec2 uv, float t) {
 const silk: Scene = {
   id: 'silk',
   name: 'Silk',
-  colors: ['#b9cfdd', '#e4ecf1', '#fbfcfd', '#f2c4ae'],
-  base: '#e6edf2',
+  colors: ['#9ab4c8', '#dce6ee', '#fcfdfe', '#efb497'],
+  base: '#e2eaf0',
   speed: 0.2,
   resolution: 0.4,
   fragment: /* glsl */ `
@@ -205,17 +205,180 @@ vec3 scene(vec2 uv, float t) {
   float h = folds(p, t);
   vec2 slope = vec2(folds(p + vec2(E, 0.0), t) - h,
                     folds(p + vec2(0.0, E), t) - h) / E;
-  vec3 n = normalize(vec3(-0.6 * slope, 1.0));
+  vec3 n = normalize(vec3(-0.8 * slope, 1.0));
   vec3 sun = normalize(vec3(-0.55, 0.5, 0.55));
 
   float diffuse = clamp(dot(n, sun), 0.0, 1.0);
   float sheen = pow(clamp(dot(n, normalize(sun + vec3(0.0, 0.0, 1.0))), 0.0, 1.0), 24.0);
 
-  vec3 col = mix(uColors[0], uColors[1], smoothstep(0.0, 0.6, diffuse));
+  vec3 col = mix(uColors[0], uColors[1], smoothstep(0.05, 0.72, diffuse));
   col = mix(col, uColors[2], smoothstep(0.6, 0.95, diffuse));
-  col = mix(col, uColors[3], 0.3 * smoothstep(0.4, 0.9, diffuse) * smoothstep(-0.7, 0.7, uv.x - uv.y));
-  col += 0.08 * sheen;
+  col = mix(col, uColors[3], 0.42 * smoothstep(0.35, 0.9, diffuse) * smoothstep(-0.7, 0.7, uv.x - uv.y));
+  col += 0.12 * sheen;
   col *= 1.0 - 0.12 * dot(uv * vec2(0.6, 1.0), uv * vec2(0.6, 1.0));
+  return col;
+}
+`,
+};
+
+/**
+ * Mist: layered hills at dawn, each fainter with distance, with fog
+ * drifting slowly between them.
+ */
+const mist: Scene = {
+  id: 'mist',
+  name: 'Mist',
+  colors: ['#eef2f6', '#c4d2e0', '#7f95ad', '#f5cdb9'],
+  base: '#e3e9ef',
+  speed: 0.12,
+  resolution: 0.4,
+  fragment: /* glsl */ `
+float ridge(float x, float seed, float t) {
+  return 0.09 * fbmFast(vec2(x * 1.3 + seed, seed * 3.1))
+       + 0.035 * sin(x * 2.1 + seed * 5.0 + 0.04 * t);
+}
+
+vec3 scene(vec2 uv, float t) {
+  // Dawn: warm low on the right, cool and pale above.
+  float glow = smoothstep(0.75, -0.1, length((uv - vec2(0.45, 0.2)) * vec2(0.75, 1.4)));
+  vec3 col = mix(uColors[0], uColors[3], 0.75 * glow);
+  // Five ridges, nearer ones lower and darker; fog drifts through them.
+  for (int i = 0; i < 5; i++) {
+    float fi = float(i);
+    float near = fi / 4.0;
+    float top = 0.2 - 0.135 * fi + ridge(uv.x + 0.015 * t * (0.3 + near), fi * 1.7, t);
+    float hill = smoothstep(0.003, -0.003, uv.y - top);
+    vec3 tone = mix(uColors[1], uColors[2], 0.25 + near * 0.75);
+    tone = mix(tone, uColors[3], 0.25 * glow * (1.0 - near));
+    col = mix(col, tone, hill);
+    float fog = smoothstep(-0.2, 0.6, fbmFast(vec2(uv.x * 1.6 - 0.05 * t * (0.6 + near), uv.y * 4.0 + fi * 2.3)));
+    float band = smoothstep(0.14, 0.0, top - uv.y) * hill;
+    col = mix(col, uColors[0], 0.55 * fog * band * (1.0 - near * 0.5));
+  }
+  return col;
+}
+`,
+};
+
+/**
+ * Dunes: soft sand ridges in late afternoon light, their shadows
+ * shifting slowly as the wind moves them.
+ */
+const dunes: Scene = {
+  id: 'dunes',
+  name: 'Dunes',
+  colors: ['#c98f6a', '#e8c4a2', '#f7e6d3', '#9b6b57'],
+  base: '#ecd3bb',
+  speed: 0.1,
+  resolution: 0.4,
+  fragment: /* glsl */ `
+float sand(vec2 p, float t) {
+  vec2 w = p + 0.45 * vec2(fbmFast(0.35 * p + vec2(0.02 * t, 0.0)),
+                           fbmFast(0.35 * p + vec2(3.1, -0.015 * t)));
+  // Dunes: rounded ridges, steeper on the far side (no hard edges).
+  float wave = 0.5 + 0.5 * sin(3.4 * w.y + 1.9 * sin(0.8 * w.x));
+  float dune = pow(wave, 1.8);
+  // Wind ripples, small and many.
+  float ripple = 0.04 * sin(7.0 * (w.y + 0.35 * w.x) + 2.0 * noiseFast(2.0 * w));
+  return dune + ripple;
+}
+
+vec3 scene(vec2 uv, float t) {
+  vec2 p = uv * vec2(2.6, 3.8);
+  const float E = 0.01;
+  float h = sand(p, t);
+  vec2 slope = vec2(sand(p + vec2(E, 0.0), t) - h, sand(p + vec2(0.0, E), t) - h) / E;
+  vec3 n = normalize(vec3(-0.25 * slope, 1.0));
+  vec3 sun = normalize(vec3(0.75, 0.35, 0.45));
+  float light = clamp(dot(n, sun), 0.0, 1.0);
+
+  vec3 col = mix(uColors[3], uColors[0], smoothstep(0.15, 0.5, light));
+  col = mix(col, uColors[1], smoothstep(0.45, 0.8, light));
+  col = mix(col, uColors[2], smoothstep(0.82, 1.0, light));
+  col = mix(col, uColors[2], 0.3 * smoothstep(0.0, 0.6, uv.y));
+  return col;
+}
+`,
+};
+
+/**
+ * Rain: drops landing on a still lake at night, rings spreading and
+ * fading across dark water.
+ */
+const rain: Scene = {
+  id: 'rain',
+  name: 'Rain',
+  colors: ['#03080d', '#0b2230', '#2b5a6b', '#8fc0cc'],
+  base: '#050b11',
+  speed: 0.5,
+  resolution: 0.5,
+  fragment: /* glsl */ `
+vec3 scene(vec2 uv, float t) {
+  // Dark water, a faint sky reflection toward the far shore (the top).
+  vec3 col = mix(uColors[0], uColors[1], smoothstep(-0.5, 0.5, uv.y));
+  col += 0.06 * uColors[2] * fbmFast(uv * vec2(1.0, 4.0) + vec2(0.02 * t, 0.0));
+
+  // Seen at a low angle, rings are flattened ovals, smaller with distance.
+  float depth = 1.0 + 1.6 * smoothstep(-0.5, 0.5, uv.y);
+  vec2 g = vec2(uv.x, uv.y * 3.2) * 3.5 * depth;
+  vec2 cell = floor(g);
+  float rings = 0.0;
+  for (int dy = -1; dy <= 1; dy++) {
+    for (int dx = -1; dx <= 1; dx++) {
+      vec2 c = cell + vec2(dx, dy);
+      float r1 = hash01(c * 1.7);
+      float r2 = hash01(c * 3.1 + 7.0);
+      float r3 = hash01(c * 5.3 + 2.0);
+      vec2 drop = c + vec2(r1, r2);
+      float period = 2.5 + 3.5 * r3;
+      float age = fract(t / period + r2);
+      // Not every spot gets a drop each time.
+      float live = step(0.45, hash01(c + floor(t / period + r2) * 17.0));
+      float d = length(g - drop);
+      for (int k = 0; k < 2; k++) {
+        float radius = age * (0.85 - 0.3 * float(k));
+        float band = exp(-pow((d - radius) * 22.0, 2.0));
+        rings += live * band * pow(1.0 - age, 2.0) * (1.0 - 0.45 * float(k));
+      }
+    }
+  }
+  col += uColors[3] * rings * 0.42 / depth;
+  col *= 1.0 - 0.35 * dot(uv * vec2(0.55, 1.0), uv * vec2(0.55, 1.0));
+  return col;
+}
+`,
+};
+
+/**
+ * Nebula: slow clouds of dust and light drifting in deep space, blue and
+ * violet, with faint stars behind.
+ */
+const nebula: Scene = {
+  id: 'nebula',
+  name: 'Nebula',
+  colors: ['#05050f', '#211b52', '#4652b0', '#d4b8f2'],
+  base: '#06060f',
+  speed: 0.15,
+  resolution: 0.5,
+  fragment: /* glsl */ `
+vec3 scene(vec2 uv, float t) {
+  vec2 p = uv * 1.4;
+  vec2 q = vec2(fbmFast(p + vec2(0.0, 0.05 * t)), fbmFast(p + vec2(4.7, 1.3) - 0.04 * t));
+  float cloud = fbmFast(p + 1.6 * q + vec2(0.03 * t, -0.02 * t));
+  float glow = smoothstep(-0.35, 0.35, cloud);
+
+  vec3 col = mix(uColors[0], uColors[1], glow);
+  col = mix(col, uColors[2], smoothstep(0.0, 0.4, cloud) * 0.85);
+  col += uColors[3] * smoothstep(0.2, 0.6, cloud) * smoothstep(-0.3, 0.3, q.x) * 0.55;
+  // A soft core of light where the clouds are thickest.
+  col += 0.12 * uColors[3] * smoothstep(0.3, 0.7, cloud + 0.2 * q.y);
+
+  vec2 grid = uv * 140.0;
+  float star = step(0.995, hash01(floor(grid) + 3.0))
+    * smoothstep(0.35, 0.0, length(fract(grid) - 0.5));
+  col += star * (0.55 - 0.4 * glow);
+
+  col *= 1.0 - 0.3 * dot(uv * vec2(0.55, 1.0), uv * vec2(0.55, 1.0));
   return col;
 }
 `,
@@ -228,6 +391,10 @@ export const SCENES: readonly Scene[] = [
   wave,
   aurora,
   silk,
+  mist,
+  dunes,
+  rain,
+  nebula,
 ];
 
 export const DEFAULT_SCENE_ID = tarn.id;

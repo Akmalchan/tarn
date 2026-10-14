@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Four new backgrounds: Mist, Dunes, Rain and Nebula. Press 1–9 and 0 to
+  switch; Silk is brighter.
+- A first look: a new install starts with the clock, Favorites, Notes and
+  Tasks, filled with a few examples to try.
 - Calendar widget: today (small), this week (medium) or the month with
   arrows (large), in your language and with your week start. Offline;
   ready for calendar events later.

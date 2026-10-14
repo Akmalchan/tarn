@@ -9,8 +9,9 @@ or adding a scene. The brand side lives in `docs/brand/BRAND.md`
 
 ## The scenes
 
-Six scenes, in `src/backdrop/scenes/index.ts`. Their order in `SCENES` is
-the order in settings and the keyboard shortcut (<kbd>1</kbd>–<kbd>6</kbd>).
+Ten scenes, in `src/backdrop/scenes/index.ts`. Their order in `SCENES` is
+the order in settings and the keyboard shortcut (<kbd>1</kbd>–<kbd>9</kbd>,
+then <kbd>0</kbd> for the tenth).
 
 | Key | Scene  | What it draws                                                                                                                                  | Tone  | Speed | Resolution | Noise                   |
 | --- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | ---------- | ----------------------- |
@@ -20,9 +21,16 @@ the order in settings and the keyboard shortcut (<kbd>1</kbd>–<kbd>6</kbd>).
 | 4   | Wave   | Nine luminous sine ribbons and a glowing sheet over deep blue, after the classic console wave.                                                 | dark  | 0.35  | 1          | none                    |
 | 5   | Aurora | Northern lights: two tilted curtains with sharp, bright lower edges and streaky rays, teal fading to violet, over a night sky with soft stars. | dark  | 0.25  | 0.5        | `fbmFast` + `noiseFast` |
 | 6   | Silk   | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights.                      | light | 0.2   | 0.4        | `noiseFast`             |
+| 7   | Mist   | Layered mountain ridges fading into fog bands, a soft dawn glow behind them; cool grey-blue with a peach horizon.                              | light | 0.12  | 0.4        | `fbmFast`               |
+| 8   | Dunes  | Sand dunes at golden hour: a warped sine height field with fine wind ripples, lit low from the side.                                           | light | 0.1   | 0.4        | `noiseFast`             |
+| 9   | Rain   | Raindrops on a dark pond at night: rings widen and fade in perspective, fewer and smaller toward the horizon.                                  | dark  | 0.5   | 0.5        | `hash01` + `fbmFast`    |
+| 0   | Nebula | Slow domain-warped clouds of indigo and lilac gas over a field of faint stars.                                                                 | dark  | 0.15  | 0.5        | `fbmFast`               |
 
 Aurora and Silk were added on 2026-10-13 (PR #14). The owner asked for
-"something new" (they mentioned Luma as a vibe) and loved both.
+"something new" (they mentioned Luma as a vibe) and loved both. Mist,
+Dunes, Rain and Nebula followed the same day for the first pilot ("nice
+and neat"): two light, two dark. Silk was brightened then (deeper shadows,
+stronger warm highlights), since it read too flat.
 
 ### Measured cost
 
@@ -37,6 +45,10 @@ M4 MacBook, Chrome for Testing 155, headed 1440×900, active pace (30 fps),
 | Wave   | 6.4-6.7%        | 10.3-10.7%  |
 | Aurora | 4.1-5.6%        | 7.7-10.3%   |
 | Silk   | 4.4-5.3%        | 9.1-10.4%   |
+| Mist   | 4.9%            | 9.6%        |
+| Dunes  | 4.5%            | 9.5%        |
+| Rain   | 7.2%            | 9.8%        |
+| Nebula | 5.0%            | 9.5%        |
 
 Most of the GPU process number is compositing 30 frames a second, not the
 shader itself, so scenes differ little. Ember is the heaviest (grain at
