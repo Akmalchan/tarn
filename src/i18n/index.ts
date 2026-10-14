@@ -62,9 +62,21 @@ export function t(
     : text;
 }
 
-/** The language in use, as a BCP 47 tag for Intl (dates, times, numbers). */
-export function locale(): Language {
-  return current.lang;
+/**
+ * The tag for Intl (dates, times, numbers): the browser's own when it is
+ * the same language, so its region's conventions stay (en-GB keeps its
+ * 24-hour clock and day-month order), otherwise the language in use.
+ */
+export function locale(): string {
+  const lang = current.lang;
+  const base = lang.split('-')[0]!;
+  const preferred =
+    typeof navigator === 'undefined' ? [] : (navigator.languages ?? []);
+  // Chinese stays Simplified: a zh-TW browser with Chinese chosen keeps zh-CN.
+  if (base === 'zh') return lang;
+  return (
+    preferred.find(tag => tag.toLowerCase().split('-')[0] === base) ?? lang
+  );
 }
 
 /**
@@ -72,9 +84,13 @@ export function locale(): Language {
  * changes; otherwise loads the catalog, remembers it for first paint and
  * re-renders everything that uses LocaleController.
  */
+let generation = 0;
+
 export async function useLanguage(setting: LanguageSetting): Promise<void> {
   const lang = resolveLanguage(setting);
   if (lang === current.lang && loaded) return;
+  // Quick changes (one language, then another): only the last one counts.
+  const mine = ++generation;
   let messages: Catalog;
   try {
     messages = await LOADERS[lang]();
@@ -82,6 +98,7 @@ export async function useLanguage(setting: LanguageSetting): Promise<void> {
     console.warn('[tarn] language not loaded:', error);
     return;
   }
+  if (mine !== generation) return;
   const changed =
     lang !== current.lang ||
     JSON.stringify(messages) !== JSON.stringify(current.messages);

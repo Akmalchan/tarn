@@ -8,7 +8,7 @@ import {browser} from 'wxt/browser';
 import {DEFAULT_SETTINGS, type WeatherSettings} from '../settings/schema';
 import {loadSettings, watchSettings} from '../settings/store';
 import {conditionName} from '../weather/conditions';
-import {roundCoordinate} from '../weather/config';
+import {roundCoordinate, watchGoogleKey} from '../weather/config';
 import {REFRESH_MS, fetchForecast, isCurrent} from '../weather/forecast';
 import {weatherGlyph} from '../weather/glyphs';
 import {searchPlaces} from '../weather/open-meteo';
@@ -25,11 +25,26 @@ import {LocaleController, locale, t} from '../i18n';
 interface WeatherData {
   readonly place: Place | null;
   readonly forecast: Forecast | null;
+  /** After a failed update, when the next try may happen (epoch ms). */
+  readonly retryAt?: number;
 }
 
 const EMPTY: WeatherData = {place: null, forecast: null};
 /** After a failed request, try again this much later. */
 const RETRY_MS = 5 * 60_000;
+/** After a rejected key or a used-up quota: until the key changes, or this. */
+const KEY_RETRY_MS = 6 * 60 * 60_000;
+
+/** Whether `zone` is a time zone this browser can format in. */
+function isTimeZone(zone: unknown): zone is string {
+  if (typeof zone !== 'string') return false;
+  try {
+    new Intl.DateTimeFormat(undefined, {timeZone: zone});
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const isNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v);
@@ -45,6 +60,7 @@ function normalize(raw: unknown): WeatherData {
           detail: typeof p.detail === 'string' ? p.detail.slice(0, 120) : '',
           lat: p.lat,
           lon: p.lon,
+          ...(p.here === true ? {here: true} : {}),
         }
       : null;
   const f = forecast as Partial<Forecast> | null;
@@ -53,11 +69,24 @@ function normalize(raw: unknown): WeatherData {
     f &&
     isNumber(f.fetched) &&
     isNumber(f.now?.temp) &&
+    isTimeZone(f.timeZone) &&
     Array.isArray(f.hours) &&
     Array.isArray(f.days)
-      ? (f as Forecast)
+      ? {
+          ...(f as Forecast),
+          hours: f.hours.filter(h => isNumber(h?.time) && isNumber(h?.temp)),
+          days: f.days.filter(
+            d =>
+              typeof d?.date === 'string' && isNumber(d.min) && isNumber(d.max),
+          ),
+        }
       : null;
-  return {place: validPlace, forecast: validForecast};
+  const {retryAt} = raw as {retryAt?: unknown};
+  return {
+    place: validPlace,
+    forecast: validForecast,
+    ...(isNumber(retryAt) ? {retryAt} : {}),
+  };
 }
 
 /**
@@ -446,6 +475,7 @@ export class TarnWeather extends LitElement {
 
   private unwatch: () => void = () => {};
   private unwatchSettings: () => void = () => {};
+  private unwatchKey: () => void = () => {};
   private timer = 0;
   private searchTimer = 0;
   private searchId = 0;
@@ -472,6 +502,8 @@ export class TarnWeather extends LitElement {
     this.unwatch = watchWidgetData(this.widgetId, normalize, this.apply);
     void loadSettings().then(s => this.useSettings(s.weather));
     this.unwatchSettings = watchSettings(s => this.useSettings(s.weather));
+    // A new Google key: try again now rather than waiting out the error.
+    this.unwatchKey = watchGoogleKey(() => this.retryNow());
     document.addEventListener('visibilitychange', this.refresh);
   }
 
@@ -479,6 +511,7 @@ export class TarnWeather extends LitElement {
     super.disconnectedCallback();
     this.unwatch();
     this.unwatchSettings();
+    this.unwatchKey();
     document.removeEventListener('visibilitychange', this.refresh);
     clearTimeout(this.timer);
     clearTimeout(this.searchTimer);
@@ -536,7 +569,7 @@ export class TarnWeather extends LitElement {
           title=${t('weather.change')}
           @click=${this.openPicker}
         >
-          ${place.name}
+          ${placeName(place)}
         </button>
         <div class="temp">${forecast ? deg(forecast.now.temp) : '–°'}</div>
         <div class="icon">
@@ -692,10 +725,22 @@ export class TarnWeather extends LitElement {
       settings.provider !== this.settings?.provider ||
       settings.units !== this.settings?.units;
     this.settings = settings;
-    if (changed) {
-      this.problem = '';
+    if (changed) this.retryNow();
+  }
+
+  /** Something that could fix a failure changed: forget the wait, try now. */
+  private retryNow(): void {
+    this.problem = '';
+    if (this.data.retryAt === undefined) {
       this.refresh();
+      return;
     }
+    const rest: WeatherData = {
+      place: this.data.place,
+      forecast: this.data.forecast,
+    };
+    this.data = rest;
+    void saveWidgetData(this.widgetId, rest).then(() => this.refresh());
   }
 
   /**
@@ -704,49 +749,66 @@ export class TarnWeather extends LitElement {
    */
   private refresh = () => {
     clearTimeout(this.timer);
-    const {place, forecast} = this.data;
+    const {place, forecast, retryAt} = this.data;
     const settings = this.settings;
-    if (!place || !settings || document.visibilityState !== 'visible') return;
+    if (!this.isConnected || !place || !settings) return;
+    if (document.visibilityState !== 'visible') return;
     if (isCurrent(forecast, place, settings)) {
       const due = forecast.fetched + REFRESH_MS - Date.now();
       this.timer = window.setTimeout(this.refresh, Math.max(due, 1000));
+      return;
+    }
+    // A failed update waits its turn, across tab switches and new tabs.
+    if (retryAt !== undefined && retryAt > Date.now()) {
+      this.timer = window.setTimeout(this.refresh, retryAt - Date.now());
       return;
     }
     void this.fetchNow();
   };
 
   private async fetchNow(): Promise<void> {
-    if (this.fetching) return;
+    if (this.fetching || !this.isConnected) return;
     const settings = this.settings;
     if (!settings) return;
     this.fetching = true;
+    let stored: WeatherData = this.data;
     try {
       // Another tab may have just fetched it.
-      const stored = await loadWidgetData(this.widgetId, normalize);
+      stored = await loadWidgetData(this.widgetId, normalize);
       const place = stored.place;
       if (!place) return;
       if (isCurrent(stored.forecast, place, settings)) {
         this.data = stored;
-        this.fetching = false;
-        this.refresh();
         return;
       }
       const forecast = await fetchForecast(place, settings);
+      // The place may have changed while the request was out: keep the new
+      // one, and fetch for it next.
+      const latest = await loadWidgetData(this.widgetId, normalize);
+      if (latest.place?.lat !== place.lat || latest.place.lon !== place.lon) {
+        this.data = latest;
+        return;
+      }
       this.problem = '';
-      const next = {place, forecast};
+      const next = {place: latest.place, forecast};
       this.data = next;
       await saveWidgetData(this.widgetId, next);
     } catch (error) {
       this.problem = describe(error, this.data.forecast);
-      // A key problem waits for the settings to change; others retry.
-      if (!(error instanceof WeatherError && error.reason === 'key')) {
-        this.timer = window.setTimeout(this.refresh, RETRY_MS);
-      }
-      return;
+      const keyProblem =
+        error instanceof WeatherError &&
+        (error.reason === 'key' || error.reason === 'quota');
+      const next = {
+        ...stored,
+        retryAt: Date.now() + (keyProblem ? KEY_RETRY_MS : RETRY_MS),
+      };
+      this.data = next;
+      await saveWidgetData(this.widgetId, next);
     } finally {
       this.fetching = false;
+      // Every way out schedules what comes next (a timer, or nothing).
+      this.refresh();
     }
-    this.refresh();
   }
 
   // ---- Picker --------------------------------------------------------------
@@ -762,8 +824,13 @@ export class TarnWeather extends LitElement {
     this.picking = false;
   };
 
-  private onPickerSubmit = (event: Event) => {
+  /** Enter picks the best match for what's typed now, not a moment ago. */
+  private onPickerSubmit = async (event: Event) => {
     event.preventDefault();
+    clearTimeout(this.searchTimer);
+    const input =
+      this.renderRoot.querySelector<HTMLInputElement>('dialog input');
+    await this.search(input?.value ?? '');
     const first = this.results[0];
     if (first) this.pick(first);
   };
@@ -782,7 +849,7 @@ export class TarnWeather extends LitElement {
       return;
     }
     try {
-      const results = await searchPlaces(query);
+      const results = await searchPlaces(query, locale());
       if (id !== this.searchId) return;
       this.results = results;
       this.note = results.length ? '' : t('weather.noPlaces');
@@ -802,12 +869,16 @@ export class TarnWeather extends LitElement {
     }
     this.note = t('weather.finding');
     navigator.geolocation.getCurrentPosition(
-      position =>
+      position => {
+        // Cancelled while waiting: leave the place as it was.
+        if (!this.picking) return;
         this.pick({
-          name: t('weather.myLocation'),
+          name: '',
+          here: true,
           lat: position.coords.latitude,
           lon: position.coords.longitude,
-        }),
+        });
+      },
       () => {
         this.note = t('weather.locationFailed');
       },
@@ -827,6 +898,11 @@ export class TarnWeather extends LitElement {
     this.data = next;
     void saveWidgetData(this.widgetId, next).then(() => this.refresh());
   }
+}
+
+/** A place's name; "My location" in the current language. */
+function placeName(place: Place): string {
+  return place.here ? t('weather.myLocation') : place.name;
 }
 
 /** A temperature, rounded, with a degree sign. */

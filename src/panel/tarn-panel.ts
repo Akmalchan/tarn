@@ -64,7 +64,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
-import {clockTime} from '../widgets/clock-faces';
+import {clockText, clockTime} from '../widgets/clock-faces';
 import {
   addWallpaper,
   deleteWallpaper,
@@ -2203,9 +2203,7 @@ function clockPreview(art: Art): ClockPreview {
   const now = new Date();
   return {
     art,
-    time: now
-      .toLocaleTimeString(locale(), {hour: 'numeric', minute: '2-digit'})
-      .replace(/\s?[AP]M$/i, ''),
+    time: clockText(now),
     // The same format as the clock on the tab (widgets/tarn-clock.ts).
     date: now.toLocaleDateString(locale(), {
       weekday: 'long',

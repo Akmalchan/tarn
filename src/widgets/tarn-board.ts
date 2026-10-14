@@ -1,28 +1,3 @@
-/** A tile being resized from its corner grip. */
-interface Resize {
-  id: string;
-  tile: HTMLElement;
-  pointerId: number;
-  startX: number;
-  startY: number;
-  /** The size when the grip was picked up, and the one it would snap to. */
-  from: WidgetSize;
-  size: WidgetSize;
-  /** The tile's top-left on the board; it stays put while the corner moves. */
-  x: number;
-  y: number;
-  /** Its box when picked up, and now (following the pointer), in px. */
-  startWidth: number;
-  startHeight: number;
-  width: number;
-  height: number;
-  /** The smallest and largest box its sizes allow. */
-  minWidth: number;
-  maxWidth: number;
-  minHeight: number;
-  maxHeight: number;
-}
-
 /**
  * Copyright 2026 The Tarn Authors
  * SPDX-License-Identifier: Apache-2.0
@@ -96,6 +71,31 @@ interface Drag {
   /** Where the held tile's center was at the last slot search. */
   searchedX: number;
   searchedY: number;
+}
+
+/** A tile being resized from its corner grip. */
+interface Resize {
+  id: string;
+  tile: HTMLElement;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  /** The size when the grip was picked up, and the one it would snap to. */
+  from: WidgetSize;
+  size: WidgetSize;
+  /** The tile's top-left on the board; it stays put while the corner moves. */
+  x: number;
+  y: number;
+  /** Its box when picked up, and now (following the pointer), in px. */
+  startWidth: number;
+  startHeight: number;
+  width: number;
+  height: number;
+  /** The smallest and largest box its sizes allow. */
+  minWidth: number;
+  maxWidth: number;
+  minHeight: number;
+  maxHeight: number;
 }
 
 /**

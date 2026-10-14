@@ -5,7 +5,7 @@
 
 import {LitElement, css, html, nothing} from 'lit';
 import type {ClockStyle} from '../settings/schema';
-import {clockTime} from './clock-faces';
+import {clockText, clockTime} from './clock-faces';
 import {LocaleController, locale} from '../i18n';
 
 /**
@@ -119,9 +119,7 @@ export class TarnClock extends LitElement {
   }
 
   override render() {
-    const time = this.now
-      .toLocaleTimeString(locale(), {hour: 'numeric', minute: '2-digit'})
-      .replace(/\s?[AP]M$/i, '');
+    const time = clockText(this.now);
     const date = this.now.toLocaleDateString(locale(), {
       weekday: 'long',
       month: 'long',

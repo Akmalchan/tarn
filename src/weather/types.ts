@@ -27,6 +27,8 @@ export interface Place {
   readonly detail?: string;
   readonly lat: number;
   readonly lon: number;
+  /** The user's own position: its name is shown in the current language. */
+  readonly here?: boolean;
 }
 
 export interface HourForecast {

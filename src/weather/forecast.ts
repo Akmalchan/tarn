@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {browser} from 'wxt/browser';
 import type {WeatherSettings} from '../settings/schema';
 import {getGoogleKey, temperatureUnit} from './config';
 import {fetchGoogle} from './google';
@@ -30,29 +29,27 @@ export function isCurrent(
   );
 }
 
+/** Requests under way, so widgets showing one place share a request. */
+const inFlight = new Map<string, Promise<Forecast>>();
+
 /**
- * The forecast for a place: a fresh one another widget already fetched,
- * or a new request. Shared by place, so two widgets for
- * the same city make one request between them.
+ * The forecast for a place. Widgets for the same place at the same moment
+ * share one request.
  */
-export async function fetchForecast(
+export function fetchForecast(
   place: Place,
   settings: WeatherSettings,
 ): Promise<Forecast> {
-  const key = cacheKey(place);
-  const cached = (await browser.storage.local.get(key))[key];
-  if (isCurrent((cached as Forecast | undefined) ?? null, place, settings)) {
-    return cached as Forecast;
-  }
   const unit = temperatureUnit(settings.units);
-  const forecast =
+  const key = `${settings.provider}|${unit}|${place.lat},${place.lon}`;
+  const pending = inFlight.get(key);
+  if (pending) return pending;
+  const request = (async () =>
     settings.provider === 'google'
-      ? await fetchGoogle(place.lat, place.lon, unit, await getGoogleKey())
-      : await fetchOpenMeteo(place.lat, place.lon, unit);
-  await browser.storage.local.set({[key]: forecast}).catch(() => {});
-  return forecast;
-}
-
-function cacheKey(place: Place): string {
-  return `weather.cache.${place.lat},${place.lon}`;
+      ? fetchGoogle(place.lat, place.lon, unit, await getGoogleKey())
+      : fetchOpenMeteo(place.lat, place.lon, unit))().finally(() =>
+    inFlight.delete(key),
+  );
+  inFlight.set(key, request);
+  return request;
 }
