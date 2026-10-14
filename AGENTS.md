@@ -18,6 +18,7 @@ same pull request** (map: `docs/README.md`).
 | change the board, the layout or a widget                    | `docs/widgets.md`                                                            |
 | change the search box                                       | `docs/search.md`                                                             |
 | add or change a setting, storage, migrations or backups     | `docs/settings.md`                                                           |
+| publish, or change the store listing or a permission        | `docs/publishing.md`                                                         |
 | download designs, or change how an id is stored             | `docs/library.md`                                                            |
 
 ## Stack (decided, don't change without discussion)

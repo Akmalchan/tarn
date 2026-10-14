@@ -33,7 +33,10 @@ re-proposes it.
   uses it only to title Tarn's side panel and its pin button. The `name`
   stays **Tarn**.
 - _tarn_ (n.): a small, still mountain lake. From Old Norse _tjörn_.
-- Store title: **Tarn: Calm New Tab**.
+- Store title: **Tarn: Modern New Tab** (owner, 2026-10-14), translated
+  after the colon. It is the manifest `name`, so `chrome://extensions`
+  shows it too; the toolbar button's tooltip stays **Tarn**. Fields and
+  rejected titles: [publishing.md](../publishing.md).
 - Compatibility line, descriptions only: "Works with Google Chrome™,
   Microsoft Edge, Brave, Arc, Opera, Vivaldi and Firefox."
 - Google's Chrome Web Store
@@ -229,6 +232,14 @@ ask for.
 | Marquee (needed to be featured) | 1400 × 560         | Same, wider                                                                                    |
 | Screenshots                     | 1280 × 800, 1 to 5 | Real new tabs: light, dark, settings                                                           |
 | Video                           | YouTube link       | 20 seconds of the scene moving, plus one ripple                                                |
+
+- Made on 2026-10-14, in `png/store/`: `promo-small-440.png` (the wordmark
+  on a still of Silk), `promo-marquee-1400.png` (the lockup on Silk) and
+  `screenshot-1…5-*.png`. The screenshots are the real built extension in
+  headless Chrome for Testing at 2x, scaled to 1280 × 800, with sample
+  content: Comet with the start widgets, Silk with a planner, Koi with no
+  widgets, Sakura with the settings panel beside it, Wave in Japanese.
+  No video yet.
 
 - Lockup (store, README): mark + wordmark side by side, wordmark ink height
   about 70% of the mark, gap about 25% of the mark.
