@@ -237,6 +237,8 @@ export const es: Catalog = {
   'panel.weather.keyRemoved': 'Clave de API eliminada',
   'panel.keys': 'Teclado',
   'panel.keys.shortcuts': 'Atajos de teclado',
+  'panel.keys.note':
+    'Una pestaña nueva empieza con el cursor en la barra de direcciones; haz clic en la página primero.',
   'panel.backup': 'Copia de seguridad',
   'panel.backup.export': 'Exportar copia',
   'panel.backup.import': 'Importar copia',
@@ -351,4 +353,12 @@ export const es: Catalog = {
   'search.micDenied': 'Tarn no puede usar el micrófono.',
   'search.micDeniedHint':
     'Permítelo para Tarn en la configuración de sitios del navegador y vuelve a intentarlo.',
+  'keys.title': 'Atajos de teclado',
+  'keys.search': 'Buscar',
+  'keys.sites': 'Abrir un marcador',
+  'keys.timer': 'Iniciar o pausar el temporizador',
+  'keys.notes': 'Escribir una nota',
+  'keys.settings': 'Abrir ajustes',
+  'keys.help': 'Ver atajos',
+  'keys.leave': 'Salir de un campo de texto',
 };

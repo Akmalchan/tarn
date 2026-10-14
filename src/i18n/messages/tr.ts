@@ -237,6 +237,8 @@ export const tr: Catalog = {
   'panel.weather.keyRemoved': 'API anahtarı kaldırıldı',
   'panel.keys': 'Klavye',
   'panel.keys.shortcuts': 'Klavye kısayolları',
+  'panel.keys.note':
+    'Yeni sekme imleç adres çubuğundayken açılır; önce sayfaya bir kez tıklayın.',
   'panel.backup': 'Yedek',
   'panel.backup.export': 'Yedeği dışa aktar',
   'panel.backup.import': 'Yedeği içe aktar',
@@ -352,4 +354,12 @@ export const tr: Catalog = {
   'search.micDenied': 'Tarn mikrofonu kullanamıyor.',
   'search.micDeniedHint':
     'Tarayıcının site ayarlarından Tarn’a izin verin ve tekrar deneyin.',
+  'keys.title': 'Klavye kısayolları',
+  'keys.search': 'Ara',
+  'keys.sites': 'Yer işareti aç',
+  'keys.timer': 'Zamanlayıcıyı başlat veya duraklat',
+  'keys.notes': 'Not yaz',
+  'keys.settings': 'Ayarları aç',
+  'keys.help': 'Kısayolları göster',
+  'keys.leave': 'Metin alanından çık',
 };

@@ -239,6 +239,8 @@ export const ru: Catalog = {
   'panel.weather.keyRemoved': 'Ключ API удалён',
   'panel.keys': 'Клавиатура',
   'panel.keys.shortcuts': 'Сочетания клавиш',
+  'panel.keys.note':
+    'В новой вкладке курсор сначала стоит в адресной строке, поэтому сначала щёлкните по странице.',
   'panel.backup': 'Резервная копия',
   'panel.backup.export': 'Экспорт копии',
   'panel.backup.import': 'Импорт копии',
@@ -354,4 +356,12 @@ export const ru: Catalog = {
   'search.micDenied': 'Tarn не может использовать микрофон.',
   'search.micDeniedHint':
     'Разрешите его для Tarn в настройках сайтов браузера и попробуйте снова.',
+  'keys.title': 'Сочетания клавиш',
+  'keys.search': 'Поиск',
+  'keys.sites': 'Открыть закладку',
+  'keys.timer': 'Запустить или приостановить таймер',
+  'keys.notes': 'Написать заметку',
+  'keys.settings': 'Открыть настройки',
+  'keys.help': 'Показать сочетания',
+  'keys.leave': 'Выйти из текстового поля',
 };

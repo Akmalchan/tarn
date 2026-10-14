@@ -239,6 +239,8 @@ export const fr: Catalog = {
   'panel.weather.keyRemoved': 'Clé API supprimée',
   'panel.keys': 'Clavier',
   'panel.keys.shortcuts': 'Raccourcis clavier',
+  'panel.keys.note':
+    'Un nouvel onglet place le curseur dans la barre d’adresse ; cliquez d’abord sur la page.',
   'panel.backup': 'Sauvegarde',
   'panel.backup.export': 'Exporter une sauvegarde',
   'panel.backup.import': 'Importer une sauvegarde',
@@ -354,4 +356,12 @@ export const fr: Catalog = {
   'search.micDenied': 'Tarn ne peut pas utiliser le micro.',
   'search.micDeniedHint':
     'Autorisez-le pour Tarn dans les paramètres des sites du navigateur, puis réessayez.',
+  'keys.title': 'Raccourcis clavier',
+  'keys.search': 'Rechercher',
+  'keys.sites': 'Ouvrir un favori',
+  'keys.timer': 'Lancer ou mettre en pause le minuteur',
+  'keys.notes': 'Écrire une note',
+  'keys.settings': 'Ouvrir les réglages',
+  'keys.help': 'Voir les raccourcis',
+  'keys.leave': 'Quitter un champ de texte',
 };

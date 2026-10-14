@@ -108,7 +108,7 @@ Settings (home)
 Advanced
     ├── Tab icon                   the browser's own / None / Your own image
     ├── Weather                    provider (Open-Meteo or Google + key)
-    ├── Keyboard                   "/" for search
+    ├── Keyboard                   shortcuts On/Off, the list, "/" here
     ├── Backup                     export, import (settings + widget
     │                              content)
     ├── Previous Setups            saved before each update; restore one

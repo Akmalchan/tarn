@@ -277,6 +277,8 @@ export const en = {
   'panel.weather.keyRemoved': 'API key removed',
   'panel.keys': 'Keyboard',
   'panel.keys.shortcuts': 'Keyboard shortcuts',
+  'panel.keys.note':
+    'A new tab starts with the cursor in the address bar, so click the page once first.',
   'panel.backup': 'Backup',
   'panel.backup.export': 'Export Backup',
   'panel.backup.import': 'Import Backup',
@@ -389,6 +391,14 @@ export const en = {
   'search.micDenied': 'Tarn can’t use the microphone.',
   'search.micDeniedHint':
     'Allow it for Tarn in your browser’s site settings, then try again.',
+  'keys.title': 'Keyboard shortcuts',
+  'keys.search': 'Search',
+  'keys.sites': 'Open a bookmark',
+  'keys.timer': 'Start or pause the timer',
+  'keys.notes': 'Write a note',
+  'keys.settings': 'Open settings',
+  'keys.help': 'Show shortcuts',
+  'keys.leave': 'Leave a text field',
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof en;

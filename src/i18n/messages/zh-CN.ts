@@ -231,6 +231,7 @@ export const zhCN: Catalog = {
   'panel.weather.keyRemoved': '已移除 API 密钥',
   'panel.keys': '键盘',
   'panel.keys.shortcuts': '键盘快捷键',
+  'panel.keys.note': '新标签页打开时光标在地址栏中，请先点击一下页面。',
   'panel.backup': '备份',
   'panel.backup.export': '导出备份',
   'panel.backup.import': '导入备份',
@@ -341,4 +342,12 @@ export const zhCN: Catalog = {
   'search.micDenied': 'Tarn 无法使用麦克风。',
   'search.micDeniedHint':
     '请在浏览器的网站设置中允许 Tarn 使用，然后再试一次。',
+  'keys.title': '键盘快捷键',
+  'keys.search': '搜索',
+  'keys.sites': '打开书签',
+  'keys.timer': '开始或暂停计时器',
+  'keys.notes': '写笔记',
+  'keys.settings': '打开设置',
+  'keys.help': '显示快捷键',
+  'keys.leave': '离开文本框',
 };

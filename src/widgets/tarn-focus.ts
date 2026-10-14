@@ -250,6 +250,11 @@ export class TarnFocus extends LitElement {
     void saveWidgetData(this.widgetId, state);
   }
 
+  /** Starts or pauses the countdown (the T shortcut). */
+  toggleTimer(): void {
+    this.toggle();
+  }
+
   private toggle = () => {
     this.now = Date.now();
     const left = this.left();

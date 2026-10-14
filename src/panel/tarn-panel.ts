@@ -73,6 +73,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
+import {SHORTCUT_LIST} from '../app/shortcuts';
 import {
   clockText,
   clockTime,
@@ -439,6 +440,10 @@ export class TarnPanel extends LitElement {
       color: var(--tile-ink);
       background: var(--tile);
       border-radius: 6px;
+    }
+
+    .ico.blank {
+      background: none;
     }
 
     .ico svg {
@@ -1654,13 +1659,52 @@ export class TarnPanel extends LitElement {
         show('keys')
           ? html`<section>
               <h2>${t('panel.keys')}</h2>
-              <div class="group">
-                <div class="row" data-target="keys">
+              <div class="group" data-target="keys">
+                <div class="row">
+                  ${icon('keyboard')}
+                  <span class="txt">${t('panel.keys.shortcuts')}</span>
+                  <span
+                    class="seg"
+                    role="radiogroup"
+                    aria-label=${t('panel.keys.shortcuts')}
+                  >
+                    ${[true, false].map(
+                      on => html`
+                        <button
+                          role="radio"
+                          aria-checked=${on === this.settings.shortcuts}
+                          @click=${() => this.applyPatch({shortcuts: on})}
+                        >
+                          ${t(on ? 'panel.search.on' : 'panel.search.off')}
+                        </button>
+                      `,
+                    )}
+                  </span>
+                </div>
+                ${
+                  this.settings.shortcuts
+                    ? SHORTCUT_LIST.map(
+                        ({keys, label}) => html`
+                          <div class="row">
+                            <span class="ico blank"></span>
+                            <span class="txt">${t(label)}</span>
+                            <span class="keys">
+                              ${keys.map(key =>
+                                key === '–' ? '–' : html`<kbd>${key}</kbd>`,
+                              )}
+                            </span>
+                          </div>
+                        `,
+                      )
+                    : nothing
+                }
+                <div class="row">
                   ${icon('search')}
                   <span class="txt">${t('panel.searchSettings')}</span>
                   <span class="keys"><kbd>/</kbd></span>
                 </div>
               </div>
+              <p class="note">${t('panel.keys.note')}</p>
             </section>`
           : nothing
       }

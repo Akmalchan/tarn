@@ -235,6 +235,8 @@ export const ko: Catalog = {
   'panel.weather.keyRemoved': 'API 키를 삭제했어요',
   'panel.keys': '키보드',
   'panel.keys.shortcuts': '키보드 단축키',
+  'panel.keys.note':
+    '새 탭은 커서가 주소창에 있으니 먼저 페이지를 한 번 클릭하세요.',
   'panel.backup': '백업',
   'panel.backup.export': '백업 내보내기',
   'panel.backup.import': '백업 가져오기',
@@ -347,4 +349,12 @@ export const ko: Catalog = {
   'search.micDenied': 'Tarn이 마이크를 사용할 수 없어요.',
   'search.micDeniedHint':
     '브라우저 사이트 설정에서 Tarn에 허용한 뒤 다시 시도하세요.',
+  'keys.title': '키보드 단축키',
+  'keys.search': '검색',
+  'keys.sites': '북마크 열기',
+  'keys.timer': '타이머 시작 또는 일시정지',
+  'keys.notes': '메모 쓰기',
+  'keys.settings': '설정 열기',
+  'keys.help': '단축키 보기',
+  'keys.leave': '입력란에서 나가기',
 };
