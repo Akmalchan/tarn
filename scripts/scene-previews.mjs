@@ -24,12 +24,10 @@ const MOMENTS = {
   wave: 12,
   aurora: 100,
   silk: 40,
-  sora: 60,
   sakura: 20,
   comet: 30,
   koi: 150,
   window: 40,
-  fireflies: 20,
   lumen: 20,
   contour: 20,
 };

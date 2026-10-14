@@ -225,109 +225,13 @@ vec3 scene(vec2 uv, float t) {
  * Mist: layered hills at dawn, each fainter with distance, with fog
  * drifting slowly between them.
  */
-const sora: Scene = {
-  id: 'sora',
-  name: 'Sora',
-  colors: ['#1846a3', '#a9d4f2', '#7d97c7', '#ffd9b0'],
-  base: '#2a5db0',
-  speed: 0.12,
-  resolution: 0.5,
-  fragment: /* glsl */ `
-// Summer anime sky: towering cumulus painted puff by puff, cel-shaded.
-
-// Each tower: base x, top y, width, puff count.
-const vec4 TOWERS[4] = vec4[4](
-  vec4(-0.72, 0.24, 0.16, 22.0),
-  vec4(0.76, 0.1, 0.17, 22.0),
-  vec4(-0.4, -0.42, 0.11, 9.0),
-  vec4(0.42, -0.46, 0.1, 8.0)
-);
-
-// One puff over what is behind it: a scalloped disc, lit like a ball.
-vec3 puff(vec3 col, vec2 p, vec2 c, float r, float seed, float t, float depth, float side) {
-  vec2 d = p - c;
-  float len = length(d);
-  if (len > r * 1.25) return col;
-  float a = atan(d.y, d.x);
-  float lobes = 5.0 + floor(4.0 * seed);
-  float scallop = abs(sin(0.5 * lobes * a + 6.28 * seed + 0.05 * t));
-  float edge = r * (1.0 + 0.1 * scallop);
-  float inside = smoothstep(edge, edge - 0.0025, len);
-  if (inside <= 0.0) return col;
-
-  vec2 q = d / edge;
-  vec3 n = normalize(vec3(q, sqrt(max(1.0 - dot(q, q), 0.0)) + 0.15));
-  vec3 L = normalize(vec3(0.55, 0.7, 0.45));
-  float light = dot(n, L);
-  // Brushy band edges.
-  light += 0.06 * noiseFast(p * 30.0 + seed * 40.0);
-  // Low in a tower, its own mass shades it.
-  light -= 0.35 * depth;
-  // The whole tower is lit as one mass: its sunward side brighter.
-  light = mix(light, light + 0.45 * side, 0.7);
-
-  vec3 shadow = uColors[2] * (1.0 - 0.18 * depth);
-  vec3 mid = mix(shadow, vec3(1.0), 0.55);
-  vec3 cel = mix(shadow, mid, smoothstep(0.2, 0.23, light));
-  cel = mix(cel, vec3(1.0), smoothstep(0.58, 0.61, light));
-  // Sunlit edge, warm.
-  float rim = smoothstep(0.82, 1.0, len / edge) * smoothstep(0.35, 0.8, light);
-  cel = mix(cel, uColors[3], 0.55 * rim);
-  return mix(col, cel, inside);
-}
-
-vec3 scene(vec2 uv, float t) {
-  vec3 zenith = uColors[0];
-  vec3 horizon = uColors[1];
-  vec3 col = mix(horizon, zenith, smoothstep(-0.45, 0.6, uv.y));
-  vec2 sun = vec2(0.46, 0.42);
-  float glow = exp(-3.0 * length(uv - sun));
-  col = mix(col, vec3(1.0, 0.97, 0.9), 0.6 * glow);
-
-  vec2 c = uv * vec2(1.4, 7.0) + vec2(0.015 * t, 0.0);
-  float cirrus = smoothstep(0.15, 0.5, fbmFast(c + 9.0)) * smoothstep(0.05, 0.4, uv.y);
-  col = mix(col, vec3(1.0), 0.3 * cirrus);
-
-  // Towers, back to front; within a tower, top puffs first.
-  for (int k = 0; k < 4; k++) {
-    vec4 tw = TOWERS[k];
-    if (abs(uv.x - tw.x) > tw.z * 2.8) continue;
-    float sway = 0.012 * sin(0.05 * t + float(k) * 2.0);
-    for (int j = 21; j >= 0; j--) {
-      if (float(j) >= tw.w) continue;
-      float a = float(j) / (tw.w - 1.0);
-      float r1 = hash01(vec2(float(k) * 17.0 + float(j), 3.0));
-      float r2 = hash01(vec2(float(k) * 17.0 + float(j), 9.0));
-      float breathe = 1.0 + 0.04 * sin(0.1 * t + 6.28 * r2);
-      // Wide at the base, narrowing to a rounded crown.
-      float width = tw.z * (1.25 - 0.75 * a * a);
-      vec2 center = vec2(
-        tw.x + sway * (1.0 + a) + (r1 - 0.5) * 2.0 * width,
-        mix(-0.62, tw.y, a) + 0.02 * (r2 - 0.5)
-      );
-      float r = tw.z * (0.95 - 0.4 * a) * (0.65 + 0.45 * r2) * breathe;
-      col = puff(col, uv, center, r, r1, t, smoothstep(0.35, 0.0, a) * 0.8,
-        clamp((center.x - tw.x) / width + 0.6 * a - 0.3, -1.0, 1.0));
-    }
-  }
-  // A low bank along the bottom, in front.
-  for (int j = 0; j < 10; j++) {
-    float r1 = hash01(vec2(float(j), 41.0));
-    vec2 center = vec2(-0.98 + 0.22 * float(j) + 0.06 * (r1 - 0.5), -0.6 + 0.04 * r1);
-    col = puff(col, uv, center, 0.085 + 0.04 * r1, r1, t, 0.3, 0.0);
-  }
-  return col;
-}
-`,
-};
-
 const sakura: Scene = {
   id: 'sakura',
   name: 'Sakura',
   colors: ['#dfeaf6', '#fbe3ea', '#f2a7bc', '#fff6f2'],
   base: '#f4e4ea',
   speed: 0.5,
-  resolution: 0.5,
+  resolution: 1,
   fragment: /* glsl */ `
 // Cherry blossoms: a canopy out of focus overhead, petals drifting down
 // in three depths, each turning as it falls.
@@ -355,6 +259,26 @@ vec2 petal(vec2 p, float t, float layer, float blur, float density) {
   float d = max(e - 1.0, -(notch - 1.0) * 0.6);
   float cover = smoothstep(blur, -blur * 0.3, d);
   return vec2(cover, clamp(0.5 + 0.5 * q.y / size, 0.0, 1.0));
+}
+
+
+// One cherry blossom at q (relative to its center), radius r: coverage
+// and color. Five petals with notched tips, a deep pink heart, stamens.
+vec4 blossom(vec2 q, float r, float turn) {
+  float a = atan(q.y, q.x) + turn;
+  float lobe = cos(5.0 * a);
+  float edge = r * (0.74 + 0.26 * lobe) - r * 0.12 * smoothstep(0.93, 1.0, lobe);
+  float d = length(q);
+  float aa = 1.2 / uResolution.y;
+  float cover = smoothstep(edge + aa, edge - aa, d);
+  vec3 petalCol = mix(uColors[2], vec3(1.0, 0.96, 0.97), smoothstep(0.15, 0.85, d / r));
+  // Faint veins and a soft crease between petals.
+  petalCol *= 0.975 + 0.025 * cos(a * 25.0) * smoothstep(0.2, 0.6, d / r);
+  petalCol *= 0.9 + 0.1 * smoothstep(-0.6, 0.2, lobe);
+  vec3 col = mix(petalCol, uColors[2] * 0.75, smoothstep(0.35, 0.1, d / r));
+  float stamens = smoothstep(0.06, 0.0, abs(d / r - 0.32)) * step(0.6, cos(a * 11.0));
+  col = mix(col, vec3(0.98, 0.82, 0.45), stamens);
+  return vec4(col, cover);
 }
 
 vec3 scene(vec2 uv, float t) {
@@ -386,6 +310,46 @@ vec3 scene(vec2 uv, float t) {
     }
   }
 
+
+  // Soft rays of sun through the canopy.
+  vec2 sr = uv - vec2(-0.6, 0.7);
+  float ray = pow(max(sin(atan(sr.x, -sr.y) * 7.0 + 0.05 * t), 0.0), 3.0);
+  col += uColors[3] * 0.04 * ray * exp(-length(sr) * 1.5);
+
+  // A branch in focus reaching in from the top right, swaying a little,
+  // with blossoms and buds along it.
+  float sway = 0.012 * sin(0.35 * t) + 0.006 * sin(0.9 * t + 1.0);
+  vec2 bp = uv - vec2(0.9, 0.6);
+  bp = mat2(cos(sway), -sin(sway), sin(sway), cos(sway)) * bp + vec2(0.9, 0.6);
+  float bs = clamp((0.9 - bp.x) / 0.56, 0.0, 1.0);
+  float by = 0.54 - 0.22 * bs + 0.05 * sin(3.2 * bs + 0.5) - 0.06 * bs * bs;
+  float thick = 0.016 * (1.0 - 0.7 * bs);
+  float px = 1.2 / uResolution.y;
+  float wood = smoothstep(thick + px, thick - px, abs(bp.y - by)) * step(bp.x, 0.95) * step(0.34, bp.x);
+  // A twig off it, angling down.
+  float ts = clamp((0.68 - bp.x) / 0.2, 0.0, 1.0);
+  float ty = (0.54 - 0.22 * 0.39 + 0.05 * sin(3.2 * 0.39 + 0.5) - 0.06 * 0.39 * 0.39) - 0.1 * ts;
+  wood = max(wood, smoothstep(0.005 + px, 0.005 - px, abs(bp.y - ty)) * step(0.48, bp.x) * step(bp.x, 0.68));
+  vec3 bark = mix(vec3(0.24, 0.17, 0.17), vec3(0.42, 0.32, 0.3), smoothstep(-thick, thick, bp.y - by));
+  col = mix(col, bark, wood);
+  for (int i = 0; i < 12; i++) {
+    float fi = float(i);
+    float s0 = 0.05 + 0.08 * fi + 0.03 * (hash01(vec2(fi, 70.0)) - 0.5);
+    float side = hash01(vec2(fi, 71.0)) < 0.5 ? -1.0 : 1.0;
+    vec2 at = vec2(0.9 - 0.56 * s0, 0.54 - 0.22 * s0 + 0.05 * sin(3.2 * s0 + 0.5) - 0.06 * s0 * s0);
+    at += vec2(0.015 * (hash01(vec2(fi, 72.0)) - 0.5), side * (0.018 + 0.02 * hash01(vec2(fi, 73.0))));
+    float r = (0.04 + 0.024 * hash01(vec2(fi, 74.0))) * (1.0 - 0.25 * s0);
+    vec2 q = bp - at;
+    if (hash01(vec2(fi, 75.0)) < 0.25) {
+      // A bud: a small, deep pink oval.
+      float bud = smoothstep(1.0, 0.85, length(q / vec2(r * 0.35, r * 0.5)));
+      col = mix(col, uColors[2] * 0.85, bud);
+      continue;
+    }
+    vec4 f = blossom(q, r, 6.28 * hash01(vec2(fi, 76.0)));
+    col = mix(col, f.rgb, f.a);
+  }
+
   // Petals: far (small, sharp), middle, near (big, soft), not too many.
   for (int i = 0; i < 3; i++) {
     float layer = float(i);
@@ -410,7 +374,7 @@ const comet: Scene = {
   colors: ['#070b26', '#3a2a6e', '#f09a78', '#bfe6ff'],
   base: '#0b0f2c',
   speed: 0.2,
-  resolution: 0.5,
+  resolution: 1,
   fragment: /* glsl */ `
 // Anime twilight: a comet over a mountain town, stars coming out.
 
@@ -421,7 +385,7 @@ float stars(vec2 uv, float scale, float density, float t) {
   if (r < 1.0 - density) return 0.0;
   vec2 c = vec2(hash01(cell + 7.7), hash01(cell + 1.9)) * 0.6 + 0.2;
   float d = length(fract(g) - c);
-  float twinkle = 0.65 + 0.35 * sin(t * (1.5 + 3.0 * r) + 40.0 * r);
+  float twinkle = 0.5 + 0.5 * sin(t * (2.0 + 4.0 * r) + 40.0 * r);
   return smoothstep(0.12, 0.0, d) * twinkle * (0.4 + 0.6 * hash01(cell + 5.3));
 }
 
@@ -464,7 +428,7 @@ vec3 scene(vec2 uv, float t) {
   col += vec3(1.0, 0.98, 0.95) * coma * 0.9;
 
   // Now and then a shooting star.
-  float period = 23.0;
+  float period = 9.0;
   float k = floor(t / period);
   float ph = fract(t / period) * period;
   if (ph < 1.2) {
@@ -478,8 +442,15 @@ vec3 scene(vec2 uv, float t) {
     col += vec3(1.0) * streak * sin(3.14 * ph / 1.2) * 0.9;
   }
 
+  // A plane crossing, high up, its light blinking.
+  float flight = fract(t / 70.0);
+  vec2 plane = vec2(-1.0 + 2.2 * flight, 0.38 - 0.08 * flight);
+  float blink = step(0.85, fract(t * 1.2));
+  col += vec3(1.0, 0.45, 0.4) * blink * smoothstep(0.004, 0.0, length(uv - plane));
+  col += vec3(1.0) * 0.6 * smoothstep(0.0025, 0.0, length(uv - plane - vec2(0.006, 0.0)));
+
   // Thin clouds, dark violet with undersides lit by the afterglow.
-  vec2 cq = uv * vec2(1.3, 11.0) + vec2(0.012 * t, 0.0);
+  vec2 cq = uv * vec2(1.3, 11.0) + vec2(0.035 * t, 0.0);
   float shape = fbmFast(cq + 5.0) + 0.3 * fbmFast(cq * 2.7);
   float cl = smoothstep(0.02, 0.3, shape) * exp(-pow((y + 0.17) / 0.13, 2.0));
   // Lit from below: the lower edge of each streak glows.
@@ -488,21 +459,59 @@ vec3 scene(vec2 uv, float t) {
   vec3 cloudCol = mix(mix(uColors[1], uColors[0], 0.4), uColors[2] * 1.15, underside);
   col = mix(col, cloudCol, cl * 0.9);
 
-  // Mountains with a scatter of warm town lights.
-  float ridge = -0.38 + 0.06 * fbmFast(vec2(uv.x * 2.2, 1.0)) + 0.02 * fbmFast(vec2(uv.x * 9.0, 4.0));
-  float near = -0.44 + 0.04 * fbmFast(vec2(uv.x * 3.5 + 8.0, 2.0));
-  vec3 far = mix(uColors[1] * 0.45, uColors[0], 0.5);
-  col = mix(col, far, smoothstep(0.002, -0.002, y - ridge));
-  vec3 land = uColors[0] * 0.5;
-  col = mix(col, land, smoothstep(0.002, -0.002, y - near));
-  vec2 lg = uv * 170.0;
-  float cluster = smoothstep(0.0, 0.3, fbmFast(vec2(uv.x * 4.0, 3.0)));
-  vec2 jitter = vec2(hash01(floor(lg) + 2.3), hash01(floor(lg) + 8.9)) * 0.6 + 0.2;
-  float town = step(0.86 - 0.12 * cluster, hash01(floor(lg) + 11.0))
-    * smoothstep(0.22, 0.0, length(fract(lg) - jitter))
-    * smoothstep(near - 0.004, near - 0.012, y);
-  float flicker = 0.75 + 0.25 * sin(t * 1.3 + hash01(floor(lg)) * 30.0);
-  col += vec3(1.0, 0.72, 0.38) * town * flicker * 1.2;
+  // Mountains: a far range, faded and rim-lit by the afterglow, then a
+  // nearer, darker one.
+  float px = 1.5 / uResolution.y;
+  float ridge = -0.33 + 0.07 * fbmFast(vec2(uv.x * 2.2, 1.0)) + 0.018 * fbmFast(vec2(uv.x * 11.0, 4.0));
+  vec3 far = mix(uColors[1] * 0.55, uColors[0], 0.35);
+  float farMask = smoothstep(px, -px, y - ridge);
+  col = mix(col, far, farMask);
+  col += uColors[2] * 0.4 * farMask * smoothstep(0.006, 0.0, ridge - y);
+  float near = -0.4 + 0.045 * fbmFast(vec2(uv.x * 3.5 + 8.0, 2.0));
+  col = mix(col, mix(uColors[0], uColors[1], 0.35), smoothstep(px, -px, y - near));
+
+  // A small town on the hillside: houses with pitched roofs, their windows
+  // lighting up and going dark through the evening.
+  float hs = 38.0;
+  float hx = uv.x * hs;
+  float hc = floor(hx);
+  float hf = fract(hx);
+  float hh = hash01(vec2(hc, 50.0));
+  float ground = -0.455 + 0.012 * fbmFast(vec2(uv.x * 4.0, 9.0));
+  float kind = hash01(vec2(hc, 51.0));
+  float w0 = 0.04 + 0.12 * hash01(vec2(hc, 52.0));
+  float w1 = 0.96 - 0.12 * hash01(vec2(hc, 53.0));
+  float tall = kind < 0.12 ? 0.045 : 0.0;
+  float wall = ground + (0.012 + 0.02 * hh) + tall;
+  float roof = wall + 0.014 * (1.0 - abs((hf - w0) / (w1 - w0) - 0.5) * 2.0) * step(0.3, hh) * step(0.12, kind);
+  float house = step(w0, hf) * step(hf, w1) * step(kind, 0.78);
+  // Trees in the gaps: round crowns.
+  float tree = step(0.78, kind) * smoothstep(0.42, 0.38, length(vec2(hf - 0.5, (y - ground - 0.011 * (0.9 + 0.6 * hh)) * hs * 0.9)));
+  float top = mix(ground, roof, house);
+  vec3 dark = uColors[0] * 0.45;
+  col = mix(col, dark, max(smoothstep(px, -px, y - top), tree));
+  // Windows: a few small warm squares per house.
+  vec2 wq = vec2(hf * 4.0, (y - ground) / 0.008);
+  vec2 wc = floor(wq);
+  float on = step(0.6, hash01(vec2(hc * 7.0 + wc.x, wc.y + floor(t * 0.04 + hash01(vec2(hc, wc.x)) * 7.0))));
+  float pane = step(abs(fract(wq.x) - 0.5), 0.22) * step(abs(fract(wq.y) - 0.5), 0.25)
+    * step(0.6, wq.y) * step(y, wall - 0.003) * house * step(0.25, hf) * step(hf, 0.75);
+  col += vec3(1.0, 0.74, 0.4) * pane * on * 0.95;
+  col += vec3(1.0, 0.6, 0.3) * 0.05 * smoothstep(0.06, 0.0, abs(y - ground - 0.015)) * (0.5 + 0.5 * fbmFast(vec2(uv.x * 6.0, 2.0)));
+
+  // Power lines on poles, sagging between them across the sky.
+  float span = 0.42;
+  float u = fract((uv.x + 0.9) / span);
+  float poleTop = -0.3;
+  float pole = smoothstep(0.0025, 0.0015, abs(u - 0.0) * span) * step(ground, y) * step(y, poleTop + 0.01);
+  pole = max(pole, smoothstep(0.0025, 0.0015, abs(u - 1.0) * span) * step(ground, y) * step(y, poleTop + 0.01));
+  float lines = 0.0;
+  for (int i = 0; i < 3; i++) {
+    float lift = float(i) * 0.012;
+    float sag = poleTop - lift - 0.035 * 4.0 * u * (1.0 - u);
+    lines = max(lines, smoothstep(px * 1.2, 0.0, abs(y - sag)));
+  }
+  col = mix(col, dark * 0.8, max(pole, lines * 0.85));
   return col;
 }
 `,
@@ -511,15 +520,15 @@ vec3 scene(vec2 uv, float t) {
 const koi: Scene = {
   id: 'koi',
   name: 'Koi',
-  colors: ['#0a2a2c', '#1d4a45', '#f0662e', '#4f7d3a'],
+  colors: ['#0b2b2b', '#1e4a44', '#e8542a', '#4f8a3c'],
   base: '#0f302f',
   speed: 0.5,
-  resolution: 0.5,
+  resolution: 1,
   fragment: /* glsl */ `
-// A koi pond from above: fish gliding in slow loops, their shadows on the
-// floor below, lily pads floating over them, light shimmering.
+// A koi pond from above: stones on the floor, koi gliding at different
+// depths with their shadows below, ripples now and then, lily pads and a
+// lotus on the surface, and sunlight shimmering through the water.
 
-// Where fish i is at time t, on a slow looping path.
 vec2 koiPath(float i, float t) {
   float s = 0.045 + 0.025 * hash01(vec2(i, 2.0));
   float ph = 6.28 * hash01(vec2(i, 3.0)) + i * 1.3;
@@ -528,92 +537,174 @@ vec2 koiPath(float i, float t) {
   return home + vec2(0.55 * sin(dirn * t * s + ph), 0.3 * sin(t * s * 1.6 + ph * 1.3));
 }
 
-// A fish's body and fins at p: coverage, its position along the body
-// (0 head .. 1 tail), and sideways offset.
-vec3 koiShape(vec2 p, float i, float t, float len) {
+// A koi at p. x: body, y: fins (translucent), z: 0 head .. 1 tail,
+// w: across the body (-1 .. 1).
+vec4 koi(vec2 p, float i, float t, float len) {
   vec2 c = koiPath(i, t);
-  vec2 ahead = koiPath(i, t + 0.4);
-  vec2 dir = normalize(ahead - c + 1e-5);
+  vec2 dir = normalize(koiPath(i, t + 0.4) - c + 1e-5);
   vec2 rel = p - c;
-  // From the head (0) back along the body, in world units.
   float back = len * 0.4 - dot(rel, dir);
   float side = dot(rel, vec2(-dir.y, dir.x));
   float s = back / len;
+  if (s < -0.1 || s > 1.5 || abs(side) > len * 0.5) return vec4(0.0);
   // The body sways in a wave that grows toward the tail.
   side -= 0.07 * len * sin(t * 3.0 - s * 5.0 + i) * s * s;
   float ss = clamp(s, 0.0, 1.0);
-  // Rounded head, widest a third of the way back, narrowing to the tail.
   float width = 0.2 * len * pow(sin(3.14159 * ss), 0.6) * (1.0 - 0.75 * smoothstep(0.35, 1.0, ss));
-  float body = smoothstep(width, width - 0.0025, abs(side)) * step(0.0, s) * step(s, 1.0);
-  // Tail: a fan that opens behind the body, a little translucent.
+  // One and a half pixels of soft edge (no derivatives: this function
+  // returns early, which leaves them undefined).
+  float aa = 1.5 / uResolution.y;
+  float body = smoothstep(width + aa, width - aa, abs(side)) * step(0.0, s) * step(s, 1.0);
+  // Tail: a forked fan with fine rays.
   float ts = s - 0.92;
-  float spread = 0.012 * len + 0.75 * max(ts, 0.0) * len;
-  float tail = step(0.0, ts) * smoothstep(0.42, 0.3, ts) * smoothstep(spread, spread - 0.003, abs(side))
-    * (0.7 + 0.3 * smoothstep(0.0, 0.3, ts));
-  // Pectoral fins: swept-back ovals beside the chest, gently paddling.
+  float spread = 0.012 * len + 0.8 * max(ts, 0.0) * len;
+  float fork = 1.0 - 0.45 * smoothstep(0.25, 0.42, ts) * smoothstep(0.35 * spread, 0.0, abs(side));
+  float tail = step(0.0, ts) * smoothstep(0.45, 0.3, ts) * smoothstep(spread + aa, spread - aa, abs(side)) * fork;
+  float rays = 0.85 + 0.15 * sin(clamp(side / max(spread, 1e-3), -1.0, 1.0) * 14.0);
+  // Pectoral fins: swept-back fans beside the chest, gently paddling.
   float flap = 0.75 + 0.25 * sin(t * 2.0 + i * 3.0);
   vec2 f = vec2(back - 0.3 * len, abs(side) - 0.17 * len);
   f = mat2(0.8, 0.6, -0.6, 0.8) * f;
-  float fins = smoothstep(1.0, 0.85, length(f / vec2(0.1 * len, 0.045 * len * flap)));
-  return vec3(max(body, max(tail * 0.65, fins * 0.55 * (1.0 - body))), ss, side / (0.2 * len));
+  float fin = smoothstep(1.0, 0.85, length(f / vec2(0.11 * len, 0.05 * len * flap)));
+  float finRays = 0.85 + 0.15 * sin(f.y / (0.05 * len) * 6.0);
+  float fins = max(tail * rays, fin * finRays * (1.0 - body));
+  return vec4(body, fins, ss, clamp(side / max(width, 1e-4), -1.0, 1.0));
+}
+
+vec3 koiColor(float i, vec4 k, vec2 p) {
+  float kind = hash01(vec2(i, 7.0));
+  vec2 local = vec2(k.z * 4.0, k.w * 0.6) + i * 3.0;
+  float spots = smoothstep(-0.03, 0.03, noise(local * 1.7));
+  float ink = smoothstep(0.32, 0.36, noise(local * 3.1 + 9.0));
+  vec3 white = vec3(0.97, 0.95, 0.91);
+  vec3 red = uColors[2];
+  vec3 col;
+  if (kind < 0.4) col = mix(white, red, spots);                         // kohaku
+  else if (kind < 0.65) col = mix(mix(white, red, spots), vec3(0.06), ink); // sanke
+  else if (kind < 0.85) col = mix(vec3(1.0, 0.78, 0.36), vec3(1.0, 0.9, 0.6), 0.5 + 0.5 * k.w); // ogon
+  else col = mix(mix(vec3(0.08), red, spots), white, smoothstep(0.1, 0.3, noise(local * 2.0 + 4.0))); // showa
+  // Its head is a little cleaner and paler.
+  col = mix(col, mix(col, white, 0.25), smoothstep(0.15, 0.0, k.z));
+  return col;
 }
 
 vec3 scene(vec2 uv, float t) {
-  // Deep water, lighter toward the middle; light shimmers on the floor.
-  vec3 col = mix(uColors[1], uColors[0], smoothstep(0.1, 0.9, length(uv * vec2(0.8, 1.1))));
-  vec2 q = uv * 5.0;
+  // Ripples now and then: rings that bend everything below the surface.
+  vec2 bend = vec2(0.0);
+  for (int k = 0; k < 2; k++) {
+    float period = 9.0 + 4.0 * float(k);
+    float n = floor(t / period + float(k) * 0.5);
+    float age = fract(t / period + float(k) * 0.5) * period;
+    vec2 at = (vec2(hash01(vec2(n, 31.0 + float(k))), hash01(vec2(n, 37.0))) - 0.5) * vec2(1.4, 0.8);
+    vec2 d = uv - at;
+    float r = length(d);
+    float front = age * 0.06;
+    float ring = sin((r - front) * 90.0) * exp(-pow((r - front) / 0.035, 2.0)) * exp(-age * 0.35);
+    bend += d / max(r, 1e-3) * ring * 0.004;
+  }
+  vec2 p = uv + bend;
+
+  // The floor: dim, rounded stones deep down.
+  vec2 g = p * 7.0 + 0.35 * vec2(noiseFast(p * 3.0), noiseFast(p * 3.0 + 4.0));
+  vec2 cell = floor(g);
+  float near = 9.0;
+  float second = 9.0;
+  for (int y = -1; y <= 1; y++) {
+    for (int x = -1; x <= 1; x++) {
+      vec2 o = cell + vec2(x, y);
+      vec2 c = o + 0.5 + 0.4 * (vec2(hash01(o), hash01(o + 5.3)) - 0.5);
+      float d = length(g - c);
+      if (d < near) { second = near; near = d; } else if (d < second) second = d;
+    }
+  }
+  float stone = smoothstep(0.0, 0.35, second - near) * (1.0 - 0.6 * near);
+  float silt = 0.5 + 0.5 * fbmFast(p * 2.5 + 3.0);
+  vec3 col = mix(uColors[0] * 0.75, uColors[1] * 0.85, (0.35 + 0.4 * stone * (0.5 + 0.5 * hash01(cell))) * (0.6 + 0.4 * silt));
+  // Deeper toward the edges.
+  col = mix(col, uColors[0] * 0.8, smoothstep(0.3, 1.0, length(uv * vec2(0.75, 1.15))));
+
+  // Sunlight shimmering on the floor.
+  vec2 q = p * 5.0;
   float caustic = 0.0;
   for (int k = 0; k < 2; k++) {
     vec2 w = q * (1.0 + float(k) * 0.6) + vec2(0.1 * t, -0.07 * t) * (k == 0 ? 1.0 : -1.0);
     float n = noiseFast(w + 0.6 * vec2(noiseFast(w * 0.7 + 0.05 * t), noiseFast(w * 0.7 - 0.04 * t)));
-    caustic += pow(1.0 - abs(n) * 2.2, 6.0);
+    caustic += pow(max(1.0 - abs(n) * 2.2, 0.0), 6.0);
   }
-  col += vec3(0.5, 0.75, 0.65) * 0.08 * caustic;
+  col += vec3(0.55, 0.8, 0.7) * 0.09 * caustic;
 
-  // Shadows of the fish on the floor, then the fish.
-  for (int i = 0; i < 5; i++) {
+  // Koi: shadows on the floor first, then the fish, deep ones bluer.
+  for (int i = 0; i < 6; i++) {
     float fi = float(i);
     float len = 0.17 + 0.06 * hash01(vec2(fi, 5.0));
-    vec3 sh = koiShape(uv - vec2(0.018, -0.024), fi, t, len);
-    col *= 1.0 - 0.35 * sh.x;
+    float depth = hash01(vec2(fi, 9.0));
+    vec2 off = vec2(0.02, -0.028) * (1.2 - depth);
+    vec4 sh = koi(p - off, fi, t, len);
+    col *= 1.0 - (0.3 + 0.15 * depth) * max(sh.x, sh.y * 0.5);
   }
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 6; i++) {
     float fi = float(i);
     float len = 0.17 + 0.06 * hash01(vec2(fi, 5.0));
-    vec3 f = koiShape(uv, fi, t, len);
-    if (f.x <= 0.0) continue;
-    // Each koi its own pattern: red-orange patches on white, or gold, or
-    // black and white.
-    float kind = hash01(vec2(fi, 7.0));
-    vec2 local = vec2(f.y * 4.0, f.z) + fi * 3.0;
-    float spots = smoothstep(-0.05, 0.1, noise(local * 1.6));
-    vec3 white = vec3(0.96, 0.94, 0.9);
-    vec3 fish = kind < 0.55 ? mix(white, uColors[2], spots)
-      : kind < 0.8 ? mix(vec3(1.0, 0.75, 0.3), uColors[2], 0.3 * spots)
-      : mix(white, vec3(0.08, 0.08, 0.1), spots);
-    // Rounded: lighter along the spine, darker at the sides.
-    fish *= 0.75 + 0.25 * (1.0 - f.z * f.z);
-    col = mix(col, fish * 0.95, f.x * 0.92);
+    float depth = hash01(vec2(fi, 9.0));
+    vec4 k = koi(p, fi, t, len);
+    if (k.x + k.y <= 0.0) continue;
+    vec3 base = koiColor(fi, k, p);
+    // Rounded and wet: darker along the flanks, a sheen along the spine.
+    float round = sqrt(max(1.0 - k.w * k.w, 0.0));
+    vec3 fish = base * (0.62 + 0.38 * round) + 0.18 * pow(round, 10.0) * (1.0 - k.z);
+    // Eyes.
+    float eye = smoothstep(0.09, 0.06, length(vec2((k.z - 0.08) * 4.0, abs(k.w) - 0.62)));
+    fish = mix(fish, vec3(0.05), eye * k.x);
+    vec3 fin = mix(base, vec3(1.0), 0.35);
+    vec3 water = mix(uColors[1], uColors[0], 0.3);
+    fish = mix(fish, water, 0.45 * depth);
+    fin = mix(fin, water, 0.45 * depth);
+    col = mix(col, fin, k.y * 0.55 * (1.0 - k.x));
+    col = mix(col, fish, k.x);
   }
 
-  // Lily pads on the surface, drifting a little.
+  // The surface: a little sky reflected, drifting sheen.
+  float sheen = smoothstep(0.2, 0.8, fbmFast(uv * vec2(1.2, 3.5) + vec2(0.03 * t, 0.01 * t)));
+  col += vec3(0.7, 0.85, 0.9) * (0.035 * sheen + 0.04 * smoothstep(0.2, 0.9, uv.y - uv.x * 0.3));
+
+  // Lily pads floating above it all (one with a lotus).
   for (int i = 0; i < 6; i++) {
     float fi = float(i);
     vec2 c = vec2(hash01(vec2(fi, 11.0)) - 0.5, hash01(vec2(fi, 12.0)) - 0.5) * vec2(1.7, 1.0);
-    c += 0.015 * vec2(sin(0.1 * t + fi), cos(0.08 * t + fi));
-    // Keep the middle clear.
     c *= 1.0 + 0.6 * smoothstep(0.4, 0.0, length(c));
+    c += 0.015 * vec2(sin(0.1 * t + fi), cos(0.08 * t + fi));
     float r = 0.06 + 0.05 * hash01(vec2(fi, 13.0));
     vec2 d = uv - c;
-    float ang = atan(d.y, d.x) + 6.28 * hash01(vec2(fi, 14.0)) + 0.02 * t;
-    float notch = smoothstep(0.12, 0.2, abs(mod(ang, 6.28318) - 3.14159) - 2.95 + 3.14159 * 0.0);
-    float wedge = step(0.18, abs(mod(ang + 3.14159, 6.28318) - 3.14159));
-    float pad = smoothstep(r, r - 0.003, length(d)) * wedge;
-    float shadow = smoothstep(r, r - 0.02, length(d - vec2(0.012, -0.016)));
+    float len = length(d);
+    float shadow = smoothstep(r, r - 0.025, length(d - vec2(0.012, -0.016)));
+    float a = atan(d.y, d.x) + 6.28 * hash01(vec2(fi, 14.0)) + 0.03 * sin(0.2 * t + fi);
+    float notch = step(0.16, abs(mod(a + 3.14159, 6.28318) - 3.14159));
+    float aa = 1.5 / uResolution.y;
+    float pad = smoothstep(r + aa, r - aa, len) * notch;
     col *= 1.0 - 0.3 * shadow * (1.0 - pad);
-    vec3 leaf = uColors[3] * (0.85 + 0.25 * dot(normalize(d + 1e-5), vec2(0.5, 0.7)) * length(d) / r);
-    leaf += 0.05 * sin(atan(d.y, d.x) * 14.0) * smoothstep(0.2 * r, r, length(d));
+    // The lotus sits on its pad, over the notch too.
+    if (pad <= 0.0 && !(i == 2 && len < r * 0.66)) continue;
+    float x = len / r;
+    vec3 leaf = uColors[3] * (0.72 + 0.2 * hash01(vec2(fi, 15.0)));
+    // Mottled, with fine veins from the middle, a yellowed, darker rim and
+    // a gloss toward the light.
+    leaf *= 0.85 + 0.25 * fbmFast(d / r * 3.0 + fi * 7.0);
+    leaf *= 1.0 - 0.07 * smoothstep(0.9, 1.0, abs(sin(a * 11.0 + 0.3 * sin(x * 6.0)))) * smoothstep(0.1, 0.3, x);
+    leaf = mix(leaf, vec3(0.62, 0.6, 0.25), 0.35 * smoothstep(0.85, 1.0, x));
+    leaf *= 1.0 - 0.2 * smoothstep(0.9, 1.0, x);
+    leaf += vec3(0.85, 1.0, 0.8) * 0.18 * exp(-pow(length(d / r - vec2(-0.35, 0.35)) / 0.35, 2.0));
     col = mix(col, leaf, pad);
+    if (i == 2) {
+      col = mix(col, vec3(0.0), 0.25 * smoothstep(r * 0.7, r * 0.5, length(d - vec2(0.006, -0.008))));
+      // The lotus: two rings of pink petals, pale at the tips.
+      float pa = atan(d.y, d.x);
+      float outer = r * 0.62 * (0.55 + 0.45 * pow(abs(cos(4.0 * pa)), 0.5));
+      float inner = r * 0.38 * (0.55 + 0.45 * pow(abs(cos(4.0 * pa + 0.785)), 0.5));
+      vec3 pink = vec3(0.96, 0.62, 0.72);
+      col = mix(col, mix(pink * 0.85, vec3(1.0, 0.93, 0.95), len / (r * 0.62)), smoothstep(outer + aa, outer - aa, len));
+      col = mix(col, mix(pink, vec3(1.0, 0.95, 0.96), len / (r * 0.38)), smoothstep(inner + aa, inner - aa, len));
+      col = mix(col, vec3(1.0, 0.85, 0.35), smoothstep(r * 0.1, r * 0.07, len));
+    }
   }
   return col;
 }
@@ -623,228 +714,123 @@ vec3 scene(vec2 uv, float t) {
 const windowScene: Scene = {
   id: 'window',
   name: 'Window',
-  colors: ['#04070d', '#10233a', '#ffb35c', '#ff5c8a'],
+  colors: ['#04060c', '#141c33', '#ffae5c', '#ff4f6a'],
   base: '#070c14',
   speed: 0.6,
-  resolution: 0.5,
+  resolution: 1,
   fragment: /* glsl */ `
-// Rain on a window at night: a city out of focus behind the glass, each
-// drop a little lens showing it sharp and upside down.
+// Rain on a window at night. Behind the glass, a city out of focus:
+// buildings with lit windows, street lamps, cars passing below. On the
+// glass, beads and running drops; each drop is a little lens showing the
+// city sharp and upside down, and running drops wipe clear trails.
 
-// The city behind the glass. focus 0: soft bokeh; 1: small sharp lights.
-vec3 city(vec2 uv, float focus, float t) {
-  vec3 col = mix(uColors[1], uColors[0], smoothstep(-0.5, 0.5, uv.y));
-  col += uColors[2] * 0.12 * exp(-6.0 * abs(uv.y + 0.35));
-  for (int i = 0; i < 2; i++) {
-    float sc = i == 0 ? 5.0 : 9.0;
-    vec2 g = uv * sc + vec2(float(i) * 3.7, 0.0);
+// The city at p, seen through the glass. focus 0: lights melt into big
+// soft discs; 1: they shrink to small bright points (as through a drop).
+vec3 city(vec2 p, float focus, float t) {
+  vec3 col = mix(uColors[1], uColors[0], smoothstep(-0.25, 0.55, p.y));
+  // The city's glow: warm low down, a cooler haze above, slowly shifting.
+  float glow = 0.5 + 0.5 * fbmFast(p * vec2(1.4, 2.2) + vec2(0.01 * t, 0.0));
+  col += mix(uColors[3] * 0.35, uColors[2], smoothstep(0.1, -0.4, p.y)) * 0.16 * glow * smoothstep(0.5, -0.2, p.y);
+
+  for (int i = 0; i < 3; i++) {
+    float fi = float(i);
+    float sc = fi == 0.0 ? 4.0 : fi == 1.0 ? 7.0 : 12.0;
+    // Each layer drifts very slowly, the nearest fastest, for depth.
+    vec2 g = p * sc + vec2(fi * 3.7 + t * 0.012 * (3.0 - fi), fi * 1.3);
     for (int y = -1; y <= 1; y++) {
       for (int x = -1; x <= 1; x++) {
         vec2 cell = floor(g) + vec2(x, y);
-        float h = hash01(cell + float(i) * 13.0);
-        // The city is below: more lights low down, few up in the sky.
-        float density = mix(0.12, 0.6, smoothstep(0.45, -0.35, cell.y / sc));
-        if (h > density) continue;
-        vec2 c = cell + 0.5 + 0.8 * (vec2(hash01(cell + 3.3), hash01(cell + 6.1)) - 0.5);
-        float rad = mix(0.48, 0.1, focus) * (0.6 + 0.6 * hash01(cell + 9.9));
+        float h = hash01(cell + fi * 13.0);
+        float lowness = smoothstep(0.45, -0.4, (cell.y + 0.5) / sc - fi * 1.3 / sc);
+        if (h > mix(0.08, 0.55, lowness)) continue;
+        vec2 c = cell + 0.5 + 0.7 * (vec2(hash01(cell + 3.3), hash01(cell + 6.1)) - 0.5);
+        float size = (0.25 + 0.35 * hash01(cell + 9.9)) * mix(1.0, 0.18, focus);
         float d = length(g - c);
-        float edge = mix(0.12, 0.02, focus);
-        float disc = smoothstep(rad, rad - edge, d) * (0.85 + 0.15 * smoothstep(rad, 0.0, d));
+        float soft = size * mix(0.2, 0.5, focus);
+        float disc = smoothstep(size, size - soft, d);
+        // A slightly brighter rim, as real out-of-focus lights have.
+        disc *= 0.8 + 0.25 * smoothstep(size * 0.55, size * 0.95, d);
         float pick = hash01(cell + 4.4);
-        vec3 light = pick < 0.5 ? uColors[2] : pick < 0.75 ? uColors[3] : vec3(0.75, 0.9, 1.0);
-        float flicker = 0.8 + 0.2 * sin(t * (0.5 + h * 2.0) + h * 40.0);
-        float energy = mix(0.45, 1.4, focus) * (0.4 + 0.9 * hash01(cell + 7.7));
-        col += light * disc * energy * flicker * (i == 0 ? 0.6 : 0.45);
+        vec3 light = pick < 0.45 ? uColors[2] : pick < 0.65 ? vec3(1.0, 0.92, 0.8) : pick < 0.85 ? uColors[3] : vec3(0.55, 0.8, 0.95);
+        float flicker = 0.85 + 0.15 * sin(t * (0.3 + h) + h * 40.0);
+        // Smaller (in-focus) lights are brighter: the same light, gathered.
+        float energy = (0.18 + 0.25 * hash01(cell + 7.7)) * mix(1.0, 3.0, focus);
+        col += light * disc * energy * flicker * (fi == 0.0 ? 1.0 : fi == 1.0 ? 0.8 : 0.6);
       }
     }
   }
   return col;
 }
 
-// Small drops that bead up, linger and dry: offset and coverage.
-vec3 beads(vec2 uv, float t, float scale) {
+// Beads on the glass: lens direction (xy) and coverage (z).
+vec3 beads(vec2 uv, float t, float scale, float seed) {
   vec2 g = uv * scale;
   vec2 cell = floor(g);
-  float h = hash01(cell + 1.7);
-  if (hash01(cell + 12.5) > 0.45) return vec3(0.0);
-  vec2 c = cell + 0.5 + 0.6 * (vec2(hash01(cell + 2.9), hash01(cell + 7.3)) - 0.5);
-  float life = fract(t * 0.05 + h);
-  float r = 0.32 * (0.4 + 0.6 * hash01(cell + 5.5)) * smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.6, life);
+  if (hash01(cell + seed) > 0.3) return vec3(0.0);
+  vec2 c = cell + 0.5 + 0.5 * (vec2(hash01(cell + seed + 2.9), hash01(cell + seed + 7.3)) - 0.5);
+  float life = fract(t * 0.03 + hash01(cell + seed + 1.7));
+  float r = 0.36 * (0.35 + 0.65 * hash01(cell + seed + 5.5)) * smoothstep(0.0, 0.08, life) * smoothstep(1.0, 0.75, life);
   vec2 q = (g - c) / max(r, 1e-3);
-  float inside = smoothstep(1.0, 0.8, length(q)) * step(0.02, r);
-  return vec3(q * inside, inside);
+  q.y *= 1.08;
+  float l = length(q);
+  float cover = smoothstep(1.0, 0.85, l) * step(0.04, r);
+  return vec3(q * cover, cover);
 }
 
 vec3 scene(vec2 uv, float t) {
-  vec2 offset = vec2(0.0);
+  vec2 lens = vec2(0.0);
   float wet = 0.0;
+  float rim = 0.0;
+  float size = 0.0;
 
   // Running drops: one per column, sliding in fits and starts.
-  float cols = 7.0;
-  vec2 g = uv * vec2(cols, 1.0);
-  float column = floor(g.x);
+  float cols = 9.0;
+  float column = floor(uv.x * cols);
   float h = hash01(vec2(column, 3.0));
-  float speed = 0.08 + 0.06 * h;
-  float phase = t * speed + h * 10.0;
-  // Stick and slip: mostly still, then a quick slide.
+  float phase = t * (0.07 + 0.05 * h) + h * 10.0;
   float slide = floor(phase) + smoothstep(0.55, 1.0, fract(phase));
-  float y = 0.65 - fract(slide * 0.23 + h) * 1.4;
-  float x = column + 0.5 + 0.25 * sin(3.0 * (uv.y - y) + h * 6.0) * 0.4 + (h - 0.5) * 0.4;
-  vec2 d = vec2((g.x - x) / cols, uv.y - y);
-  float size = 0.024 + 0.014 * h;
-  // A drop is round below and drawn out above.
-  vec2 dq = d / vec2(size, size * (d.y > 0.0 ? 1.6 : 1.0));
-  float drop = smoothstep(1.0, 0.75, length(dq));
-  offset += dq * drop * 0.09;
+  float y = 0.65 - fract(slide * 0.21 + h) * 1.4;
+  float x = (column + 0.5 + (h - 0.5) * 0.5) / cols + 0.006 * sin(18.0 * (uv.y - y) + h * 6.0);
+  vec2 d = uv - vec2(x, y);
+  float rd = 0.016 + 0.01 * h;
+  vec2 dq = d / vec2(rd, rd * (d.y > 0.0 ? 1.45 : 1.0));
+  float drop = smoothstep(1.0, 0.85, length(dq));
+  lens += dq * drop;
   wet = max(wet, drop);
-  // Its trail: a wiped strip with tiny drops left behind.
+  rim = max(rim, drop * smoothstep(0.6, 1.0, length(dq)));
+  size = max(size, drop * rd);
+  // Its trail: the glass wiped clear, with tiny drops left behind.
   float above = uv.y - y;
-  float trail = step(0.0, above) * smoothstep(0.5, 0.0, above) * smoothstep(size * 0.9, 0.0, abs(d.x));
-  vec2 tg = vec2(d.x / size * 1.2, fract(above * 28.0) - 0.5);
-  float bit = smoothstep(0.35, 0.2, length(tg)) * trail * step(0.03, above);
-  offset += tg * bit * 0.02;
+  float trail = step(0.0, above) * smoothstep(0.3, 0.02, above) * smoothstep(rd * 0.7, rd * 0.35, abs(d.x));
+  vec2 tg = vec2(d.x / (rd * 0.35), (fract(above * 30.0 + h) - 0.5) * 3.0);
+  float bit = smoothstep(1.0, 0.8, length(tg)) * trail * step(0.03, above) * step(0.4, hash01(vec2(column, floor(above * 30.0 + h))));
+  lens += tg * bit;
   wet = max(wet, bit);
+  size = max(size, bit * rd * 0.3);
 
-  // Beads everywhere except where a drop just wiped the glass.
-  vec3 b1 = beads(uv, t, 34.0) * (1.0 - trail);
-  vec3 b2 = beads(uv + 0.37, t * 1.3, 61.0) * (1.0 - trail);
-  offset += b1.xy * 0.06 + b2.xy * 0.035;
-  wet = max(wet, max(b1.z, b2.z));
+  // Beads everywhere else, in three sizes.
+  vec3 b1 = beads(uv, t, 22.0, 0.0) * (1.0 - trail);
+  vec3 b2 = beads(uv, t * 1.2, 40.0, 7.0) * (1.0 - trail);
+  vec3 b3 = beads(uv, t * 1.4, 70.0, 13.0) * (1.0 - trail) * 0.0;
+  lens += b1.xy + b2.xy + b3.xy;
+  wet = max(wet, max(b1.z, max(b2.z, b3.z)));
+  rim = max(rim, max(b1.z * smoothstep(0.6, 1.0, length(b1.xy)), b2.z * smoothstep(0.6, 1.0, length(b2.xy))));
+  size = max(size, max(b1.z * 0.016, max(b2.z * 0.009, b3.z * 0.005)));
 
-  // Through a drop the city is sharper, shrunk and flipped (a lens);
-  // elsewhere it's a blur.
-  vec2 look = uv - offset;
-  vec3 col = city(look, 0.25 * wet, t);
-  // The wiped trails are a touch clearer.
-  col *= 1.0 + 0.12 * trail * (1.0 - wet);
-  // Drops gather light: a soft highlight up top, a darker rim below.
-  vec2 n = offset / 0.09;
-  col += vec3(0.75, 0.82, 0.9) * 0.18 * wet * smoothstep(0.3, 0.9, n.y);
-  col *= 1.0 - 0.35 * wet * smoothstep(0.55, 1.0, length(n));
-  // Small drops catch the room's light too.
-  col += uColors[1] * 0.25 * max(b1.z, b2.z);
-  return col;
-}
-`,
-};
-
-const fireflies: Scene = {
-  id: 'fireflies',
-  name: 'Fireflies',
-  colors: ['#02060a', '#0d2a33', '#3f7f86', '#e8f58a'],
-  base: '#06141a',
-  speed: 0.35,
-  resolution: 0.5,
-  fragment: /* glsl */ `
-// A lake at night: moonlight on still water, pines on the far shore, reeds
-// in front, and fireflies drifting over it all, mirrored in the lake.
-
-// Height of a row of pines at x: narrow, jagged triangles.
-float pines(float x, float y, float scale, float seed, float base, float tall) {
-  float g = x * scale;
-  float inside = 0.0;
-  for (int i = -1; i <= 1; i++) {
-    float cell = floor(g) + float(i);
-    float h = hash01(vec2(cell, seed));
-    if (hash01(vec2(cell, seed + 2.0)) > 0.85) continue;
-    float c = cell + 0.5 + 0.6 * (hash01(vec2(cell, seed + 4.0)) - 0.5);
-    float height = tall * (0.3 + 0.7 * h);
-    float s = (y - base) / height;
-    if (s < 0.0 || s > 1.0) continue;
-    // Tiers of branches: the outline steps in and out on the way up.
-    float tier = fract(s * (5.0 + 3.0 * h));
-    float w = (0.42 + 0.25 * h) * (1.0 - s) * (0.75 + 0.35 * tier) + 0.03;
-    inside = max(inside, smoothstep(w, w - 0.06, abs(g - c)));
-  }
-  return inside;
-}
-
-vec3 fireflies(vec2 uv, float t, float scale, float seed, float size) {
-  vec2 g = uv * scale;
-  vec3 glow = vec3(0.0);
-  for (int y = -1; y <= 1; y++) {
-    for (int x = -1; x <= 1; x++) {
-      vec2 cell = floor(g) + vec2(x, y);
-      float density = mix(0.05, 0.45, smoothstep(0.15, -0.35, cell.y / scale));
-      float h = hash01(cell + seed);
-      if (h > density) continue;
-      float h2 = hash01(cell + seed + 3.7);
-      float h3 = hash01(cell + seed + 8.1);
-      vec2 c = cell + 0.5 + 0.38 * vec2(sin(t * (0.3 + 0.3 * h2) + 6.28 * h3), sin(t * (0.23 + 0.2 * h3) + 6.28 * h2));
-      float d = length(g - c);
-      float blink = pow(0.5 + 0.5 * sin(t * (0.6 + 0.8 * h2) + 6.28 * h), 3.0);
-      glow += uColors[3] * (smoothstep(size, 0.0, d) + 0.5 * exp(-d * d / (size * size * 20.0))) * blink;
-    }
-  }
-  return glow;
-}
-
-// Everything above the water line.
-vec3 world(vec2 uv, float t, float shore) {
-  vec3 col = mix(uColors[1], uColors[0], smoothstep(-0.1, 0.55, uv.y));
-  vec2 moon = vec2(-0.28, 0.3);
-  float md = length(uv - moon);
-  col += uColors[2] * 0.5 * exp(-4.0 * md);
-  col = mix(col, vec3(0.9, 0.97, 1.0), smoothstep(0.05, 0.044, md) * 0.92);
-  // Thin clouds catching the moonlight.
-  float cl = smoothstep(0.1, 0.5, fbmFast(uv * vec2(1.5, 8.0) + vec2(0.01 * t, 2.0))) * smoothstep(0.05, 0.25, uv.y);
-  col = mix(col, uColors[2] * 0.8, cl * 0.35 * (0.4 + exp(-3.0 * md)));
-  vec2 sg = uv * 120.0;
-  col += 0.45 * step(0.996, hash01(floor(sg))) * smoothstep(0.3, 0.0, length(fract(sg) - 0.5)) * smoothstep(0.0, 0.4, uv.y) * (1.0 - cl);
-  // Two rows of pines on the far shore, the nearer darker.
-  float back = max(pines(uv.x, uv.y, 40.0, 1.0, shore, 0.11), smoothstep(shore + 0.012, shore + 0.008, uv.y));
-  col = mix(col, mix(uColors[1], uColors[2], 0.25), back);
-  // Mist along the shore, between the rows.
-  float mist = exp(-pow((uv.y - shore - 0.02) / 0.04, 2.0)) * (0.5 + 0.5 * fbmFast(vec2(uv.x * 3.0 + 0.02 * t, 4.0)));
-  col += uColors[2] * 0.25 * mist;
-  float front = pines(uv.x, uv.y, 22.0, 5.0, shore - 0.005, 0.17);
-  col = mix(col, mix(uColors[0], uColors[1], 0.3), front);
-  return col;
-}
-
-vec3 scene(vec2 uv, float t) {
-  float shore = -0.12;
-  vec3 col;
-  if (uv.y > shore) {
-    col = world(uv, t, shore);
-    col += fireflies(uv, t, 12.0, 2.0, 0.03) * 0.6;
-  } else {
-    // The lake mirrors the shore, broken by slow ripples.
-    float depth = shore - uv.y;
-    vec2 ripple = vec2(0.006 * noiseFast(vec2(uv.x * 4.0, depth * 60.0 - 0.3 * t)), 0.0);
-    vec2 m = vec2(uv.x, shore + depth * 1.0) + ripple * (0.5 + 4.0 * depth);
-    col = world(m, t, shore) * 0.6 + uColors[0] * 0.1;
-    // The moon's path, glittering.
-    float path = exp(-pow((uv.x + 0.28) / (0.03 + 0.25 * depth), 2.0));
-    float glint = smoothstep(0.35, 0.7, noiseFast(vec2(uv.x * 30.0, depth * 140.0 - 0.6 * t)));
-    col += vec3(0.8, 0.92, 1.0) * path * glint * 0.9;
-    col += uColors[2] * path * 0.08;
-    col += fireflies(m, t, 12.0, 2.0, 0.03) * 0.3;
-    col += fireflies(m, t, 6.0, 9.0, 0.035) * 0.4;
-  }
-
-  // Reeds in front, tall at the sides, swaying.
-  float reeds = 0.0;
-  for (int k = 0; k < 2; k++) {
-    float sc = k == 0 ? 70.0 : 40.0;
-    float g = uv.x * sc;
-    for (int i = -1; i <= 1; i++) {
-      float cell = floor(g) + float(i);
-      float h = hash01(vec2(cell, 21.0 + float(k)));
-      float side = smoothstep(0.25, 0.85, abs((cell + 0.5) / sc));
-      float height = (0.05 + 0.28 * h * h) * (0.35 + 0.9 * side) * (k == 0 ? 0.8 : 1.0);
-      float base = -0.52;
-      float s = clamp((uv.y - base) / height, 0.0, 1.0);
-      float bend = (h - 0.5) * 1.6 + 0.25 * sin(0.4 * t + h * 6.0);
-      float cx = cell + 0.5 + bend * s * s * sc * height * 0.4;
-      float w = 0.22 * (1.0 - s);
-      reeds = max(reeds, step(uv.y, base + height) * smoothstep(w, w * 0.4, abs(g - cx)));
-    }
-  }
-  col = mix(col, uColors[0] * 0.5, reeds);
-
-  col += fireflies(uv, t, 6.0, 9.0, 0.035) * 0.9;
-  col += fireflies(uv + 1.3, t * 0.8, 3.0, 17.0, 0.03);
+  // Through a drop the city is sharp, flipped and shrunk; elsewhere the
+  // fogged glass blurs it, less where a drop has wiped it.
+  vec2 look = uv - lens * size * 14.0;
+  vec3 col = city(mix(uv, look, wet), max(wet * 0.4, trail * 0.3), t);
+  // Drops gather the sky's light; condensation lightens the glass a
+  // little, less on the wiped trails.
+  col += uColors[1] * 0.3 * wet * (1.0 - rim);
+  // Light gathered along a drop's lower edge.
+  col += vec3(1.0, 0.9, 0.8) * 0.12 * wet * smoothstep(0.5, 0.95, -lens.y) * smoothstep(1.0, 0.7, length(lens));
+  col = mix(col, col * 0.88 + uColors[1] * 0.15, (1.0 - wet) * (1.0 - 0.5 * trail) * 0.3);
+  // A drop's edge is darker; a tiny highlight sits near its top.
+  col *= 1.0 - 0.18 * rim;
+  vec2 n = lens;
+  col += vec3(0.9, 0.95, 1.0) * 0.35 * wet * smoothstep(0.35, 0.0, length(n - vec2(-0.3, 0.45)));
   return col;
 }
 `,
@@ -855,51 +841,61 @@ const lumen: Scene = {
   name: 'Lumen',
   colors: ['#030509', '#0c1622', '#ffd9a1', '#7fb8c9'],
   base: '#05080d',
-  speed: 0.25,
+  speed: 0.4,
   resolution: 0.5,
   fragment: /* glsl */ `
-// Light through haze: shafts falling from high on the left into a dark
-// room, slowly shifting, with dust drifting through them.
+// Light through haze: shafts falling from an opening above into a dark
+// room. They sway and breathe as if leaves moved across the opening, the
+// haze rolls through them, and dust drifts and glints in the light.
 
 vec3 scene(vec2 uv, float t) {
   vec3 col = mix(uColors[1], uColors[0], smoothstep(-0.6, 0.5, uv.y + 0.3 * uv.x));
 
-  vec2 src = vec2(-0.38, 0.78);
+  vec2 src = vec2(-0.38 + 0.03 * sin(0.11 * t), 0.78);
   vec2 rel = uv - src;
   float dist = length(rel);
   float ang = atan(rel.x, -rel.y);
-  // Shafts: a few broad bands of angle, drifting and breathing.
+  // Shafts: broad bands of angle that sway, widen and dim on their own.
   float shafts = 0.0;
   for (int i = 0; i < 5; i++) {
     float fi = float(i);
-    float center = -0.05 + 0.24 * fi + 0.04 * sin(0.07 * t + fi * 1.7);
-    float width = 0.035 + 0.02 * sin(0.05 * t + fi * 2.3) + 0.015 * fi;
-    shafts += exp(-pow((ang - center) / width, 2.0)) * (0.7 + 0.3 * sin(0.09 * t + fi));
+    float sway = 0.08 * sin(0.21 * t + fi * 1.7) + 0.04 * sin(0.47 * t + fi * 4.1);
+    float center = -0.05 + 0.24 * fi + sway;
+    float width = 0.04 + 0.022 * sin(0.17 * t + fi * 2.3) + 0.012 * fi;
+    float strength = 0.35 + 0.65 * smoothstep(-0.35, 0.4, noiseFast(vec2(fi * 3.7, 0.35 * t)));
+    shafts += exp(-pow((ang - center) / width, 2.0)) * strength;
   }
-  // Fine streaks within, like light through leaves.
-  float streak = 0.6 + 0.4 * noiseFast(vec2(ang * 40.0, 0.03 * t));
-  // Haze: the light shows where the air is thick.
-  vec2 hq = uv * 2.2 + vec2(0.02 * t, -0.015 * t);
-  float haze = smoothstep(-0.45, 0.5, fbmFast(hq + 0.4 * fbmFast(hq * 1.7 - 0.01 * t))) * 0.8 + 0.2;
+  // Fine streaks within, like light through leaves, shimmering.
+  float streak = 0.55 + 0.45 * noiseFast(vec2(ang * 40.0 + 0.4 * sin(0.3 * t), 0.5 * t));
+  // Haze rolling through: thicker patches drift down and across.
+  vec2 hq = uv * 2.2 + vec2(0.07 * t, 0.05 * t);
+  float haze = smoothstep(-0.45, 0.5, fbmFast(hq + 0.5 * fbmFast(hq * 1.7 - 0.04 * t))) * 0.8 + 0.2;
+  // Pulses of brighter air travelling down each shaft.
+  float flow = 0.8 + 0.2 * noiseFast(vec2(ang * 6.0, dist * 4.0 - 0.6 * t));
   float fall = exp(-dist * 0.75);
-  float light = shafts * streak * haze * fall;
+  float light = shafts * streak * haze * flow * fall;
   vec3 beam = mix(uColors[3], uColors[2], smoothstep(0.2, 1.0, shafts));
-  col += beam * light * 1.5;
-  // A soft bloom near the opening.
-  col += uColors[2] * 0.5 * exp(-dist * 3.5) + vec3(1.0, 0.95, 0.85) * 0.5 * exp(-dist * 14.0);
+  col += beam * light * 1.6;
+  // A soft bloom near the opening, breathing with the light.
+  float breathe = 0.85 + 0.15 * sin(0.33 * t);
+  col += (uColors[2] * 0.5 * exp(-dist * 3.5) + vec3(1.0, 0.95, 0.85) * 0.5 * exp(-dist * 14.0)) * breathe;
 
-  // Dust: specks that glint only inside the light.
-  for (int k = 0; k < 2; k++) {
-    float sc = k == 0 ? 45.0 : 22.0;
-    vec2 g = uv * sc + vec2(0.06 * t * (k == 0 ? 1.0 : -0.7), 0.04 * t);
-    vec2 cell = floor(g);
-    float h = hash01(cell + float(k) * 9.0);
-    if (h < 0.35) {
-      vec2 c = cell + 0.5 + 0.35 * vec2(sin(t * 0.3 + h * 20.0), cos(t * 0.27 + h * 13.0));
+  // Dust in three depths: specks that wander, turn and glint in the light.
+  for (int k = 0; k < 3; k++) {
+    float fk = float(k);
+    float sc = fk == 0.0 ? 60.0 : fk == 1.0 ? 32.0 : 16.0;
+    vec2 g = uv * sc + vec2(0.18 * t * (0.6 + 0.4 * fk) * (k == 1 ? -1.0 : 1.0), -0.12 * t * (0.5 + 0.3 * fk));
+    for (int y = 0; y <= 1; y++) {
+      vec2 cell = floor(g) + vec2(0.0, float(y) - 0.5 + step(0.5, fract(g.y)) - 0.5);
+      cell = floor(g) + vec2(0.0, float(y) * (fract(g.y) < 0.5 ? -1.0 : 1.0));
+      float h = hash01(cell + fk * 9.0);
+      if (h > 0.4) continue;
+      vec2 c = cell + 0.5 + 0.4 * vec2(sin(t * (0.5 + h) + h * 20.0), cos(t * (0.45 + h) + h * 13.0));
       float d = length(g - c);
-      float size = k == 0 ? 0.08 : 0.12;
-      float speck = smoothstep(size, 0.0, d) * (0.5 + 0.5 * sin(t * 0.8 + h * 30.0));
-      col += uColors[2] * speck * light * (k == 0 ? 1.6 : 2.2);
+      float size = fk == 0.0 ? 0.07 : fk == 1.0 ? 0.1 : 0.16;
+      float soft = fk == 2.0 ? 0.6 : 0.0;
+      float speck = smoothstep(size, size * soft, d) * (0.4 + 0.6 * pow(0.5 + 0.5 * sin(t * (1.2 + h) + h * 30.0), 2.0));
+      col += uColors[2] * speck * light * (fk == 0.0 ? 1.6 : fk == 1.0 ? 2.2 : 1.4);
     }
   }
   // A faint floor catching the light far below.
@@ -970,12 +966,10 @@ export const SCENES: readonly Scene[] = [
   wave,
   aurora,
   silk,
-  sora,
   sakura,
   comet,
   koi,
   windowScene,
-  fireflies,
   lumen,
   contour,
 ];
