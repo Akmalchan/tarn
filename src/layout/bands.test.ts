@@ -168,7 +168,8 @@ describe('layoutBands', () => {
     // A gap before the last band happens only when nothing can fill it
     // (several extra large widgets: two never fit side by side in 6).
     expect(shortBands / totalBands).toBeLessThan(0.03);
-  });
+    // ~1 s locally; CI runners can take 5+ s for its ~5000 layouts.
+  }, 30_000);
 });
 
 describe('columnsFor', () => {

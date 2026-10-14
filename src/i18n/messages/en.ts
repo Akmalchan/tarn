@@ -336,6 +336,51 @@ export const en = {
   'panel.tab.noteCustom':
     'New tabs show your image. It stays on this computer.',
   'panel.tab.badImage': 'That image can’t be used.',
+
+  // Search box
+  'panel.page.search': 'Search',
+  'panel.search.box': 'Search box',
+  'panel.search.show': 'Show',
+  'panel.search.hide': 'Hide',
+  'panel.search.shown': 'On',
+  'panel.search.hidden': 'Off',
+  'panel.search.boxNote':
+    'Under the clock, like your browser’s own. Searches go to your browser’s search engine.',
+  'panel.search.buttons': 'Buttons',
+  'panel.search.voice': 'Voice search',
+  'panel.search.lens': 'Google Lens',
+  'panel.search.ai': 'AI Mode',
+  'panel.search.on': 'On',
+  'panel.search.off': 'Off',
+  'panel.search.buttonsNote':
+    'Nothing is sent until you press one. Voice turns your speech into text through your browser, which sends it to Google. Lens sends an image to Google Lens only when you drop, pick or paste one. AI Mode opens your question in Google’s AI Mode.',
+  'search.placeholder': 'Search or type a URL',
+  'search.voice': 'Search by voice',
+  'search.lens': 'Search with Google Lens',
+  'search.openSite': 'Open site',
+  'search.searchWeb': 'Search the web',
+  'panel.search.style': 'Look',
+  'panel.search.auto': 'Auto',
+  'panel.search.light': 'Light',
+  'panel.search.dark': 'Dark',
+  'panel.search.glass': 'Glass',
+  'search.aiMode': 'AI Mode',
+  'search.close': 'Close',
+  'search.lensTitle': 'Search any image with Google Lens',
+  'search.lensDrop': 'Drag an image here or',
+  'search.lensUpload': 'upload a file',
+  'search.lensOr': 'OR',
+  'search.lensLink': 'Paste image link',
+  'search.lensSearch': 'Search',
+  'search.lensBadLink': 'That doesn’t look like an image link.',
+  'search.lensNotImage': 'That file isn’t an image.',
+  'search.speakNow': 'Speak now',
+  'search.stopListening': 'Stop listening',
+  'search.noSpeech': 'Didn’t catch that.',
+  'search.voiceFailed': 'Voice search isn’t working right now.',
+  'search.micDenied': 'Tarn can’t use the microphone.',
+  'search.micDeniedHint':
+    'Allow it for Tarn in your browser’s site settings, then try again.',
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof en;

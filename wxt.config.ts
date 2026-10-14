@@ -60,10 +60,12 @@ export default defineConfig({
     // `bookmarks` shows the browser's bookmarks bar in a Bookmarks widget
     // from the first new tab, until the user edits it (read only; install
     // warning "Read and change your bookmarks", owner's choice 2026-10-14).
+    // `search` sends the search box's queries to the browser's own default
+    // engine (chrome.search / browser.search); Tarn never picks the engine.
     permissions:
       browser === 'firefox'
-        ? ['storage', 'bookmarks']
-        : ['storage', 'offscreen', 'favicon', 'bookmarks'],
+        ? ['storage', 'bookmarks', 'search']
+        : ['storage', 'offscreen', 'favicon', 'bookmarks', 'search'],
     // Asked for only when needed, so neither shows an install warning:
     // `management` when the user switches off another new-tab extension
     // (Firefox only lets extensions toggle themes, so not there), and

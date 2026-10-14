@@ -8,6 +8,12 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A search box under the clock, shaped like the browser's own: it searches
+  with your browser's engine, opens typed addresses, and suggests your
+  bookmarks. Voice (right in the box, with a voice line), Google Lens (a box on the
+  page) and AI Mode are one switch each in Settings > Search, along with
+  its look (auto, light, dark or glass) or hiding it.
+- Bookmarks starts with your browser's bookmarks bar, folders included.
 - Three new clock faces: Glass (translucent digits with a lit bevel, like
   Apple's), Rounded and Analog.
 - More clock faces: Flip (split-flap cards that flip each minute), Nixie

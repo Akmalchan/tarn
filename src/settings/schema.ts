@@ -156,6 +156,44 @@ export interface WeatherSettings {
   readonly units: WeatherUnits;
 }
 
+/**
+ * Where "Ask AI" in the search box sends a question; 'off' hides it.
+ * Each opens the service's own site with the question; Tarn has no AI.
+ */
+export type SearchAi = 'off' | 'google' | 'chatgpt' | 'claude' | 'perplexity';
+export const SEARCH_AIS: readonly SearchAi[] = [
+  'off',
+  'google',
+  'chatgpt',
+  'claude',
+  'perplexity',
+];
+
+/**
+ * The search box under the clock, shaped like the browser's own. Searches
+ * go to the browser's default engine; the buttons only open Google's
+ * voice search, Google Lens, or the chosen AI when pressed.
+ */
+/**
+ * The search box's look: 'auto' follows the computer's light or dark mode
+ * like the browser's own box; 'glass' is frosted like the widgets.
+ */
+export type SearchStyle = 'auto' | 'light' | 'dark' | 'glass';
+export const SEARCH_STYLES: readonly SearchStyle[] = [
+  'auto',
+  'light',
+  'dark',
+  'glass',
+];
+
+export interface SearchSettings {
+  readonly show: boolean;
+  readonly style: SearchStyle;
+  readonly voice: boolean;
+  readonly lens: boolean;
+  readonly ai: SearchAi;
+}
+
 /** Everything the user can change. Small and serializable; synced across devices. */
 export interface Settings {
   /** Whether new tabs show Tarn, or hand off to the browser's own page. */
@@ -166,6 +204,7 @@ export interface Settings {
   /** In the user's order. Empty by default: a calm page is the default. */
   readonly widgets: readonly WidgetEntry[];
   readonly weather: WeatherSettings;
+  readonly search: SearchSettings;
   /** 'auto' follows the browser's languages. */
   readonly language: LanguageSetting;
 }
@@ -189,6 +228,7 @@ export const DEFAULT_SETTINGS: Settings = {
   clock: 'center',
   widgets: START_WIDGETS,
   weather: {provider: 'open-meteo', units: 'auto'},
+  search: {show: true, style: 'auto', voice: true, lens: true, ai: 'off'},
   language: 'auto',
 };
 
@@ -244,9 +284,28 @@ export function normalizeSettings(raw: unknown): Settings {
     widgets:
       'widgets' in value ? normalizeWidgets(value.widgets) : [...START_WIDGETS],
     weather: normalizeWeather(value.weather),
+    search: normalizeSearch(value.search),
     language: LANGUAGE_SETTINGS.includes(value.language as LanguageSetting)
       ? (value.language as LanguageSetting)
       : DEFAULT_SETTINGS.language,
+  };
+}
+
+function normalizeSearch(raw: unknown): SearchSettings {
+  const value = isRecord(raw) ? raw : {};
+  const fallback = DEFAULT_SETTINGS.search;
+  const flag = (key: 'show' | 'voice' | 'lens') =>
+    typeof value[key] === 'boolean' ? (value[key] as boolean) : fallback[key];
+  return {
+    show: flag('show'),
+    style: SEARCH_STYLES.includes(value.style as SearchStyle)
+      ? (value.style as SearchStyle)
+      : fallback.style,
+    voice: flag('voice'),
+    lens: flag('lens'),
+    ai: SEARCH_AIS.includes(value.ai as SearchAi)
+      ? (value.ai as SearchAi)
+      : fallback.ai,
   };
 }
 

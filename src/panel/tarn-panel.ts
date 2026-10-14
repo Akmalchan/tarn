@@ -26,6 +26,7 @@ import {
   DEFAULT_SETTINGS,
   DEFAULT_WIDGET_SIZE,
   MAX_WIDGETS,
+  SEARCH_STYLES,
   TAB_ICONS,
   WEATHER_PROVIDERS,
   WEATHER_UNITS,
@@ -33,6 +34,8 @@ import {
   WIDGET_SIZE_OPTIONS,
   newWidgetId,
   type ClockStyle,
+  type SearchStyle,
+  type SearchSettings,
   type Settings,
   type TabIcon,
   type WidgetEntry,
@@ -93,7 +96,13 @@ import {
  * docs/design/settings-panel.md.
  */
 type Page =
-  'home' | 'backgrounds' | 'clock' | 'widgets' | 'language' | 'advanced';
+  | 'home'
+  | 'backgrounds'
+  | 'clock'
+  | 'widgets'
+  | 'search'
+  | 'language'
+  | 'advanced';
 
 /**
  * Home shows three choices per picker, then a "Show All" tile that opens
@@ -1134,6 +1143,7 @@ export class TarnPanel extends LitElement {
             backgrounds: () => this.renderBackgrounds(),
             clock: () => this.renderClock(),
             widgets: () => this.renderWidgets(),
+            search: () => this.renderSearch(),
             language: () => this.renderLanguage(),
             advanced: () => this.renderAdvanced(),
           }[this.page]();
@@ -1153,18 +1163,22 @@ export class TarnPanel extends LitElement {
                     <h1>${t(PAGE_TITLES[this.page])}</h1>
                   </div>`
             }
-            <label class="search">
-              ${glyph('search')}
-              <input
-                type="search"
-                placeholder=${t(scoped ?? 'panel.search')}
-                aria-label=${t(scoped ?? 'panel.searchSettings')}
-                .value=${this.query}
-                @input=${this.onSearch}
-                @keydown=${this.onSearchKey}
-              />
-              <kbd>/</kbd>
-            </label>
+            ${
+              this.page === 'search'
+                ? nothing
+                : html` <label class="search">
+                    ${glyph('search')}
+                    <input
+                      type="search"
+                      placeholder=${t(scoped ?? 'panel.search')}
+                      aria-label=${t(scoped ?? 'panel.searchSettings')}
+                      .value=${this.query}
+                      @input=${this.onSearch}
+                      @keydown=${this.onSearchKey}
+                    />
+                    <kbd>/</kbd>
+                  </label>`
+            }
           </div>
           ${body}
         </div>`,
@@ -1263,6 +1277,15 @@ export class TarnPanel extends LitElement {
           widgets.length ? String(widgets.length) : t('panel.none'),
           'widgets',
           'widgets',
+        )}
+        ${this.navRow(
+          'search',
+          t('panel.page.search'),
+          this.settings.search.show
+            ? t('panel.search.shown')
+            : t('panel.search.hidden'),
+          'search',
+          'search',
         )}
       </div>
 
@@ -1706,6 +1729,104 @@ export class TarnPanel extends LitElement {
    * Weather: who to ask and in which units. Nothing is fetched until a
    * Weather widget is added and given a place (src/weather/).
    */
+  /**
+   * The search box: shown or not, and which buttons it carries. Searches
+   * always go to the browser's own engine (search/tarn-search.ts).
+   */
+  private renderSearch() {
+    const {show, style, voice, lens, ai} = this.settings.search;
+    const onOff = (
+      label: MessageKey,
+      glyphName: GlyphName,
+      value: boolean,
+      set: (value: boolean) => void,
+      [yes, no]: [MessageKey, MessageKey] = [
+        'panel.search.on',
+        'panel.search.off',
+      ],
+    ) => html`
+      <div class="row">
+        ${icon(glyphName)}
+        <span class="txt">${t(label)}</span>
+        <span class="seg" role="radiogroup" aria-label=${t(label)}>
+          <button role="radio" aria-checked=${value} @click=${() => set(true)}>
+            ${t(yes)}
+          </button>
+          <button
+            role="radio"
+            aria-checked=${!value}
+            @click=${() => set(false)}
+          >
+            ${t(no)}
+          </button>
+        </span>
+      </div>
+    `;
+    return html`
+      <section data-target="search">
+        <div class="group">
+          ${onOff(
+            'panel.search.box',
+            'search',
+            show,
+            value => this.setSearch({show: value}),
+            ['panel.search.show', 'panel.search.hide'],
+          )}
+          ${
+            show
+              ? html`<div class="row">
+                  ${icon('sliders')}
+                  <span class="txt">${t('panel.search.style')}</span>
+                  <span
+                    class="seg"
+                    role="radiogroup"
+                    aria-label=${t('panel.search.style')}
+                  >
+                    ${SEARCH_STYLES.map(
+                      value => html`
+                        <button
+                          role="radio"
+                          aria-checked=${value === style}
+                          @click=${() => this.setSearch({style: value})}
+                        >
+                          ${t(STYLE_NAMES[value])}
+                        </button>
+                      `,
+                    )}
+                  </span>
+                </div>`
+              : nothing
+          }
+        </div>
+        <p class="note">${t('panel.search.boxNote')}</p>
+      </section>
+
+      ${
+        show
+          ? html`<section>
+              <h2>${t('panel.search.buttons')}</h2>
+              <div class="group">
+                ${onOff('panel.search.voice', 'mic', voice, value =>
+                  this.setSearch({voice: value}),
+                )}
+                ${onOff('panel.search.lens', 'lens', lens, value =>
+                  this.setSearch({lens: value}),
+                )}
+                ${onOff('panel.search.ai', 'sparkle', ai !== 'off', value =>
+                  this.setSearch({ai: value ? 'google' : 'off'}),
+                )}
+              </div>
+              <p class="note">${t('panel.search.buttonsNote')}</p>
+            </section>`
+          : nothing
+      }
+    `;
+  }
+
+  private setSearch(patch: Partial<SearchSettings>): void {
+    this.applyPatch({search: {...this.settings.search, ...patch}});
+  }
+
   private renderWeather() {
     const {provider, units} = this.settings.weather;
     const google = provider === 'google';
@@ -2413,6 +2534,7 @@ const PAGE_TITLES: Record<Page, MessageKey> = {
   backgrounds: 'panel.page.wallpapers',
   clock: 'panel.page.clock',
   widgets: 'panel.page.widgets',
+  search: 'panel.page.search',
   language: 'panel.page.language',
   advanced: 'panel.page.advanced',
 };
@@ -2664,6 +2786,13 @@ const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
   calendar: 'calendar',
 };
 
+const STYLE_NAMES: Record<SearchStyle, MessageKey> = {
+  auto: 'panel.search.auto',
+  light: 'panel.search.light',
+  dark: 'panel.search.dark',
+  glass: 'panel.search.glass',
+};
+
 const PROVIDER_NAMES: Record<WeatherProvider, string> = {
   'open-meteo': 'Open-Meteo',
   google: 'Google',
@@ -2719,6 +2848,15 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     glyph: 'widgets',
     words:
       'bookmarks favorites sites folders notes tasks timer focus weather calendar add remove size',
+  },
+  {
+    label: 'panel.page.search',
+    where: 'common.settings',
+    page: 'search',
+    target: 'search',
+    glyph: 'search',
+    words:
+      'search bar box google lens voice microphone mic ai mode hide style color light dark glass',
   },
   {
     label: 'panel.page.language',

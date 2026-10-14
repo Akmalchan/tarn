@@ -37,11 +37,17 @@
   tab, then folders and your own icons), notes, tasks,
   a calendar, a focus timer and weather, on a calm grid you arrange while
   settings is open.
+- **Search box.** Under the clock, shaped like your browser's own: Enter
+  searches with your browser's search engine, typed addresses and your
+  bookmarks come up as you type, and voice, Google Lens and AI Mode are
+  one switch each in settings. Light, dark, glass, or following your
+  computer; or hidden.
 - **Private.** Nothing leaves your browser. Settings sync through your
   browser's own account, if you use one. The one exception is the Weather
   widget, and only once you add it and choose a place: it asks Open-Meteo
   (free, no account), or Google with your own API key, for that place's
-  forecast, at most every 30 minutes. See [PRIVACY.md](PRIVACY.md).
+  forecast, at most every 30 minutes. The search box sends nothing until
+  you search. See [PRIVACY.md](PRIVACY.md).
 
 ## Install from source
 

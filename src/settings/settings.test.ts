@@ -34,6 +34,13 @@ describe('normalizeSettings', () => {
         clock: 'none',
         widgets,
         weather: {provider: 'google', units: 'fahrenheit'},
+        search: {
+          show: false,
+          style: 'glass',
+          voice: false,
+          lens: true,
+          ai: 'claude',
+        },
         language: 'de',
       }),
     ).toEqual({
@@ -43,8 +50,23 @@ describe('normalizeSettings', () => {
       clock: 'none',
       widgets,
       weather: {provider: 'google', units: 'fahrenheit'},
+      search: {
+        show: false,
+        style: 'glass',
+        voice: false,
+        lens: true,
+        ai: 'claude',
+      },
       language: 'de',
     });
+  });
+
+  it('fills in the search box and fixes its broken parts', () => {
+    expect(normalizeSettings({}).search).toEqual(DEFAULT_SETTINGS.search);
+    expect(
+      normalizeSettings({search: {show: 'yes', voice: false, ai: 'bard'}})
+        .search,
+    ).toEqual({...DEFAULT_SETTINGS.search, voice: false});
   });
 
   it('fixes each field independently', () => {
