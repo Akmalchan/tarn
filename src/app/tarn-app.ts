@@ -260,7 +260,10 @@ export class TarnApp extends LitElement {
           ${
             clock === 'none'
               ? nothing
-              : html`<tarn-clock face=${clock}></tarn-clock>`
+              : html`<tarn-clock
+                  face=${clock}
+                  tone=${sceneTone(sceneById(this.settings.scene))}
+                ></tarn-clock>`
           }
           ${
             search.show

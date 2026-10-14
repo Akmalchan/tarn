@@ -51,7 +51,9 @@ function flipCard(value: string, old: string) {
     `${old}>${value}`,
     html`<span class="card"
       ><span class="face top">${value}</span
-      ><span class="face bottom">${moving ? old : value}</span>${
+      ><span class="face bottom" aria-hidden="true"
+        >${moving ? old : value}</span
+      >${
         moving
           ? html`<span class="face flap top" aria-hidden="true">${old}</span
               ><span class="face flap bottom" aria-hidden="true"
@@ -287,7 +289,8 @@ export const faceStyles = css`
     filter: url(#face-glass);
   }
 
-  :host-context([tone='light']) .t.glass,
+  /* Light wallpapers: the clock's tone, or a settings thumbnail's. */
+  :host([tone='light']) .t.glass,
   .light .t.glass {
     filter: url(#face-glass-light);
   }
@@ -353,6 +356,7 @@ export const faceStyles = css`
   }
 
   .t.flip .face {
+    position: relative;
     grid-area: 1 / 1;
     padding: 0.04em 0.14em;
     border-radius: 0.14em;
@@ -379,6 +383,37 @@ export const faceStyles = css`
     background: rgb(0 0 0 / 0.6);
   }
 
+  /* A turning flap dims as it tilts away from the light: a black layer
+     fading in and out (opacity only). */
+  .t.flip .flap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: #000;
+    opacity: 0;
+  }
+
+  .t.flip .flap.top::before {
+    animation: flap-shade 260ms cubic-bezier(0.55, 0, 0.9, 0.55) both;
+  }
+
+  .t.flip .flap.bottom::before {
+    animation: flap-unshade 340ms 250ms ease-out both;
+  }
+
+  @keyframes flap-shade {
+    to {
+      opacity: 0.45;
+    }
+  }
+
+  @keyframes flap-unshade {
+    from {
+      opacity: 0.4;
+    }
+  }
+
   .t.flip .flap {
     z-index: 1;
     transform-origin: 50% 50%;
@@ -396,14 +431,12 @@ export const faceStyles = css`
   @keyframes flap-fall {
     to {
       transform: rotateX(-90deg);
-      filter: brightness(0.55);
     }
   }
 
   @keyframes flap-land {
     from {
       transform: rotateX(90deg);
-      filter: brightness(0.6);
     }
   }
 
@@ -438,7 +471,8 @@ export const faceStyles = css`
     .t.flip .flap.top {
       display: none;
     }
-    .t.flip .flap.bottom {
+    .t.flip .flap.bottom,
+    .t.flip .flap.bottom::before {
       animation: none;
     }
   }

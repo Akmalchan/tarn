@@ -13,15 +13,18 @@ import {LocaleController, locale} from '../i18n';
  * a phone-narrow window gets a smaller one. It updates once a minute, on the
  * minute, and not at all while the tab is hidden. `face` picks the style
  * (clock-faces.ts): classic (thin, with the date), glass, bold, rounded,
- * minimal (time only), serif,
- * stacked, outline, pixel (8-bit) or analog. None loads a font: serif uses
- * the system's; glass, rounded and outline are SVG filters over the
- * bundled one; pixel and analog are drawn.
+ * minimal (time only), serif, stacked, outline, pixel (8-bit), flip, lcd,
+ * neon, fraktur, gotisch or analog. Serif uses the system's font; glass,
+ * rounded and outline are SVG filters over the bundled one; pixel, lcd and
+ * analog are drawn; fraktur and gotisch load their own bundled fonts, only
+ * when shown. `tone` is the wallpaper's (light or dark), for faces that
+ * change with it.
  */
 export class TarnClock extends LitElement {
   static override properties = {
     now: {state: true},
     face: {type: String, reflect: true},
+    tone: {type: String, reflect: true},
   };
 
   static override styles = css`
@@ -61,7 +64,8 @@ export class TarnClock extends LitElement {
     }
 
     @media (max-width: 480px) {
-      time {
+      time,
+      :host([face='stacked']) time {
         font-size: 72px;
       }
       .date {
@@ -72,6 +76,7 @@ export class TarnClock extends LitElement {
 
   declare now: Date;
   declare face: Exclude<ClockStyle, 'none'>;
+  declare tone: 'light' | 'dark';
   /** The time shown before this one, so the flip face can flip from it. */
   private previous = '';
   private timer = 0;
@@ -82,6 +87,7 @@ export class TarnClock extends LitElement {
     new LocaleController(this);
     this.now = new Date();
     this.face = 'center';
+    this.tone = 'dark';
   }
 
   override connectedCallback(): void {
