@@ -62,7 +62,6 @@ export const ko: Catalog = {
   'favorites.more': '더보기',
   'favorites.icon': '아이콘',
   'favorites.chooseIcon': '이미지 선택',
-  'favorites.siteIcon': '사이트 아이콘 사용',
   'favorites.badIcon': '이 이미지는 사용할 수 없어요.',
   'favorites.folderLabel': '폴더',
   'favorites.noFolder': '없음',

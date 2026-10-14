@@ -63,7 +63,6 @@ export const es: Catalog = {
   'favorites.more': 'Más',
   'favorites.icon': 'Icono',
   'favorites.chooseIcon': 'Elegir una imagen',
-  'favorites.siteIcon': 'Usar el icono del sitio',
   'favorites.badIcon': 'No se puede usar esa imagen.',
   'favorites.folderLabel': 'Carpeta',
   'favorites.noFolder': 'Ninguna',

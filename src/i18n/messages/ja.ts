@@ -62,7 +62,6 @@ export const ja: Catalog = {
   'favorites.more': 'その他',
   'favorites.icon': 'アイコン',
   'favorites.chooseIcon': '画像を選ぶ',
-  'favorites.siteIcon': 'サイトのアイコンを使う',
   'favorites.badIcon': 'この画像は使えません。',
   'favorites.folderLabel': 'フォルダ',
   'favorites.noFolder': 'なし',

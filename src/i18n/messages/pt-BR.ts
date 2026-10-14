@@ -63,7 +63,6 @@ export const ptBR: Catalog = {
   'favorites.more': 'Mais',
   'favorites.icon': 'Ícone',
   'favorites.chooseIcon': 'Escolher uma imagem',
-  'favorites.siteIcon': 'Usar o ícone do site',
   'favorites.badIcon': 'Não é possível usar essa imagem.',
   'favorites.folderLabel': 'Pasta',
   'favorites.noFolder': 'Nenhuma',

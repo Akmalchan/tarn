@@ -63,7 +63,6 @@ export const ru: Catalog = {
   'favorites.more': 'Ещё',
   'favorites.icon': 'Значок',
   'favorites.chooseIcon': 'Выбрать изображение',
-  'favorites.siteIcon': 'Значок сайта',
   'favorites.badIcon': 'Это изображение не подходит.',
   'favorites.folderLabel': 'Папка',
   'favorites.noFolder': 'Нет',

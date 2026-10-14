@@ -550,16 +550,23 @@ export class TarnFavorites extends LitElement {
         text-align: center;
       }
 
-      .preview {
-        display: grid;
-        place-items: center;
-        --chip-size: 64px;
-        --icon-size: 46px;
-        --chip-radius: 17px;
+      /* The image chosen as the site's icon. */
+      .thumb {
+        flex: none;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
       }
 
-      .preview .chip {
-        box-shadow: 0 6px 18px rgb(0 0 0 / 0.22);
+      .thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
       }
 
       /* Fields as one rounded group with hairlines between rows. */
@@ -742,7 +749,7 @@ export class TarnFavorites extends LitElement {
   declare more: boolean;
   /** The editor's icon: unchanged (undefined), a new image, or removed. */
   declare draftIcon: string | null | undefined;
-  /** What the editor's fields hold, for its preview. */
+  /** What the editor's fields hold, kept across re-renders. */
   declare draftUrl: string;
   declare draftTitle: string;
   declare error: string;
@@ -1061,9 +1068,6 @@ export class TarnFavorites extends LitElement {
       <dialog class="editor" data-edit @close=${this.onEditorClosed}>
         <form method="dialog" @submit=${this.onSubmit} @input=${this.onDraft}>
           <h4>${site ? t('favorites.editTitle') : t('favorites.addTitle')}</h4>
-          <div class="preview" aria-hidden="true">
-            ${this.previewChip(icon)}
-          </div>
           <div class="group">
             <label class="row">
               <span>${t('favorites.name')}</span>
@@ -1098,21 +1102,28 @@ export class TarnFavorites extends LitElement {
                       ${
                         icon
                           ? html`<button
+                                type="button"
+                                class="text-button dim"
+                                @click=${() => (this.draftIcon = null)}
+                              >
+                                ${t('common.remove')}
+                              </button>
+                              <button
+                                type="button"
+                                class="thumb"
+                                title=${t('favorites.chooseIcon')}
+                                @click=${this.chooseIcon}
+                              >
+                                <img src=${icon} alt="" />
+                              </button>`
+                          : html`<button
                               type="button"
-                              class="text-button dim"
-                              @click=${() => (this.draftIcon = null)}
+                              class="text-button"
+                              @click=${this.chooseIcon}
                             >
-                              ${t('favorites.siteIcon')}
+                              ${t('favorites.chooseIcon')}
                             </button>`
-                          : nothing
                       }
-                      <button
-                        type="button"
-                        class="text-button"
-                        @click=${this.chooseIcon}
-                      >
-                        ${t('favorites.chooseIcon')}
-                      </button>
                     </div>
                     <input
                       type="file"
@@ -1162,33 +1173,16 @@ export class TarnFavorites extends LitElement {
     `;
   }
 
-  /** The editor's icon, following what is typed. */
-  private previewChip(icon: string | null | undefined) {
-    const url = toUrl(this.draftUrl);
-    const title = this.draftTitle.trim() || (url ? nameOf(url) : '');
-    if (!url && !icon) return html`<span class="chip"></span>`;
-    return this.chip(
-      {url: url ?? 'https://example.com/', title, ...(icon ? {icon} : {})},
-      true,
-    );
-  }
-
-  /** Follows the editor's fields, so the preview can show the icon. */
+  /** Follows the editor's fields, so a re-render keeps what's typed. */
   private onDraft = (event: Event) => {
     const input = event.target as HTMLInputElement;
     if (input.name === 'title') this.draftTitle = input.value;
     if (input.name !== 'url') return;
     this.error = '';
     this.draftUrl = input.value;
-    const url = toUrl(input.value);
-    if (url && !this.icons.has(url)) {
-      void siteIcon(url).then(found => {
-        this.icons = new Map(this.icons).set(url, found);
-      });
-    }
   };
 
-  private chip(site: Site, preview = false) {
+  private chip(site: Site) {
     if (site.icon) {
       return html`<span class="chip custom"
         ><img src=${site.icon} alt=""
@@ -1196,8 +1190,7 @@ export class TarnFavorites extends LitElement {
     }
     const found = this.icons.get(site.url);
     // Looking up the icon takes a few ms: a plain tile until then.
-    if (found === undefined && !preview)
-      return html`<span class="chip"></span>`;
+    if (found === undefined) return html`<span class="chip"></span>`;
     if (found) {
       return html`<span class=${found.light ? 'chip icon dark' : 'chip icon'}
         ><img src=${found.src} alt=""

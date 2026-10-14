@@ -81,7 +81,6 @@ export const en = {
   'favorites.more': 'More',
   'favorites.icon': 'Icon',
   'favorites.chooseIcon': 'Choose an image',
-  'favorites.siteIcon': 'Use the site’s icon',
   'favorites.badIcon': 'That image can’t be used.',
   'favorites.folderLabel': 'Folder',
   'favorites.noFolder': 'None',

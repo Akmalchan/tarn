@@ -63,7 +63,6 @@ export const tr: Catalog = {
   'favorites.more': 'Diğer',
   'favorites.icon': 'Simge',
   'favorites.chooseIcon': 'Görsel seç',
-  'favorites.siteIcon': 'Sitenin simgesini kullan',
   'favorites.badIcon': 'Bu görsel kullanılamıyor.',
   'favorites.folderLabel': 'Klasör',
   'favorites.noFolder': 'Yok',

@@ -62,7 +62,6 @@ export const zhCN: Catalog = {
   'favorites.more': '更多',
   'favorites.icon': '图标',
   'favorites.chooseIcon': '选择图片',
-  'favorites.siteIcon': '使用网站图标',
   'favorites.badIcon': '无法使用这张图片。',
   'favorites.folderLabel': '文件夹',
   'favorites.noFolder': '无',
