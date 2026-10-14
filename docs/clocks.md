@@ -116,8 +116,8 @@ The clock follows the "Arrival" rules in `architecture.md`:
 - The time is 112px on every screen (`docs/widgets.md` rule 1),
   72px at `max-width: 480px`. Base text: weight 200, line-height 0.92,
   letter-spacing -0.04em, tabular numbers.
-- Tab-only per-face sizes live in `tarn-clock.ts`: Stacked is 104px, Pixel
-  has line-height 1.
+- Tab-only per-face sizes live in `tarn-clock.ts`: Stacked is 104px (72px
+  on narrow windows, like the rest), Pixel has line-height 1.
 - Drawn faces size in `em` from the clock's font size: Pixel's SVG is
   0.6em tall, LCD's 1.04em, Analog's 1.55em square, Flip's card padding
   and radius are in em. That is how the same code fits a 112px clock and a
@@ -142,8 +142,9 @@ Two mechanisms, both in `src/widgets/clock-faces.ts`:
 1. **CSS: `faceStyles`.** A `css` block with rules for `.t.<face>`. Any
    element with classes `t <face>` gets the look, both the clock's
    `<time>` and the panel's thumbnail `<span>`. Sizes stay with the caller.
-   A light background is detected by `:host-context([tone='light'])` (the
-   clock inside `tarn-app`) or a `.light` ancestor (the panel thumbnails).
+   A light background is detected by `:host([tone='light'])` (the clock
+   reflects the wallpaper's tone, which `tarn-app` passes in) or a `.light`
+   ancestor (the panel thumbnails).
 2. **Markup: `clockTime(face, time, now?, previous?)`.** Returns the plain
    text for most faces, and markup for five:
    - `stacked`: `<span class="hh">` and `<span class="mm">` (grid, hours
@@ -203,6 +204,10 @@ round filters follow `--ink`.
 Only Flip moves. When a card's number changes, `keyed()` gives it a new
 element so the animation plays once: the old top half falls (`flap-fall`,
 260ms), then the new bottom half lands (`flap-land`, 340ms after 250ms).
+Each flap dims as it tilts away through a black `::before` layer whose
+opacity animates (`flap-shade`, `flap-unshade`): transform and opacity
+only. The bottom halves are `aria-hidden`, so a screen reader reads each
+number once.
 With `prefers-reduced-motion: reduce` the top flap is hidden and the bottom
 does not animate: the new number just appears.
 
@@ -369,7 +374,9 @@ Taste notes that apply to clocks:
      (the panel's `.thumb .t` has the same weight; `faceStyles` wins by
      coming last).
    - If it should change on light wallpapers, add both
-     `:host-context([tone='light']) .t.<id>` and `.light .t.<id>`.
+     `:host([tone='light']) .t.<id>` (the clock reflects the wallpaper's
+     tone, set by the app) and `.light .t.<id>` (settings thumbnails).
+     Not `:host-context()`: Firefox doesn't support it.
    - If it needs markup, add a branch to `clockTime()`. It must work from
      the `time` string alone (thumbnails pass no `now` or `previous`), and
      every hour/separator form `clockText` can produce: one- or two-digit
@@ -440,24 +447,10 @@ never-lose rule). Add a row to section 5.
 
 ## Contradictions and open questions (found 2026-10-14)
 
-- **Stacked on phones (likely bug).** `:host([face='stacked']) time
-{ font-size: 104px }` is more specific than the phone rule
-  `@media (max-width: 480px) { time { font-size: 72px } }`, so Stacked
-  likely stays 104px on narrow windows. Not checked in a browser.
-- **Glass on light wallpapers in Firefox.** The clock picks the light glass
-  filter with `:host-context([tone='light'])`, which Firefox doesn't
-  support as far as I know; there it would keep the dark-wallpaper filter.
-  Not checked in Firefox.
-- **Flip animates `filter`.** `flap-fall` and `flap-land` animate
-  `filter: brightness()` along with the transform. `AGENTS.md` says
-  "animate only transform/opacity".
 - **Neon and the brand.** `BRAND.md` bans "AI-style glow" anywhere and
   asks for a light and a dark version of every new visual. Neon is a glow
   and ignores tone; Flip also ignores tone. The owner shipped both, so treat
   them as accepted exceptions, but ask before adding another glow face.
-- **Stale comments.** The doc comment in `tarn-clock.ts` lists
-  only 10 faces and says "None loads a font", which Fraktur and Gotisch now
-  do.
 - **CHANGELOG gaps.** It lists Glass, Rounded, Analog, Flip, LCD, Neon,
   Fraktur and Gotisch, and the Outline fix, but not Bold, Minimal, Serif,
   Stacked or Pixel.
@@ -468,6 +461,3 @@ never-lose rule). Add a row to section 5.
 - **Fonts.** `font-display: block` with no preload: the first time a gothic
   face is shown, the time may be invisible for a moment while the font
   loads. Not measured.
-- **Flip and screen readers.** Each card holds the number twice (top and
-  bottom halves, neither `aria-hidden`), so a screen reader may read the
-  digits twice. The `<time datetime>` is correct.
