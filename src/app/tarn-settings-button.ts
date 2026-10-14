@@ -5,6 +5,7 @@
 
 import {LitElement, css, html} from 'lit';
 import {openSidePanel, prepareSidePanel, watchSidePanel} from './side-panel';
+import {t} from '../i18n';
 
 /**
  * "settings" from Google's Material Icons, Apache License 2.0.
@@ -115,8 +116,8 @@ export class TarnSettingsButton extends LitElement {
   override render() {
     return html`
       <button
-        title="Settings"
-        aria-label="Open settings"
+        title=${t('common.settings')}
+        aria-label=${t('common.openSettings')}
         ?inert=${this.panelOpen}
         @click=${this.open}
       >

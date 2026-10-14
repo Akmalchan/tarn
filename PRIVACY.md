@@ -22,8 +22,7 @@ Removing Tarn removes all of it.
 
 ## Weather
 
-Only if you add a Weather widget, or turn on weather beside the clock, and
-choose a place:
+Only if you add a Weather widget and choose a place:
 
 - **City search:** what you type in the place search is sent to Open-Meteo
   (open-meteo.com) to find matching places, even if Google gives your

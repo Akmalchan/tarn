@@ -26,6 +26,15 @@ export async function setGoogleKey(key: string): Promise<void> {
   else await browser.storage.local.remove(KEY);
 }
 
+/** Calls `listener` when the Google key is saved or removed. */
+export function watchGoogleKey(listener: () => void): () => void {
+  const onChanged = (changes: Record<string, unknown>, area: string) => {
+    if (area === 'local' && KEY in changes) listener();
+  };
+  browser.storage.onChanged.addListener(onChanged);
+  return () => browser.storage.onChanged.removeListener(onChanged);
+}
+
 /** Places where °F is the everyday unit. */
 const FAHRENHEIT_REGIONS = new Set(['US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW']);
 

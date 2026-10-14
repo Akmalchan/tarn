@@ -8,13 +8,18 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Resize widgets while settings is open: drag the corner grip and the
+  widget snaps through the sizes it offers, with the others making room.
+  Plus and minus keys do the same from the keyboard.
+- Tasks: add from a + beside the title, so a small tile shows more tasks.
+- Ten languages: English, Español, Português (Brasil), Français, Deutsch,
+  Русский, 日本語, 简体中文, 한국어 and Türkçe. Tarn follows the browser's
+  language, or pick one in Settings > Language. Dates, times and the store
+  listing follow it too.
 - Weather widget: now, the next hours and the week ahead, in four sizes.
   Search for a city or use your location; forecasts from Open-Meteo (free,
   no account) or Google with your own API key. Opt-in: nothing is sent
   until you add it.
-- Weather beside the clock: an icon and the temperature on the date line
-  (Settings > Clock > Show weather), on faces with a date line. It shares
-  forecasts with Weather widgets for the same place.
 - Your setup survives updates: a save only changes what you changed, so an
   older Tarn on another computer never erases a newer one's widgets or
   choices; renamed options get proper upgrades; every update first keeps a

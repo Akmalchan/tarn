@@ -136,6 +136,8 @@ async function getJson(url: string): Promise<unknown> {
     response = await fetch(url, {
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
+      // A stalled request gives up rather than holding back every refresh.
+      signal: AbortSignal.timeout(15_000),
     });
   } catch {
     throw new WeatherError('offline', 'No connection.');

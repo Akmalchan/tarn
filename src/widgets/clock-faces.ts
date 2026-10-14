@@ -4,6 +4,7 @@
  */
 
 import {html, svg} from 'lit';
+import {locale} from '../i18n';
 import type {ClockStyle} from '../settings/schema';
 
 /**
@@ -22,12 +23,22 @@ export function clockTime(face: ClockStyle, time: string) {
 }
 
 /**
- * Whether a face shows the weather on its date line. Minimal and none have
- * no date line; the pixel face's 8-bit digits don't sit well with line
- * glyphs.
+ * Hours and minutes as the language writes them ("9:40", "21:40",
+ * "21.40"), without AM/PM wherever the language puts it ("오후 9:40").
  */
-export function clockShowsWeather(face: ClockStyle): boolean {
-  return face !== 'minimal' && face !== 'none' && face !== 'pixel';
+export function clockText(now: Date, tag: string = locale()): string {
+  const parts = new Intl.DateTimeFormat(tag, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).formatToParts(now);
+  const hour = parts.findIndex(part => part.type === 'hour');
+  const minute = parts.findIndex(part => part.type === 'minute');
+  if (hour < 0 || minute < 0) return '';
+  const between = parts
+    .slice(Math.min(hour, minute) + 1, Math.max(hour, minute))
+    .map(part => (part.type === 'literal' ? part.value.trim() : ''))
+    .join('');
+  return `${parts[hour]!.value}${between || ':'}${parts[minute]!.value}`;
 }
 
 /** "7:42" -> ["07", "42"]: stacked faces read better with two digits. */

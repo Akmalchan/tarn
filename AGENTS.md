@@ -56,6 +56,17 @@ owner's taste. The essentials:
   new-tab extension (Chromium only). Adding any permission needs a stated reason.
 - **Performance:** never block first paint; animate only transform/opacity;
   backgrounds pause when hidden and honor `prefers-reduced-motion`.
+- **Words:** every visible word goes through `t()` (`src/i18n/`); never
+  write UI text inline. Add the English to `messages/en.ts` (grouped keys,
+  `{name}` placeholders, no wording that depends on a count) and the same
+  key to all 9 other catalogs; `i18n.test.ts` fails on a missing key or
+  placeholder. Pass `locale()` to every Intl call. Languages: en, es,
+  pt-BR, fr, de, ru, ja, zh-CN, ko, tr; 'auto' follows the browser. The
+  active catalog is mirrored in localStorage, so the first frame is
+  already in the right language; components re-render on a change with
+  `new LocaleController(this)`. The manifest name and description come
+  from `public/_locales`. Google's weather credit stays in English (its
+  required wording).
 - **Settings** go through `src/settings/` (versioned key, normalized on read).
   Never trust stored data's shape.
 - **Never lose a setup** (`settings/store.ts`, `migrate.ts`, `backup.ts`;
@@ -139,17 +150,23 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
 - A widget is its own custom element (code, styles, storage by `widgetId`)
   plus one entry in `widgets/registry.ts`.
   Each kind offers only the sizes its content looks right at
-  (`WIDGET_SIZE_OPTIONS` in `settings/schema.ts`: Focus S/M; Notes and
-  Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
+  (`WIDGET_SIZE_OPTIONS` in `settings/schema.ts`: Focus S/M; Weather
+  S/M/L; Notes and Tasks M/L/XL; Favorites all); stored sizes snap to the nearest offered
   one. A widget marked `editable` (Favorites) stays live in edit mode and
   shows its own controls (add and remove sites) there, marked `data-edit` so
   pressing them doesn't start a drag; its links are off meanwhile.
   In edit mode every tile also gets a holder on its top edge: the widget's
   name (click to rename; `WidgetEntry.name`, shown as its heading) and a
   remove button that asks once before removing. The board saves both
-  through the same `tarn-reorder` event as a drag. The tile clips its
-  content, not itself, so the holder can overlap its edge. Modules load eagerly on purpose:
-  a reload must draw every widget in its first frame.
+  through the same `tarn-reorder` event as a drag. A grip in each tile's
+  corner resizes it. The tile lifts and its frame follows the pointer
+  (held at the widget's smallest and largest sizes with a little rubber-band
+  give), a soft outline shows the size it will snap to (the nearest one the
+  widget offers; sizes are whole cells), the others reflow only when that
+  changes, and on release it glides into the outline (FLIP) and saves;
+  - and - do the same from the keyboard, Escape cancels. The tile clips its
+    content, not itself, so the holder can overlap its edge. Modules load eagerly on purpose:
+    a reload must draw every widget in its first frame.
 - **Edit mode:** while the settings side panel is open (`watchSidePanel`),
   widgets can be dragged (Pointer Events + capture) or moved with arrow
   keys. Positions come from the layout engine, never free placement;
@@ -157,7 +174,11 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   Widget contents are `inert` meanwhile.
 
 - `layout/bands.ts` places widgets (pure function, ~12 µs for 9 widgets,
-  ~42 µs for 30; columns are always 2, 4 or 6);
+  ~42 µs for 30; columns are always 2, 4 or 6). Its order of priorities:
+  no holes (only the last band may be short), then the sizes the user
+  chose (a small or medium is stretched to fill a two-row band only when
+  keeping its size would leave a hole; otherwise it lies flat on a row of
+  its own, owner 2026-10-13), then the fewest bands, then the user's order;
   `widgets/tarn-board.ts` positions tiles with transforms and animates moves
   with FLIP (transform and opacity only).
 - Nothing runs while idle: the board recalculates only when widgets change

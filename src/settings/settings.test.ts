@@ -29,6 +29,7 @@ describe('normalizeSettings', () => {
         clock: 'none',
         widgets,
         weather: {provider: 'google', units: 'fahrenheit'},
+        language: 'de',
       }),
     ).toEqual({
       enabled: false,
@@ -36,7 +37,8 @@ describe('normalizeSettings', () => {
       tabIcon: 'none',
       clock: 'none',
       widgets,
-      weather: {provider: 'google', units: 'fahrenheit', clock: false},
+      weather: {provider: 'google', units: 'fahrenheit'},
+      language: 'de',
     });
   });
 
@@ -86,12 +88,12 @@ describe('normalizeSettings', () => {
   it('snaps each widget to a size it offers', () => {
     const {widgets} = normalizeSettings({
       widgets: [
-        {id: 'notes-1', kind: 'notes', size: 's'},
+        {id: 'weather-1', kind: 'weather', size: 'xl'},
         {id: 'focus-2', kind: 'focus', size: 'xl'},
-        {id: 'tasks-3', kind: 'tasks', size: 'l'},
+        {id: 'tasks-3', kind: 'tasks', size: 's'},
       ],
     });
-    expect(widgets.map(w => w.size)).toEqual(['m', 'm', 'l']);
+    expect(widgets.map(w => w.size)).toEqual(['l', 'm', 'm']);
   });
 
   it('keeps a trimmed custom name, and drops an empty one', () => {
