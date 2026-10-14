@@ -376,7 +376,8 @@ const comet: Scene = {
   speed: 0.2,
   resolution: 1,
   fragment: /* glsl */ `
-// Anime twilight: a comet over a mountain town, stars coming out.
+// Twilight by a mountain lake: a comet over the ranges, stars coming out,
+// the whole sky mirrored in still water with a few lights on the far shore.
 
 float stars(vec2 uv, float scale, float density, float t) {
   vec2 g = uv * scale;
@@ -389,12 +390,12 @@ float stars(vec2 uv, float scale, float density, float t) {
   return smoothstep(0.12, 0.0, d) * twinkle * (0.4 + 0.6 * hash01(cell + 5.3));
 }
 
-vec3 scene(vec2 uv, float t) {
+vec3 sky(vec2 uv, float t) {
   float y = uv.y;
   // Indigo overhead, violet, then the warm afterglow at the horizon.
   vec3 col = mix(uColors[1], uColors[0], smoothstep(-0.2, 0.5, y));
-  col = mix(col, uColors[2], smoothstep(-0.05, -0.42, y) * 0.85);
-  col += vec3(0.25, 0.12, 0.05) * exp(-12.0 * abs(y + 0.36)) * 0.6;
+  col = mix(col, uColors[2], smoothstep(0.05, -0.3, y) * 0.85);
+  col += vec3(0.25, 0.12, 0.05) * exp(-12.0 * abs(y + 0.26)) * 0.6;
 
   // The Milky Way: a faint diagonal river of dust and tiny stars.
   vec2 m = mat2(0.86, 0.5, -0.5, 0.86) * uv;
@@ -459,59 +460,91 @@ vec3 scene(vec2 uv, float t) {
   vec3 cloudCol = mix(mix(uColors[1], uColors[0], 0.4), uColors[2] * 1.15, underside);
   col = mix(col, cloudCol, cl * 0.9);
 
-  // Mountains: a far range, faded and rim-lit by the afterglow, then a
-  // nearer, darker one.
-  float px = 1.5 / uResolution.y;
-  float ridge = -0.33 + 0.07 * fbmFast(vec2(uv.x * 2.2, 1.0)) + 0.018 * fbmFast(vec2(uv.x * 11.0, 4.0));
-  vec3 far = mix(uColors[1] * 0.55, uColors[0], 0.35);
-  float farMask = smoothstep(px, -px, y - ridge);
-  col = mix(col, far, farMask);
-  col += uColors[2] * 0.4 * farMask * smoothstep(0.006, 0.0, ridge - y);
-  float near = -0.4 + 0.045 * fbmFast(vec2(uv.x * 3.5 + 8.0, 2.0));
-  col = mix(col, mix(uColors[0], uColors[1], 0.35), smoothstep(px, -px, y - near));
+  return col;
+}
 
-  // A small town on the hillside: houses with pitched roofs, their windows
-  // lighting up and going dark through the evening.
-  float hs = 38.0;
-  float hx = uv.x * hs;
-  float hc = floor(hx);
-  float hf = fract(hx);
-  float hh = hash01(vec2(hc, 50.0));
-  float ground = -0.455 + 0.012 * fbmFast(vec2(uv.x * 4.0, 9.0));
-  float kind = hash01(vec2(hc, 51.0));
-  float w0 = 0.04 + 0.12 * hash01(vec2(hc, 52.0));
-  float w1 = 0.96 - 0.12 * hash01(vec2(hc, 53.0));
-  float tall = kind < 0.12 ? 0.045 : 0.0;
-  float wall = ground + (0.012 + 0.02 * hh) + tall;
-  float roof = wall + 0.014 * (1.0 - abs((hf - w0) / (w1 - w0) - 0.5) * 2.0) * step(0.3, hh) * step(0.12, kind);
-  float house = step(w0, hf) * step(hf, w1) * step(kind, 0.78);
-  // Trees in the gaps: round crowns.
-  float tree = step(0.78, kind) * smoothstep(0.42, 0.38, length(vec2(hf - 0.5, (y - ground - 0.011 * (0.9 + 0.6 * hh)) * hs * 0.9)));
-  float top = mix(ground, roof, house);
-  vec3 dark = uColors[0] * 0.45;
-  col = mix(col, dark, max(smoothstep(px, -px, y - top), tree));
-  // Windows: a few small warm squares per house.
-  vec2 wq = vec2(hf * 4.0, (y - ground) / 0.008);
-  vec2 wc = floor(wq);
-  float on = step(0.6, hash01(vec2(hc * 7.0 + wc.x, wc.y + floor(t * 0.04 + hash01(vec2(hc, wc.x)) * 7.0))));
-  float pane = step(abs(fract(wq.x) - 0.5), 0.22) * step(abs(fract(wq.y) - 0.5), 0.25)
-    * step(0.6, wq.y) * step(y, wall - 0.003) * house * step(0.25, hf) * step(hf, 0.75);
-  col += vec3(1.0, 0.74, 0.4) * pane * on * 0.95;
-  col += vec3(1.0, 0.6, 0.3) * 0.05 * smoothstep(0.06, 0.0, abs(y - ground - 0.015)) * (0.5 + 0.5 * fbmFast(vec2(uv.x * 6.0, 2.0)));
-
-  // Power lines on poles, sagging between them across the sky.
-  float span = 0.42;
-  float u = fract((uv.x + 0.9) / span);
-  float poleTop = -0.3;
-  float pole = smoothstep(0.0025, 0.0015, abs(u - 0.0) * span) * step(ground, y) * step(y, poleTop + 0.01);
-  pole = max(pole, smoothstep(0.0025, 0.0015, abs(u - 1.0) * span) * step(ground, y) * step(y, poleTop + 0.01));
-  float lines = 0.0;
-  for (int i = 0; i < 3; i++) {
-    float lift = float(i) * 0.012;
-    float sag = poleTop - lift - 0.035 * 4.0 * u * (1.0 - u);
-    lines = max(lines, smoothstep(px * 1.2, 0.0, abs(y - sag)));
+// Ridged noise: sharp crests, like eroded mountains.
+float ridged(float x, float seed) {
+  float sum = 0.0;
+  float amp = 0.55;
+  float f = 1.0;
+  for (int i = 0; i < 4; i++) {
+    float n = 1.0 - abs(noise(vec2(x * f, seed + float(i) * 7.3)) * 1.6);
+    sum += amp * n * n;
+    f *= 2.1;
+    amp *= 0.45;
   }
-  col = mix(col, dark * 0.8, max(pole, lines * 0.85));
+  return sum;
+}
+
+// Lights scattered along the far shore: positions in cells along x.
+vec3 shoreLight(float cell, float shore) {
+  // Lights gather in a few small villages along the shore.
+  float village = smoothstep(-0.05, 0.2, noise(vec2(cell * 0.13, 3.0)));
+  float on = step(hash01(vec2(cell, 80.0)), 0.7 * village);
+  vec2 at = vec2((cell + 0.2 + 0.6 * hash01(vec2(cell, 81.0))) / 28.0, shore + 0.004 + 0.008 * hash01(vec2(cell, 82.0)));
+  return vec3(at, on);
+}
+
+// The land above the shore at p over the sky color: two ranges fading
+// into the haze, rim-lit by the afterglow, then the dark forested shore.
+vec3 land(vec3 col, vec2 p, float t, float shore, float px) {
+  // Big peaks and low saddles, not a row of equal bumps.
+  float massif = 0.45 + 0.75 * smoothstep(-0.45, 0.45, noise(vec2(p.x * 0.9 + 2.0, 3.0)));
+  float far = shore + 0.04 + 0.15 * massif * ridged(p.x * 1.4 + 3.0, 1.0);
+  float farMask = smoothstep(px, -px, p.y - far);
+  // Lit warm along the crests by the afterglow, cooler and darker below.
+  float below = smoothstep(shore + 0.17, shore + 0.01, p.y);
+  vec3 haze = mix(mix(uColors[1], uColors[2], 0.45) * 0.7, mix(uColors[1], uColors[0], 0.5) * 0.55, below);
+  col = mix(col, haze, farMask);
+  col += uColors[2] * 0.3 * farMask * smoothstep(0.006, 0.0, far - p.y);
+  // Faint ridgelines in the far range.
+  col *= 1.0 - 0.08 * farMask * smoothstep(0.4, 0.9, ridged(p.x * 6.0 + p.y * 3.0, 9.0));
+  float mid = shore + 0.025 + 0.08 * ridged(p.x * 2.4 + 11.0, 4.0);
+  float midMask = smoothstep(px, -px, p.y - mid);
+  col = mix(col, mix(uColors[1] * 0.42, uColors[0], 0.4), midMask);
+  col += uColors[2] * 0.12 * midMask * smoothstep(0.005, 0.0, mid - p.y);
+  // The near shore: a ragged line of treetops.
+  float trees = shore + 0.012 + 0.012 * fbmFast(vec2(p.x * 9.0, 2.0))
+    + 0.006 * abs(noise(vec2(p.x * 140.0, 5.0))) + 0.004 * abs(noise(vec2(p.x * 300.0, 8.0)));
+  col = mix(col, uColors[0] * 0.55, smoothstep(px, -px, p.y - trees));
+  // Lights on the far shore, among the trees.
+  for (int i = -1; i <= 1; i++) {
+    vec3 l = shoreLight(floor(p.x * 28.0) + float(i), shore);
+    float d = length(p - l.xy);
+    float glow = exp(-d * d / (0.0013 * 0.0013)) + 0.18 * exp(-d * 55.0);
+    col += vec3(1.0, 0.75, 0.45) * glow * l.z * (0.85 + 0.15 * sin(t * 1.1 + l.x * 90.0));
+  }
+  return col;
+}
+
+vec3 scene(vec2 uv, float t) {
+  float shore = -0.27;
+  float px = 1.5 / uResolution.y;
+  if (uv.y > shore) return land(sky(uv, t), uv, t, shore, px);
+
+  // The lake: the land and sky mirrored, broken by slow ripples that
+  // stretch the reflection more the nearer the water.
+  float depth = shore - uv.y;
+  float ripple = noiseFast(vec2(uv.x * 5.0 + 0.02 * t, depth * 90.0 / (0.3 + depth * 3.0) - 0.35 * t));
+  vec2 m = vec2(uv.x + 0.004 * ripple * (0.2 + 4.0 * depth), shore + depth * 0.9 + 0.003 * ripple);
+  vec3 col = land(sky(m, t), m, t, shore, px);
+  // Water is darker than what it mirrors, more so close by.
+  col *= mix(0.72, 0.42, smoothstep(0.0, 0.22, depth));
+  col = mix(col, uColors[0] * 0.5, 0.15);
+  // Fine, bright ripple lines catching the afterglow.
+  float lines = smoothstep(0.55, 0.9, noiseFast(vec2(uv.x * 2.0, depth * 400.0 / (0.4 + depth * 6.0) - 0.5 * t)));
+  col += uColors[2] * 0.08 * lines * smoothstep(0.3, 0.0, depth);
+  // The shore lights' reflections: long shimmering streaks below each.
+  for (int i = -1; i <= 1; i++) {
+    vec3 l = shoreLight(floor(uv.x * 28.0) + float(i), shore);
+    float dx = uv.x - l.x;
+    float streak = exp(-dx * dx / (0.0018 * 0.0018 * (1.0 + 40.0 * depth))) * exp(-depth * 7.0);
+    float shimmer = smoothstep(-0.2, 0.6, noiseFast(vec2(l.x * 50.0, depth * 160.0 - 0.8 * t)));
+    col += vec3(1.0, 0.72, 0.42) * streak * shimmer * l.z * 0.7;
+  }
+  // A thin dark line where water meets land.
+  col *= 1.0 - 0.4 * smoothstep(0.004, 0.0, depth);
   return col;
 }
 `,
