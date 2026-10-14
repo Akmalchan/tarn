@@ -33,8 +33,9 @@
 - **One-click switch.** Tarn's toolbar button turns it on or off. If another
   new-tab extension (like Momentum) is in the way, Tarn can switch it off
   for you, and back on when you turn Tarn off.
-- **Widgets.** Favorites, notes, tasks, a focus timer and weather, on a
-  calm grid you arrange while settings is open.
+- **Widgets.** Favorites (with folders, your own icons, and your bookmarks
+  bar in one click), notes, tasks, a calendar, a focus timer and weather,
+  on a calm grid you arrange while settings is open.
 - **Private.** Nothing leaves your browser. Settings sync through your
   browser's own account, if you use one. The one exception is the Weather
   widget, and only once you add it and choose a place: it asks Open-Meteo

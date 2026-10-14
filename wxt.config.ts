@@ -59,12 +59,16 @@ export default defineConfig({
     // site icons appear without any network request.
     permissions:
       browser === 'firefox' ? ['storage'] : ['storage', 'offscreen', 'favicon'],
-    // Asked for only when needed, so neither shows an install warning:
+    // Asked for only when needed, so none shows an install warning:
     // `management` when the user switches off another new-tab extension
-    // (Firefox only lets extensions toggle themes, so not there), and
-    // `geolocation` when they press "Use my location" in a Weather widget.
+    // (Firefox only lets extensions toggle themes, so not there),
+    // `geolocation` when they press "Use my location" in a Weather widget,
+    // and `bookmarks` when they press "Use my bookmarks" in Favorites (read
+    // once, then given back).
     optional_permissions:
-      browser === 'firefox' ? ['geolocation'] : ['management', 'geolocation'],
+      browser === 'firefox'
+        ? ['geolocation', 'bookmarks']
+        : ['management', 'geolocation', 'bookmarks'],
   }),
   hooks: {
     'build:publicAssets': (wxt, files) => {
