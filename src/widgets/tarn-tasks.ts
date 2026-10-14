@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {LitElement, css, html, svg} from 'lit';
+import {LitElement, css, html, nothing, svg} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
 import {
   debounce,
@@ -13,6 +13,7 @@ import {
   watchWidgetData,
 } from './data';
 import {widgetStyles} from './styles';
+import {LocaleController, t} from '../i18n';
 
 interface Task {
   readonly id: string;
@@ -42,6 +43,8 @@ function normalize(raw: unknown): Task[] {
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
+const PLUS = svg`<path d="M10 4.5v11M4.5 10h11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`;
+
 const CHECK = svg`<path d="M5 10.4l3.1 3.1L15 6.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
 
 /**
@@ -56,6 +59,7 @@ export class TarnTasks extends LitElement {
     tasks: {state: true},
     done: {state: true},
     fading: {state: true},
+    adding: {state: true},
   };
 
   static override styles = [
@@ -106,6 +110,11 @@ export class TarnTasks extends LitElement {
         color: var(--ink-faint);
       }
 
+      /* Typing is plain text editing: the caret is enough, no ring. */
+      input:focus-visible {
+        outline: none;
+      }
+
       .check {
         display: grid;
         flex: none;
@@ -154,16 +163,41 @@ export class TarnTasks extends LitElement {
         opacity: 0;
       }
 
-      /* The row that adds a task: a faint plus where the button would be. */
-      .add::after {
-        content: '+';
+      .head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 20px;
+      }
+
+      /* Adds a task: beside the title, so the list keeps every row. */
+      .plus {
         display: grid;
         flex: none;
         place-items: center;
-        width: 20px;
-        font-size: 18px;
-        font-weight: 300;
-        color: var(--ink-faint);
+        width: 22px;
+        height: 22px;
+        margin: -3px -3px -3px 0;
+        padding: 0;
+        color: var(--ink-dim);
+        background: transparent;
+        border: 0;
+        border-radius: 50%;
+        cursor: pointer;
+        transition:
+          color 150ms ease,
+          background-color 150ms ease;
+      }
+
+      .plus:hover {
+        color: var(--ink);
+        background: var(--chip-hover);
+      }
+
+      .plus svg {
+        width: 14px;
+        height: 14px;
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -183,6 +217,8 @@ export class TarnTasks extends LitElement {
   declare done: ReadonlySet<string>;
   /** Checked tasks fading out right now. */
   declare fading: ReadonlySet<string>;
+  /** The add row is open (it also shows whenever the list is empty). */
+  declare adding: boolean;
   private leaving = new Map<string, number>();
   private unwatch: () => void = () => {};
   private save = debounce((tasks: Task[]) => {
@@ -191,11 +227,14 @@ export class TarnTasks extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgetId = '';
-    this.heading = 'Tasks';
+    this.heading = t('widget.tasks');
     this.tasks = [];
     this.done = new Set();
     this.fading = new Set();
+    this.adding = false;
   }
 
   override connectedCallback(): void {
@@ -220,17 +259,32 @@ export class TarnTasks extends LitElement {
 
   override render() {
     const full = this.tasks.length >= MAX_TASKS;
+    const showAdd = !full && (this.adding || !this.tasks.length);
     return html`
-      <h3 id="title">${this.heading}</h3>
-      <ul aria-labelledby="title">
+      <div class="head">
+        <h3 id="title">${this.heading}</h3>
         ${
           full
+            ? nothing
+            : html`<button
+                class="plus"
+                aria-label=${t('tasks.add')}
+                title=${t('tasks.add')}
+                @click=${this.startAdding}
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true">${PLUS}</svg>
+              </button>`
+        }
+      </div>
+      <ul aria-labelledby="title">
+        ${
+          !showAdd
             ? ''
             : html`<li class="add">
                 <input
                   class="new"
-                  aria-label="New task"
-                  placeholder="Add a task"
+                  aria-label=${t('tasks.new')}
+                  placeholder=${t('tasks.add')}
                   maxlength=${MAX_LENGTH}
                   spellcheck="false"
                   @keydown=${this.onNewKey}
@@ -250,7 +304,7 @@ export class TarnTasks extends LitElement {
                 data-id=${task.id}
               >
                 <input
-                  aria-label="Task"
+                  aria-label=${t('tasks.task')}
                   maxlength=${MAX_LENGTH}
                   spellcheck="false"
                   .value=${task.text}
@@ -260,7 +314,7 @@ export class TarnTasks extends LitElement {
                 />
                 <button
                   class="check"
-                  aria-label=${done ? 'Not done' : 'Done'}
+                  aria-label=${done ? t('tasks.notDone') : t('tasks.done')}
                   aria-pressed=${done}
                   @click=${() => this.toggle(task.id)}
                 >
@@ -299,15 +353,30 @@ export class TarnTasks extends LitElement {
     }
   }
 
-  private onNewKey = (event: KeyboardEvent) => {
-    if (event.key !== 'Enter') return;
-    event.preventDefault();
-    this.addFrom(event.target as HTMLInputElement);
+  /** Opens the add row at the top of the list and puts the cursor in it. */
+  private startAdding = () => {
+    this.adding = true;
+    void this.focusRow(null);
   };
 
+  /** Enter adds and stays for the next one; Escape closes the row. */
+  private onNewKey = (event: KeyboardEvent) => {
+    const input = event.target as HTMLInputElement;
+    if (event.key === 'Escape') {
+      input.value = '';
+      input.blur();
+    }
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    this.addFrom(input);
+  };
+
+  /** Leaving the row adds what was typed; an empty row closes. */
   private onNewBlur = (event: Event) => {
-    this.addFrom(event.target as HTMLInputElement);
+    const input = event.target as HTMLInputElement;
+    this.addFrom(input);
     this.save.flush();
+    this.adding = false;
   };
 
   private addFrom(input: HTMLInputElement): void {
@@ -319,6 +388,7 @@ export class TarnTasks extends LitElement {
   }
 
   private async focusRow(id: string | null): Promise<void> {
+    if (id === null) this.adding = true;
     await this.updateComplete;
     const selector = id ? `li[data-id="${id}"] input` : 'input.new';
     const input = this.renderRoot.querySelector<HTMLInputElement>(selector);

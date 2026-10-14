@@ -10,6 +10,7 @@ import './tarn-focus';
 import './tarn-notes';
 import './tarn-tasks';
 import './tarn-weather';
+import {t, type MessageKey} from '../i18n';
 
 /**
  * Every widget, in one place. A widget is a self-contained custom element
@@ -19,7 +20,8 @@ import './tarn-weather';
  * (see Arrival in AGENTS.md), and each widget is only a few KB.
  */
 export interface WidgetDefinition {
-  readonly name: string;
+  /** Its name, also its default heading. */
+  readonly nameKey: MessageKey;
   /** The custom element that draws it. */
   readonly tag: string;
   /**
@@ -31,11 +33,15 @@ export interface WidgetDefinition {
 }
 
 export const WIDGETS: Readonly<Record<WidgetKind, WidgetDefinition>> = {
-  favorites: {name: 'Favorites', tag: 'tarn-favorites', editable: true},
-  notes: {name: 'Notes', tag: 'tarn-notes'},
-  tasks: {name: 'Tasks', tag: 'tarn-tasks'},
-  focus: {name: 'Focus timer', tag: 'tarn-focus'},
-  weather: {name: 'Weather', tag: 'tarn-weather'},
+  favorites: {
+    nameKey: 'widget.favorites',
+    tag: 'tarn-favorites',
+    editable: true,
+  },
+  notes: {nameKey: 'widget.notes', tag: 'tarn-notes'},
+  tasks: {nameKey: 'widget.tasks', tag: 'tarn-tasks'},
+  focus: {nameKey: 'widget.focus', tag: 'tarn-focus'},
+  weather: {nameKey: 'widget.weather', tag: 'tarn-weather'},
 };
 
 /**
@@ -55,6 +61,6 @@ export function renderWidget(
   return html`<${tag}
     .widgetId=${id}
     .editing=${editing}
-    .heading=${name ?? definition.name}
+    .heading=${name ?? t(definition.nameKey)}
   ></${tag}>`;
 }

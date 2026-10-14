@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {t} from '../i18n';
 import type {Condition} from './types';
 
 /** WMO weather interpretation codes (Open-Meteo) to Tarn's conditions. */
@@ -36,16 +37,7 @@ export function fromGoogle(type: string): Condition {
   return 'cloudy';
 }
 
-/** A short, plain name for a condition. */
-export const CONDITION_NAMES: Readonly<Record<Condition, string>> = {
-  clear: 'Clear',
-  partly: 'Partly cloudy',
-  cloudy: 'Cloudy',
-  fog: 'Fog',
-  drizzle: 'Drizzle',
-  rain: 'Rain',
-  sleet: 'Sleet',
-  snow: 'Snow',
-  storm: 'Thunderstorm',
-  wind: 'Windy',
-};
+/** A short, plain name for a condition, in the current language. */
+export function conditionName(condition: Condition): string {
+  return t(`weather.${condition}`);
+}

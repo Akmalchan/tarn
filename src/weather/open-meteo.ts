@@ -79,12 +79,14 @@ export function parseOpenMeteo(
     }))
     .filter(h => h.time > now - 3_600_000 && Number.isFinite(h.temp))
     .slice(0, 24);
-  const days = daily.time.map((t, i) => ({
-    date: new Date(t * 1000 + offset).toISOString().slice(0, 10),
-    min: daily.temperature_2m_min[i]!,
-    max: daily.temperature_2m_max[i]!,
-    condition: fromWmo(daily.weather_code[i]!),
-  }));
+  const days = daily.time
+    .map((t, i) => ({
+      date: new Date(t * 1000 + offset).toISOString().slice(0, 10),
+      min: daily.temperature_2m_min[i]!,
+      max: daily.temperature_2m_max[i]!,
+      condition: fromWmo(daily.weather_code[i]!),
+    }))
+    .filter(d => Number.isFinite(d.min) && Number.isFinite(d.max));
   return {
     provider: 'open-meteo',
     unit,
@@ -140,6 +142,8 @@ async function getJson(url: string): Promise<unknown> {
     response = await fetch(url, {
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
+      // A stalled request gives up rather than holding back every refresh.
+      signal: AbortSignal.timeout(15_000),
     });
   } catch {
     throw new WeatherError('offline', 'No connection.');

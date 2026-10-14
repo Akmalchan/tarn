@@ -61,8 +61,9 @@ interface Block {
  * rectangle:
  *  - large and extra large widgets fill a band's height on their own;
  *  - small widgets stack in pairs in a one-cell column, mediums in pairs in
- *    a two-cell column; a widget left without a partner grows to fill the
- *    column (small to 1x2, medium to 2x2);
+ *    a two-cell column; a widget left without a partner keeps its size on a
+ *    row of its own, and grows to fill the column (small to 1x2, medium to
+ *    2x2) only when keeping its size would leave a hole;
  *  - bands fill up: when the next widget doesn't fit, a later one that does
  *    moves up into the gap, so only the last band can be short;
  *  - a band of only smalls and mediums that would leave empty space lies
@@ -102,6 +103,26 @@ export function layoutBands(
           width,
         ).map(band => band.map(index => order[index]!));
         const candidate = arrange(groups, cols, set + variant);
+        if (!best || isLess(candidate.score, best.score)) best = candidate;
+      }
+    }
+    // Large widgets in bands of their own, and the one-row widgets in
+    // theirs: the one-row ones can then lie flat at their own sizes
+    // instead of being stretched to stand beside a large one.
+    const large = blocks.filter(b => !b.stack);
+    const oneRow = blocks.filter(b => b.stack);
+    if (large.length && oneRow.length) {
+      for (let width = cols; width >= widest; width--) {
+        const fill = (part: Block[]) =>
+          fillBands(
+            part.map(b => b.w),
+            width,
+          ).map(band => band.map(index => part[index]!));
+        const candidate = arrange(
+          [...fill(large), ...fill(oneRow)],
+          cols,
+          set + 1,
+        );
         if (!best || isLess(candidate.score, best.score)) best = candidate;
       }
     }
@@ -235,8 +256,8 @@ interface Shape {
 
 /**
  * Turns groups of blocks into placed bands, and scores the result (lower is
- * better): fewest bands, then fewest empty cells before the last band, then
- * fewest widgets grown beyond their size, then your order kept
+ * better): fewest empty cells before the last band, then fewest widgets
+ * grown beyond their size, then fewest bands, then your order kept
  * (`reordered` counts changes made before this), then the fullest last band.
  */
 function arrange(
@@ -277,7 +298,10 @@ function arrange(
     .filter(block => block.stack)
     .flatMap(block => block.parts)
     .filter(part => part.h === 2).length;
-  const score = [ordered.length, gaps, grown, moved, full - widths.at(-1)!];
+  // No holes come first (only the last band may be short); then your
+  // chosen sizes: a widget is stretched beyond its size only when keeping
+  // it would leave a hole, even if keeping it takes another band.
+  const score = [gaps, grown, ordered.length, moved, full - widths.at(-1)!];
 
   const placements: Placement[] = [];
   const bands: number[] = [];

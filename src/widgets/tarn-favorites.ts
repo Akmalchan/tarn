@@ -12,6 +12,7 @@ import {
 } from './data';
 import {lastSiteIcon, siteHue, siteIcon} from './site-icon';
 import {sheetStyles, widgetStyles} from './styles';
+import {LocaleController, t} from '../i18n';
 
 interface Site {
   readonly url: string;
@@ -299,9 +300,11 @@ export class TarnFavorites extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgetId = '';
     this.editing = false;
-    this.heading = 'Favorites';
+    this.heading = t('widget.favorites');
     this.sites = [];
     this.editor = null;
     this.error = '';
@@ -346,7 +349,7 @@ export class TarnFavorites extends LitElement {
       <h3>${this.heading}</h3>
       ${
         empty
-          ? html`<p class="empty">Open settings to add your sites.</p>`
+          ? html`<p class="empty">${t('favorites.empty')}</p>`
           : html`<div class="sites">
               ${this.sites.map((site, i) => this.siteTile(site, i))}
               ${
@@ -354,11 +357,11 @@ export class TarnFavorites extends LitElement {
                   ? html`<button
                       class="add"
                       data-edit
-                      title="Add a site"
+                      title=${t('favorites.addSite')}
                       @click=${() => this.open('new')}
                     >
                       <span class="chip" aria-hidden="true">+</span>
-                      <span class="name">Add</span>
+                      <span class="name">${t('common.add')}</span>
                     </button>`
                   : nothing
               }
@@ -381,7 +384,7 @@ export class TarnFavorites extends LitElement {
       <button
         class="link"
         data-edit
-        title="Edit ${site.title}"
+        title=${t('favorites.editSite', {title: site.title})}
         @click=${() => this.open(index)}
       >
         ${this.chip(site)}
@@ -390,8 +393,8 @@ export class TarnFavorites extends LitElement {
       <button
         class="remove"
         data-edit
-        aria-label="Remove ${site.title}"
-        title="Remove"
+        aria-label=${t('favorites.removeSite', {title: site.title})}
+        title=${t('common.remove')}
         @click=${() => this.save(this.sites.filter((_, i) => i !== index))}
       >
         ×
@@ -405,19 +408,19 @@ export class TarnFavorites extends LitElement {
     return html`
       <dialog data-edit @close=${this.onClose}>
         <form method="dialog" @submit=${this.onSubmit}>
-          <h4>${site ? 'Edit Site' : 'Add a Site'}</h4>
+          <h4>${site ? t('favorites.editTitle') : t('favorites.addTitle')}</h4>
           <label>
-            Name
+            ${t('favorites.name')}
             <input
               name="title"
               autocomplete="off"
               maxlength="60"
-              placeholder="Shown under the icon"
+              placeholder=${t('favorites.namePlaceholder')}
               .value=${site?.title ?? ''}
             />
           </label>
           <label>
-            Address
+            ${t('favorites.address')}
             <input
               name="url"
               type="text"
@@ -432,9 +435,11 @@ export class TarnFavorites extends LitElement {
           ${this.error ? html`<p class="error">${this.error}</p>` : nothing}
           <div class="buttons">
             <button type="button" @click=${() => (this.editor = null)}>
-              Cancel
+              ${t('common.cancel')}
             </button>
-            <button class="primary">${site ? 'Save' : 'Add'}</button>
+            <button class="primary">
+              ${site ? t('common.save') : t('common.add')}
+            </button>
           </div>
         </form>
       </dialog>
@@ -456,7 +461,7 @@ export class TarnFavorites extends LitElement {
     const data = new FormData(form);
     const url = toUrl(data.get('url'));
     if (!url) {
-      this.error = 'That doesn’t look like a web address.';
+      this.error = t('favorites.badAddress');
       return;
     }
     const typed = String(data.get('title') ?? '')

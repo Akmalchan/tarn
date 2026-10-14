@@ -12,6 +12,7 @@ import {
   watchWidgetData,
 } from './data';
 import {widgetStyles} from './styles';
+import {LocaleController, t} from '../i18n';
 
 const DEFAULT_MS = 25 * 60_000;
 const MIN_MS = 10_000;
@@ -174,6 +175,8 @@ export class TarnFocus extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgetId = '';
     this.state = idle();
     this.now = Date.now();
@@ -201,14 +204,18 @@ export class TarnFocus extends LitElement {
     const left = this.left();
     const running = endsAt !== null;
     const finished = running && left === 0;
-    const label = running ? 'Pause' : left < duration ? 'Resume' : 'Start';
+    const label = running
+      ? t('focus.pause')
+      : left < duration
+        ? t('focus.resume')
+        : t('focus.start');
     return html`
-      <h3>Focus</h3>
+      <h3>${t('focus.title')}</h3>
       <input
         class="time"
         role="timer"
-        aria-label=${running ? 'Time left' : 'Timer length, editable'}
-        title=${running ? '' : 'Click to change'}
+        aria-label=${running ? t('focus.timeLeft') : t('focus.length')}
+        title=${running ? '' : t('focus.change')}
         inputmode="numeric"
         autocomplete="off"
         spellcheck="false"
@@ -222,12 +229,12 @@ export class TarnFocus extends LitElement {
       <div class="actions">
         ${
           finished
-            ? html`<span class="done">Break time</span>`
+            ? html`<span class="done">${t('focus.break')}</span>`
             : html`<button @click=${this.toggle}>${label}</button>`
         }
         ${
           (left < duration && !running) || finished
-            ? html`<button @click=${this.reset}>Reset</button>`
+            ? html`<button @click=${this.reset}>${t('focus.reset')}</button>`
             : nothing
         }
       </div>

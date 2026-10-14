@@ -12,6 +12,7 @@ import {
   watchWidgetData,
 } from './data';
 import {widgetStyles} from './styles';
+import {LocaleController, t} from '../i18n';
 
 const MAX_LENGTH = 20_000;
 
@@ -69,8 +70,10 @@ export class TarnNotes extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgetId = '';
-    this.heading = 'Notes';
+    this.heading = t('widget.notes');
     this.text = '';
   }
 
@@ -99,7 +102,7 @@ export class TarnNotes extends LitElement {
       <h3 id="title">${this.heading}</h3>
       <textarea
         aria-labelledby="title"
-        placeholder="Write something…"
+        placeholder=${t('notes.placeholder')}
         maxlength=${MAX_LENGTH}
         spellcheck="false"
         .value=${this.text}

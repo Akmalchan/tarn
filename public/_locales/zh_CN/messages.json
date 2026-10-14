@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn",
+    "description": "The extension name. Not translated."
+  },
+  "extShortName": {
+    "message": "设置",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "每个标签页，都有一个宁静清晰的开始。",
+    "description": "Store and extension-page description."
+  }
+}

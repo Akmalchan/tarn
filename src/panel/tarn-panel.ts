@@ -38,6 +38,16 @@ import {
 } from '../settings/schema';
 import {getGoogleKey, setGoogleKey} from '../weather/config';
 import {
+  LANGUAGES,
+  LANGUAGE_SETTINGS,
+  LocaleController,
+  locale,
+  t,
+  useLanguage,
+  type LanguageSetting,
+  type MessageKey,
+} from '../i18n';
+import {
   autoBackups,
   createBackup,
   downloadBackup,
@@ -54,7 +64,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
-import {clockShowsWeather, clockTime} from '../widgets/clock-faces';
+import {clockText, clockTime} from '../widgets/clock-faces';
 import {
   addWallpaper,
   deleteWallpaper,
@@ -62,6 +72,8 @@ import {
   listWallpapers,
   photoMirror,
   restoreWallpaper,
+  WallpaperError,
+  type WallpaperErrorCode,
   type WallpaperInfo,
 } from '../wallpapers/store';
 
@@ -70,7 +82,8 @@ import {
  * ends in a row that opens more, and Advanced sits last. See
  * docs/design/settings-panel.md.
  */
-type Page = 'home' | 'backgrounds' | 'clock' | 'widgets' | 'advanced';
+type Page =
+  'home' | 'backgrounds' | 'clock' | 'widgets' | 'language' | 'advanced';
 
 /**
  * Home shows three choices per picker, then a "Show All" tile that opens
@@ -432,6 +445,18 @@ export class TarnPanel extends LitElement {
       width: 13px;
       height: 13px;
       fill: var(--muted);
+    }
+
+    /* Lists without icons (Language): hairlines start at the text. */
+    .plain .row + .row::before {
+      left: var(--row-x);
+    }
+
+    .check {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      fill: var(--ink);
     }
 
     /* The API key field: right-aligned, like a value. */
@@ -952,6 +977,8 @@ export class TarnPanel extends LitElement {
     this.photos = [];
     this.backups = [];
     this.googleKey = '';
+    // Re-renders in the new words when the language changes.
+    new LocaleController(this);
   }
 
   override connectedCallback(): void {
@@ -960,14 +987,19 @@ export class TarnPanel extends LitElement {
     if (import.meta.env.DEV) {
       void import('../widgets/samples').then(m => (this.samples = m));
     }
-    void loadSettings().then(s => (this.settings = s));
-    this.unwatch = watchSettings(s => (this.settings = s));
+    void loadSettings().then(s => this.onSettings(s));
+    this.unwatch = watchSettings(s => this.onSettings(s));
     window.addEventListener('keydown', this.onKeyDown);
     // Another page added or deleted a photo: its mirror key changed.
     window.addEventListener('storage', this.onStorage);
     void this.loadPhotos();
     void autoBackups().then(list => (this.backups = list));
     void getGoogleKey().then(key => (this.googleKey = key));
+  }
+
+  private onSettings(settings: Settings): void {
+    this.settings = settings;
+    void useLanguage(settings.language);
   }
 
   override disconnectedCallback(): void {
@@ -1005,6 +1037,7 @@ export class TarnPanel extends LitElement {
             backgrounds: () => this.renderBackgrounds(),
             clock: () => this.renderClock(),
             widgets: () => this.renderWidgets(),
+            language: () => this.renderLanguage(),
             advanced: () => this.renderAdvanced(),
           }[this.page]();
     return html`
@@ -1017,17 +1050,17 @@ export class TarnPanel extends LitElement {
                 ? nothing
                 : html`<div class="bar">
                     <button class="back" @click=${() => this.go('home')}>
-                      ${glyph('back')}Settings
+                      ${glyph('back')}${t('common.settings')}
                     </button>
-                    <h1>${PAGE_TITLES[this.page]}</h1>
+                    <h1>${t(PAGE_TITLES[this.page])}</h1>
                   </div>`
             }
             <label class="search">
               ${glyph('search')}
               <input
                 type="search"
-                placeholder=${scoped ? `Search ${scoped}` : 'Search'}
-                aria-label=${`Search ${scoped?.toLowerCase() ?? 'settings'}`}
+                placeholder=${t(scoped ?? 'panel.search')}
+                aria-label=${t(scoped ?? 'panel.searchSettings')}
                 .value=${this.query}
                 @input=${this.onSearch}
                 @keydown=${this.onSearchKey}
@@ -1044,7 +1077,9 @@ export class TarnPanel extends LitElement {
               <span>${this.toast.text}</span>
               ${
                 this.toast.undo
-                  ? html`<button @click=${this.onUndo}>Undo</button>`
+                  ? html`<button @click=${this.onUndo}>
+                      ${t('panel.undo')}
+                    </button>`
                   : nothing
               }
             </div>`
@@ -1083,48 +1118,72 @@ export class TarnPanel extends LitElement {
     const moreScene = SCENES.find(s => !scenes.includes(s.id)) ?? SCENES[0]!;
     return html`
       <section data-target="background">
-        <h2>Wallpaper</h2>
-        <div class="scenes" role="radiogroup" aria-label="Wallpaper">
+        <h2>${t('panel.wallpaper')}</h2>
+        <div
+          class="scenes"
+          role="radiogroup"
+          aria-label=${t('panel.wallpaper')}
+        >
           ${scenes.map(id => this.wallpaperButton(id))}
           <button class="pick" @click=${() => this.go('backgrounds')}>
-            ${showAll(sceneArt(moreScene))} Show All
+            ${showAll(sceneArt(moreScene))} ${t('panel.showAll')}
           </button>
         </div>
       </section>
 
       <section data-target="clock">
-        <h2>Clock</h2>
-        <div class="group tiles" role="radiogroup" aria-label="Clock">
+        <h2>${t('panel.clock')}</h2>
+        <div
+          class="group tiles"
+          role="radiogroup"
+          aria-label=${t('panel.clock')}
+        >
           ${faces.map(face => this.faceButton(face, preview))}
           <button class="pick" @click=${() => this.go('clock')}>
-            ${showAll(preview.art)} Show All
+            ${showAll(preview.art)} ${t('panel.showAll')}
           </button>
         </div>
-        ${this.clockWeatherRow()}
       </section>
 
       <div class="group">
         ${this.navRow(
           'widgets',
-          'Widgets',
-          widgets.length ? String(widgets.length) : 'None',
+          t('panel.page.widgets'),
+          widgets.length ? String(widgets.length) : t('panel.none'),
           'widgets',
           'widgets',
         )}
       </div>
 
       <div class="group">
-        ${this.navRow('sliders', 'Advanced', '', 'advanced')}
+        ${this.navRow(
+          'globe',
+          t('panel.page.language'),
+          languageName(this.settings.language),
+          'language',
+          'language',
+        )}
+        ${this.navRow('sliders', t('panel.page.advanced'), '', 'advanced')}
       </div>
 
       <footer class="signature">
         ${wordmark('Tarn')}
-        ${BROWSER ? html`<span class="for">for ${BROWSER}</span>` : nothing}
-        <span>Version ${this.version}</span>
+        ${
+          BROWSER
+            ? html`<span class="for"
+                >${t('panel.for', {browser: BROWSER})}</span
+              >`
+            : nothing
+        }
+        <span>${t('panel.version', {version: this.version})}</span>
         <span class="links">
-          <a href=${PRIVACY_URL} target="_blank" rel="noopener">Privacy</a>
+          <a href=${PRIVACY_URL} target="_blank" rel="noopener"
+            >${t('panel.privacy')}</a
+          >
           <span aria-hidden="true">·</span>
-          <a href=${SOURCE_URL} target="_blank" rel="noopener">Source code</a>
+          <a href=${SOURCE_URL} target="_blank" rel="noopener"
+            >${t('panel.source')}</a
+          >
         </span>
       </footer>
     `;
@@ -1139,15 +1198,19 @@ export class TarnPanel extends LitElement {
       <div class="group" data-target="add-photo">
         <button class="row" @click=${this.pickPhoto}>
           ${icon('photo')}
-          <span class="txt">Add Photo…</span>
+          <span class="txt">${t('panel.addPhoto')}</span>
         </button>
       </div>
 
       ${
         photos.length
           ? html`<section data-target="photos">
-              <h2>Your Photos</h2>
-              <div class="scenes" role="radiogroup" aria-label="Your photos">
+              <h2>${t('panel.yourPhotos')}</h2>
+              <div
+                class="scenes"
+                role="radiogroup"
+                aria-label=${t('panel.yourPhotos')}
+              >
                 ${photos.map(photo => this.wallpaperButton(photo.id))}
               </div>
             </section>`
@@ -1156,8 +1219,12 @@ export class TarnPanel extends LitElement {
       ${
         scenes.length
           ? html`<section data-target="all-backgrounds">
-              ${this.photos.length ? html`<h2>Live</h2>` : nothing}
-              <div class="scenes" role="radiogroup" aria-label="Wallpaper">
+              ${this.photos.length ? html`<h2>${t('panel.live')}</h2>` : nothing}
+              <div
+                class="scenes"
+                role="radiogroup"
+                aria-label=${t('panel.wallpaper')}
+              >
                 ${scenes.map(scene => this.sceneButton(scene))}
               </div>
             </section>`
@@ -1166,7 +1233,7 @@ export class TarnPanel extends LitElement {
       ${
         !scenes.length && !photos.length
           ? html`<p class="none">
-              No wallpapers match “${this.query.trim()}”.
+              ${t('panel.noWallpapers', {query: this.query.trim()})}
             </p>`
           : nothing
       }
@@ -1177,14 +1244,16 @@ export class TarnPanel extends LitElement {
     const preview = clockPreview(this.art(this.settings.scene));
     const query = this.query.trim().toLowerCase();
     const faces = CLOCK_STYLES.filter(face =>
-      FACE_NAMES[face].toLowerCase().includes(query),
+      t(FACE_NAMES[face]).toLowerCase().includes(query),
     );
     if (!faces.length) {
-      return html`<p class="none">No clocks match “${this.query.trim()}”.</p>`;
+      return html`<p class="none">
+        ${t('panel.noClocks', {query: this.query.trim()})}
+      </p>`;
     }
     return html`
       <section data-target="all-faces">
-        <div class="scenes" role="radiogroup" aria-label="Clock">
+        <div class="scenes" role="radiogroup" aria-label=${t('panel.clock')}>
           ${faces.map(face => this.faceButton(face, preview))}
         </div>
       </section>
@@ -1196,25 +1265,19 @@ export class TarnPanel extends LitElement {
     const full = widgets.length >= MAX_WIDGETS;
     return html`
       <section data-target="widgets">
-        <h2>On your tab</h2>
+        <h2>${t('panel.widgets.onTab')}</h2>
         ${
           widgets.length
             ? html`<div class="group">
                   ${widgets.map((widget, i) => this.widgetRow(widget, i))}
                 </div>
-                <p class="note">
-                  While this panel is open, drag widgets on your tab to move
-                  them.
-                </p>`
-            : html`<p class="none">
-                No widgets. The page stays calm: just the wallpaper and the
-                clock.
-              </p>`
+                <p class="note">${t('panel.widgets.dragNote')}</p>`
+            : html`<p class="none">${t('panel.widgets.empty')}</p>`
         }
       </section>
 
       <section>
-        <h2>Add a widget</h2>
+        <h2>${t('panel.widgets.add')}</h2>
         <div class="group">
           ${WIDGET_KINDS.map(
             kind => html`
@@ -1225,8 +1288,8 @@ export class TarnPanel extends LitElement {
               >
                 ${icon(KIND_GLYPHS[kind])}
                 <span class="txt"
-                  >${KIND_NAMES[kind]}
-                  <span class="sub">${KIND_NOTES[kind]}</span></span
+                  >${t(KIND_NAMES[kind])}
+                  <span class="sub">${t(KIND_NOTES[kind])}</span></span
                 >
                 <svg class="action" viewBox="0 0 24 24" aria-hidden="true">
                   ${GLYPHS.plus}
@@ -1235,11 +1298,7 @@ export class TarnPanel extends LitElement {
             `,
           )}
         </div>
-        ${
-          full
-            ? html`<p class="note">That's the most a page can hold.</p>`
-            : nothing
-        }
+        ${full ? html`<p class="note">${t('panel.widgets.full')}</p>` : nothing}
       </section>
     `;
   }
@@ -1251,12 +1310,16 @@ export class TarnPanel extends LitElement {
         import.meta.env.FIREFOX
           ? nothing
           : html`<section>
-              <h2>Tab</h2>
+              <h2>${t('panel.tab')}</h2>
               <div class="group">
                 <div class="row" data-target="tab-icon">
                   ${icon('tab')}
-                  <span class="txt">Tab icon</span>
-                  <div class="seg" role="radiogroup" aria-label="Tab icon">
+                  <span class="txt">${t('panel.tab.icon')}</span>
+                  <div
+                    class="seg"
+                    role="radiogroup"
+                    aria-label=${t('panel.tab.icon')}
+                  >
                     ${TAB_ICONS.map(
                       value => html`
                         <button
@@ -1264,7 +1327,7 @@ export class TarnPanel extends LitElement {
                           aria-checked=${value === tabIcon}
                           @click=${() => this.setTabIcon(value)}
                         >
-                          ${value === 'chrome' ? 'Chrome' : 'None'}
+                          ${t(value === 'chrome' ? 'panel.tab.chrome' : 'panel.none')}
                         </button>
                       `,
                     )}
@@ -1272,34 +1335,34 @@ export class TarnPanel extends LitElement {
                 </div>
               </div>
               <p class="note">
-                ${
+                ${t(
                   tabIcon === 'none'
-                    ? 'New tabs show no icon.'
-                    : 'New tabs show Chrome’s own new-tab icon.'
-                }
+                    ? 'panel.tab.noteNone'
+                    : 'panel.tab.noteChrome',
+                )}
               </p>
             </section>`
       }
       ${this.renderWeather()}
 
       <section>
-        <h2>Keyboard</h2>
+        <h2>${t('panel.keys')}</h2>
         <div class="group">
           <div class="row" data-target="keys">
             ${icon('keyboard')}
-            <span class="txt">Switch wallpaper</span>
+            <span class="txt">${t('panel.keys.switch')}</span>
             <span class="keys"><kbd>1</kbd>–<kbd>${SCENES.length}</kbd></span>
           </div>
           <div class="row">
             ${icon('search')}
-            <span class="txt">Search settings</span>
+            <span class="txt">${t('panel.searchSettings')}</span>
             <span class="keys"><kbd>/</kbd></span>
           </div>
         </div>
       </section>
 
       <section>
-        <h2>Backup</h2>
+        <h2>${t('panel.backup')}</h2>
         <div class="group">
           <button
             class="row"
@@ -1307,33 +1370,31 @@ export class TarnPanel extends LitElement {
             @click=${this.exportSettings}
           >
             ${icon('share')}
-            <span class="txt">Export Backup</span>
+            <span class="txt">${t('panel.backup.export')}</span>
           </button>
           <button class="row" @click=${this.pickImport}>
             ${icon('tray')}
-            <span class="txt">Import Backup</span>
+            <span class="txt">${t('panel.backup.import')}</span>
           </button>
           <button class="row" data-target="reset" @click=${this.onReset}>
             ${icon('reset')}
-            <span class="txt">Reset to defaults</span>
+            <span class="txt">${t('panel.backup.reset')}</span>
             ${
               this.confirmReset
-                ? html`<span class="value ink">Click again</span>`
+                ? html`<span class="value ink"
+                    >${t('panel.backup.confirm')}</span
+                  >`
                 : nothing
             }
           </button>
         </div>
-        <p class="note">
-          A backup is one .json file with your settings and what's in your
-          widgets. Reset restores the wallpaper, clock, widgets and tab icon.
-          None of these turns Tarn on or off.
-        </p>
+        <p class="note">${t('panel.backup.note')}</p>
       </section>
 
       ${
         this.backups.length
           ? html`<section data-target="previous">
-              <h2>Previous Setups</h2>
+              <h2>${t('panel.previous')}</h2>
               <div class="group">
                 ${this.backups.map(
                   (backup, index) => html`
@@ -1343,59 +1404,56 @@ export class TarnPanel extends LitElement {
                     >
                       ${icon('reset')}
                       <span class="txt">${formatWhen(backup.created)}</span>
-                      <span class="value">Tarn ${backup.app}</span>
+                      <span class="value"
+                        >${t('panel.previous.app', {version: backup.app})}</span
+                      >
                     </button>
                   `,
                 )}
               </div>
-              <p class="note">
-                Tarn keeps your setup from before each of its last updates.
-                Click one to go back to it.
-              </p>
+              <p class="note">${t('panel.previous.note')}</p>
             </section>`
           : nothing
       }
 
       <section>
-        <h2>settings.json</h2>
+        <h2>${t('panel.json.file')}</h2>
         <div class="group" data-target="json">
           <textarea
             spellcheck="false"
-            aria-label="settings.json"
+            aria-label=${t('panel.json.file')}
             .value=${this.jsonDraft ?? JSON.stringify(this.settings, null, 2)}
             @input=${this.onJsonInput}
           ></textarea>
           <div class="row actions">
             <span class="status"
-              >${this.jsonStatus || 'Edit, then apply. Invalid values fall back to defaults.'}</span
+              >${this.jsonStatus || t('panel.json.hint')}</span
             >
             <button
               class="text-button"
               ?disabled=${this.jsonDraft === null}
               @click=${this.applyJson}
             >
-              Apply
+              ${t('panel.json.apply')}
             </button>
           </div>
         </div>
       </section>
 
       <section>
-        <h2>About</h2>
+        <h2>${t('panel.about')}</h2>
         <div class="group">
           <div class="row" data-target="about">
             ${icon('info')}
-            <span class="txt">Version</span>
+            <span class="txt">${t('panel.about.version')}</span>
             <span class="value">${this.version}</span>
           </div>
           <button class="row" @click=${this.copyDiagnostics}>
             ${icon('doc')}
-            <span class="txt">Copy diagnostics</span>
+            <span class="txt">${t('panel.about.diagnostics')}</span>
           </button>
         </div>
-        <p class="note">
-          Copies the version, browser and settings, for bug reports.
-        </p>
+        <p class="note">${t('panel.about.diagnosticsNote')}</p>
       </section>
 
       ${
@@ -1409,35 +1467,45 @@ export class TarnPanel extends LitElement {
   }
 
   /**
-   * "Show weather" beside the clock's date. Stays in place, disabled, for
-   * faces with no room for it, so the list doesn't jump while picking.
+   * The Language page: an iOS-style checklist, "Same as browser" first,
+   * then every language in its own name.
    */
-  private clockWeatherRow() {
-    const {clock} = this.settings;
-    const fits = clockShowsWeather(clock);
-    const on = this.settings.weather.clock;
+  private renderLanguage() {
+    const current = this.settings.language;
     return html`
-      <div class="group">
-        <div class="row" data-target="clock-weather">
-          ${icon('weather')}
-          <span class="txt">Show weather</span>
-          <button
-            class="sw"
-            role="switch"
-            aria-label="Show weather beside the clock"
-            aria-checked=${on && fits}
-            ?disabled=${!fits}
-            @click=${() => this.setWeather({clock: !on})}
-          ></button>
+      <section data-target="language">
+        <div
+          class="group plain"
+          role="radiogroup"
+          aria-label=${t('panel.page.language')}
+        >
+          ${LANGUAGE_SETTINGS.map(
+            setting => html`
+              <button
+                class="row"
+                role="radio"
+                aria-checked=${setting === current}
+                lang=${setting === 'auto' ? nothing : setting}
+                @click=${() => this.setLanguage(setting)}
+              >
+                <span class="txt">${languageName(setting)}</span>
+                ${
+                  setting === current
+                    ? html`<svg
+                        class="check"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        ${GLYPHS.check}
+                      </svg>`
+                    : nothing
+                }
+              </button>
+            `,
+          )}
         </div>
-      </div>
-      ${
-        fits
-          ? nothing
-          : html`<p class="note">
-              Not shown with the ${FACE_NAMES[clock]} face.
-            </p>`
-      }
+        <p class="note">${t('panel.language.note')}</p>
+      </section>
     `;
   }
 
@@ -1450,12 +1518,16 @@ export class TarnPanel extends LitElement {
     const google = provider === 'google';
     return html`
       <section data-target="weather">
-        <h2>Weather</h2>
+        <h2>${t('widget.weather')}</h2>
         <div class="group">
           <div class="row">
             ${icon('weather')}
-            <span class="txt">Provider</span>
-            <span class="seg" role="radiogroup" aria-label="Weather provider">
+            <span class="txt">${t('panel.weather.provider')}</span>
+            <span
+              class="seg"
+              role="radiogroup"
+              aria-label=${t('panel.weather.providerLabel')}
+            >
               ${WEATHER_PROVIDERS.map(
                 value => html`
                   <button
@@ -1473,13 +1545,13 @@ export class TarnPanel extends LitElement {
             google
               ? html`<label class="row">
                   ${icon('key')}
-                  <span class="txt">API Key</span>
+                  <span class="txt">${t('panel.weather.apiKey')}</span>
                   <input
                     class="key"
                     type="password"
                     autocomplete="off"
                     spellcheck="false"
-                    placeholder="Paste key"
+                    placeholder=${t('panel.weather.pasteKey')}
                     .value=${this.googleKey}
                     @change=${this.onGoogleKey}
                   />
@@ -1488,8 +1560,12 @@ export class TarnPanel extends LitElement {
           }
           <div class="row">
             ${icon('thermometer')}
-            <span class="txt">Units</span>
-            <span class="seg" role="radiogroup" aria-label="Temperature units">
+            <span class="txt">${t('panel.weather.units')}</span>
+            <span
+              class="seg"
+              role="radiogroup"
+              aria-label=${t('panel.weather.unitsLabel')}
+            >
               ${WEATHER_UNITS.map(
                 value => html`
                   <button
@@ -1497,7 +1573,7 @@ export class TarnPanel extends LitElement {
                     aria-checked=${value === units}
                     @click=${() => this.setWeather({units: value})}
                   >
-                    ${UNIT_NAMES[value]}
+                    ${value === 'auto' ? t('panel.weather.auto') : UNIT_NAMES[value]}
                   </button>
                 `,
               )}
@@ -1505,11 +1581,9 @@ export class TarnPanel extends LitElement {
           </div>
         </div>
         <p class="note">
-          ${
-            google
-              ? 'Requests are billed to your key’s Google Cloud project, which needs the Weather API turned on. The key stays on this computer.'
-              : 'Free, no key needed. Weather is only fetched for Weather widgets you add, about every 30 minutes while a tab is open.'
-          }
+          ${t(
+            google ? 'panel.weather.noteGoogle' : 'panel.weather.noteOpenMeteo',
+          )}
         </p>
       </section>
     `;
@@ -1517,19 +1591,21 @@ export class TarnPanel extends LitElement {
 
   private renderResults() {
     const query = this.query.trim().toLowerCase();
+    // Matches the words in the current language and in English, so either
+    // finds a setting.
     const hits = SEARCH_INDEX.filter(entry =>
-      `${entry.label} ${entry.where} ${entry.words}`
+      `${t(entry.label)} ${t(entry.where)} ${entry.words}`
         .toLowerCase()
         .includes(query),
     );
     if (!hits.length) {
       return html`<p class="none">
-        No settings match “${this.query.trim()}”.
+        ${t('panel.noSettings', {query: this.query.trim()})}
       </p>`;
     }
     return html`
       <section>
-        <h2>Results</h2>
+        <h2>${t('panel.results')}</h2>
         <div class="group">
           ${hits.map(
             entry => html`
@@ -1538,8 +1614,8 @@ export class TarnPanel extends LitElement {
                 @click=${() => this.go(entry.page, entry.target)}
               >
                 ${icon(entry.glyph)}
-                <span class="txt">${entry.label}</span>
-                <span class="value">${entry.where}</span>
+                <span class="txt">${t(entry.label)}</span>
+                <span class="value">${t(entry.where)}</span>
                 ${chevron()}
               </button>
             `,
@@ -1570,7 +1646,7 @@ export class TarnPanel extends LitElement {
     if (!isPhotoId(id)) return this.sceneButton(sceneById(id));
     const photo = this.photos.find(p => p.id === id);
     const {background} = this.art(id);
-    const name = photo?.name ?? 'Photo';
+    const name = photo?.name ?? t('panel.photo');
     return html`
       <span class="photo">
         <button
@@ -1586,8 +1662,8 @@ export class TarnPanel extends LitElement {
           photo
             ? html`<button
                 class="delete"
-                aria-label="Delete ${name}"
-                title="Delete"
+                aria-label=${t('panel.deletePhotoNamed', {name})}
+                title=${t('panel.deletePhoto')}
                 @click=${() => void this.deletePhoto(id)}
               >
                 ${glyph('close')}
@@ -1609,15 +1685,20 @@ export class TarnPanel extends LitElement {
         @click=${() => this.applyPatch({clock: face})}
       >
         <span class="thumb ${art.tone}" style="background: ${art.background}">
-          ${face === 'none' ? html`<span class="off">Off</span>` : clockArt(face, preview)}
+          ${
+            face === 'none'
+              ? html`<span class="off">${t('panel.face.off')}</span>`
+              : clockArt(face, preview)
+          }
         </span>
-        ${FACE_NAMES[face]}
+        ${t(FACE_NAMES[face])}
       </button>
     `;
   }
 
   private widgetRow(widget: WidgetEntry, index: number) {
-    const name = widget.name ?? KIND_NAMES[widget.kind];
+    const kindName = t(KIND_NAMES[widget.kind]);
+    const name = widget.name ?? kindName;
     return html`
       <div class="row">
         ${icon(KIND_GLYPHS[widget.kind])}
@@ -1627,19 +1708,23 @@ export class TarnPanel extends LitElement {
           data-name=${name}
           maxlength="40"
           spellcheck="false"
-          placeholder=${KIND_NAMES[widget.kind]}
-          aria-label="Name of ${name}"
-          title="Rename"
+          placeholder=${kindName}
+          aria-label=${t('panel.widgets.nameOf', {name})}
+          title=${t('board.rename')}
           @keydown=${this.onNameKey}
           @change=${(event: Event) =>
             this.renameWidget(index, (event.target as HTMLInputElement).value)}
         />
-        <span class="seg" role="radiogroup" aria-label="${name} size">
+        <span
+          class="seg"
+          role="radiogroup"
+          aria-label=${t('panel.widgets.sizeOf', {name})}
+        >
           ${WIDGET_SIZE_OPTIONS[widget.kind].map(
             size => html`
               <button
                 role="radio"
-                title=${SIZE_NAMES[size]}
+                title=${t(SIZE_NAMES[size])}
                 aria-checked=${size === widget.size}
                 @click=${() => this.resizeWidget(index, size)}
               >
@@ -1650,8 +1735,8 @@ export class TarnPanel extends LitElement {
         </span>
         <button
           class="remove"
-          aria-label="Remove ${name}"
-          title="Remove"
+          aria-label=${t('board.removeWidget', {name})}
+          title=${t('common.remove')}
           @click=${() => this.removeWidget(index)}
         >
           <svg class="action" viewBox="0 0 24 24" aria-hidden="true">
@@ -1730,7 +1815,7 @@ export class TarnPanel extends LitElement {
       size: DEFAULT_WIDGET_SIZE[kind],
     };
     this.applyPatch({widgets: [...this.settings.widgets, widget]});
-    this.showToast(`${KIND_NAMES[kind]} added`);
+    this.showToast(t('panel.widgets.added', {name: t(KIND_NAMES[kind])}));
   }
 
   private removeWidget(index: number): void {
@@ -1740,7 +1825,9 @@ export class TarnPanel extends LitElement {
       widgets: this.settings.widgets.filter((_, i) => i !== index),
     });
     this.showToast(
-      `${removed.name ?? KIND_NAMES[removed.kind]} removed`,
+      t('panel.widgets.removed', {
+        name: removed.name ?? t(KIND_NAMES[removed.kind]),
+      }),
       () => {
         const widgets = [...this.settings.widgets];
         widgets.splice(index, 0, removed);
@@ -1766,7 +1853,7 @@ export class TarnPanel extends LitElement {
       widgets: this.settings.widgets.map((w, i) => {
         if (i !== index) return w;
         const {id, kind, size} = w;
-        return name && name !== KIND_NAMES[kind]
+        return name && name !== t(KIND_NAMES[kind])
           ? {id, kind, size, name}
           : {id, kind, size};
       }),
@@ -1851,16 +1938,18 @@ export class TarnPanel extends LitElement {
         added = await addWallpaper(file);
       } catch (error) {
         this.showToast(
-          error instanceof Error
-            ? error.message
-            : 'That image couldn’t be added.',
+          t(
+            error instanceof WallpaperError
+              ? PHOTO_ERRORS[error.code]
+              : 'panel.photoCantAdd',
+          ),
         );
       }
     }
     await this.loadPhotos();
     if (added) {
       this.selectScene(added.id);
-      this.showToast(files.length > 1 ? 'Photos added' : 'Photo added');
+      this.showToast(t('panel.photoAdded'));
     }
   };
 
@@ -1870,7 +1959,7 @@ export class TarnPanel extends LitElement {
     if (wasCurrent) this.selectScene(DEFAULT_SCENE_ID);
     await this.loadPhotos();
     if (!record) return;
-    this.showToast(`${record.info.name} deleted`, () => {
+    this.showToast(t('panel.photoDeleted', {name: record.info.name}), () => {
       void restoreWallpaper(record).then(async () => {
         await this.loadPhotos();
         if (wasCurrent) this.selectScene(id);
@@ -1913,10 +2002,10 @@ export class TarnPanel extends LitElement {
   private exportSettings = async () => {
     try {
       await downloadBackup();
-      this.showToast('Backup saved');
+      this.showToast(t('panel.backup.saved'));
     } catch (error) {
       console.error('Tarn: export failed', error);
-      this.showToast('The backup couldn’t be saved');
+      this.showToast(t('panel.backup.cantSave'));
     }
   };
 
@@ -1933,10 +2022,10 @@ export class TarnPanel extends LitElement {
     try {
       raw = JSON.parse(await file.text());
     } catch {
-      this.showToast('That file isn’t a Tarn backup');
+      this.showToast(t('panel.backup.notBackup'));
       return;
     }
-    await this.restoreWithUndo(restoreBackup(raw), 'Backup imported');
+    await this.restoreWithUndo(restoreBackup(raw), t('panel.backup.imported'));
   };
 
   private onReset = () => {
@@ -1956,15 +2045,19 @@ export class TarnPanel extends LitElement {
         await replaceSettings(DEFAULT_SETTINGS);
         return before;
       }),
-      'Reset to defaults',
+      t('panel.backup.reset'),
     );
   };
+
+  private setLanguage(language: LanguageSetting): void {
+    this.applyPatch({language});
+    void useLanguage(language);
+  }
 
   private setWeather(
     patch: Partial<{
       provider: WeatherProvider;
       units: WeatherUnits;
-      clock: boolean;
     }>,
   ): void {
     this.applyPatch({weather: {...this.settings.weather, ...patch}});
@@ -1974,11 +2067,16 @@ export class TarnPanel extends LitElement {
     const key = (event.target as HTMLInputElement).value.trim();
     await setGoogleKey(key);
     this.googleKey = key;
-    this.showToast(key ? 'API key saved' : 'API key removed');
+    this.showToast(
+      t(key ? 'panel.weather.keySaved' : 'panel.weather.keyRemoved'),
+    );
   };
 
   private async onRestoreAuto(index: number): Promise<void> {
-    await this.restoreWithUndo(restoreAutoBackup(index), 'Setup restored');
+    await this.restoreWithUndo(
+      restoreAutoBackup(index),
+      t('panel.previous.restored'),
+    );
   }
 
   private onJsonInput = (event: Event) => {
@@ -1992,11 +2090,13 @@ export class TarnPanel extends LitElement {
     try {
       raw = JSON.parse(this.jsonDraft);
     } catch (error) {
-      this.jsonStatus = `Not valid JSON: ${(error as Error).message}`;
+      this.jsonStatus = t('panel.json.invalid', {
+        error: (error as Error).message,
+      });
       return;
     }
     this.jsonDraft = null;
-    this.jsonStatus = 'Applied.';
+    this.jsonStatus = t('panel.json.applied');
     void replaceSettings(raw).then(() => this.reloadSettings());
   };
 
@@ -2008,9 +2108,9 @@ export class TarnPanel extends LitElement {
     };
     try {
       await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
-      this.showToast('Diagnostics copied');
+      this.showToast(t('panel.about.copied'));
     } catch {
-      this.showToast('Couldn’t copy. Use settings.json instead.');
+      this.showToast(t('panel.about.cantCopy'));
     }
   };
 
@@ -2057,17 +2157,24 @@ const BROWSER = ((): string => {
   return brands?.includes('Google Chrome') ? 'Google Chrome™' : '';
 })();
 
-const PAGE_TITLES: Record<Page, string> = {
-  home: 'Settings',
-  backgrounds: 'Wallpapers',
-  clock: 'Clock',
-  widgets: 'Widgets',
-  advanced: 'Advanced',
+const PAGE_TITLES: Record<Page, MessageKey> = {
+  home: 'common.settings',
+  backgrounds: 'panel.page.wallpapers',
+  clock: 'panel.page.clock',
+  widgets: 'panel.page.widgets',
+  language: 'panel.page.language',
+  advanced: 'panel.page.advanced',
 };
 
-/** "Oct 13, 21:40", in the user's own format. */
+/** "Same as browser", or the language in its own name ("Deutsch"). */
+function languageName(setting: LanguageSetting): string {
+  if (setting === 'auto') return t('panel.language.auto');
+  return LANGUAGES.find(l => l.code === setting)?.name ?? setting;
+}
+
+/** "Oct 13, 21:40", in the panel's language. */
 function formatWhen(time: number): string {
-  return new Date(time).toLocaleString([], {
+  return new Date(time).toLocaleString(locale(), {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -2096,11 +2203,9 @@ function clockPreview(art: Art): ClockPreview {
   const now = new Date();
   return {
     art,
-    time: now
-      .toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
-      .replace(/\s?[AP]M$/i, ''),
+    time: clockText(now),
     // The same format as the clock on the tab (widgets/tarn-clock.ts).
-    date: now.toLocaleDateString([], {
+    date: now.toLocaleDateString(locale(), {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
@@ -2134,37 +2239,44 @@ function pickShown<T>(all: readonly T[], count: number, current: T): T[] {
   return [...shown.slice(0, -1), current];
 }
 
-const FACE_NAMES: Record<ClockStyle, string> = {
-  center: 'Classic',
-  bold: 'Bold',
-  minimal: 'Minimal',
-  serif: 'Serif',
-  stacked: 'Stacked',
-  outline: 'Outline',
-  pixel: 'Pixel',
-  none: 'None',
+const FACE_NAMES: Record<ClockStyle, MessageKey> = {
+  center: 'panel.face.center',
+  bold: 'panel.face.bold',
+  minimal: 'panel.face.minimal',
+  serif: 'panel.face.serif',
+  stacked: 'panel.face.stacked',
+  outline: 'panel.face.outline',
+  pixel: 'panel.face.pixel',
+  none: 'panel.face.none',
 };
 
-/** Pages whose search filters their own choices, and what they're called. */
-const SCOPED_SEARCH: Partial<Record<Page, string>> = {
-  backgrounds: 'Wallpapers',
-  clock: 'Clocks',
+/** Pages whose search filters their own choices: the field's placeholder. */
+const SCOPED_SEARCH: Partial<Record<Page, MessageKey>> = {
+  backgrounds: 'panel.searchWallpapers',
+  clock: 'panel.searchClocks',
 };
 
-const KIND_NAMES: Record<WidgetKind, string> = {
-  favorites: 'Favorites',
-  notes: 'Notes',
-  tasks: 'Tasks',
-  weather: 'Weather',
-  focus: 'Focus timer',
+const KIND_NAMES: Record<WidgetKind, MessageKey> = {
+  favorites: 'widget.favorites',
+  notes: 'widget.notes',
+  tasks: 'widget.tasks',
+  weather: 'widget.weather',
+  focus: 'widget.focus',
 };
 
-const KIND_NOTES: Record<WidgetKind, string> = {
-  favorites: 'Your sites, one click away',
-  notes: 'A note that stays on this computer',
-  tasks: 'A short to-do list',
-  weather: 'Today and the week ahead',
-  focus: 'One task and a timer',
+const KIND_NOTES: Record<WidgetKind, MessageKey> = {
+  favorites: 'panel.widgetAbout.favorites',
+  notes: 'panel.widgetAbout.notes',
+  tasks: 'panel.widgetAbout.tasks',
+  weather: 'panel.widgetAbout.weather',
+  focus: 'panel.widgetAbout.focus',
+};
+
+const PHOTO_ERRORS: Record<WallpaperErrorCode, MessageKey> = {
+  notImage: 'panel.photoNotImage',
+  tooLarge: 'panel.photoTooLarge',
+  cantOpen: 'panel.photoCantOpen',
+  cantProcess: 'panel.photoCantAdd',
 };
 
 const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
@@ -2180,22 +2292,23 @@ const PROVIDER_NAMES: Record<WeatherProvider, string> = {
   google: 'Google',
 };
 
+/** Symbols, the same in every language; Auto is translated where shown. */
 const UNIT_NAMES: Record<WeatherUnits, string> = {
   auto: 'Auto',
   celsius: '°C',
   fahrenheit: '°F',
 };
 
-const SIZE_NAMES: Record<WidgetSize, string> = {
-  s: 'Small',
-  m: 'Medium',
-  l: 'Large',
-  xl: 'Extra large',
+const SIZE_NAMES: Record<WidgetSize, MessageKey> = {
+  s: 'panel.size.s',
+  m: 'panel.size.m',
+  l: 'panel.size.l',
+  xl: 'panel.size.xl',
 };
 
 interface SearchEntry {
-  label: string;
-  where: string;
+  label: MessageKey;
+  where: MessageKey;
   page: Page;
   target: string;
   glyph: GlyphName;
@@ -2205,45 +2318,54 @@ interface SearchEntry {
 /** What search finds, and where each setting lives. */
 const SEARCH_INDEX: readonly SearchEntry[] = [
   {
-    label: 'Wallpaper',
-    where: 'Settings',
+    label: 'panel.wallpaper',
+    where: 'common.settings',
     page: 'home',
     target: 'background',
     glyph: 'photo',
     words: `scene background ${SCENES.map(s => s.name).join(' ')}`,
   },
   {
-    label: 'Clock',
-    where: 'Settings',
+    label: 'panel.clock',
+    where: 'common.settings',
     page: 'home',
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide weather temperature',
+      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide',
   },
   {
-    label: 'Widgets',
-    where: 'Settings',
+    label: 'panel.page.widgets',
+    where: 'common.settings',
     page: 'widgets',
     target: 'widgets',
     glyph: 'widgets',
     words: 'favorites notes focus timer add remove size',
   },
+  {
+    label: 'panel.page.language',
+    where: 'common.settings',
+    page: 'language',
+    target: 'language',
+    glyph: 'globe',
+    words:
+      'language translate english español português français deutsch русский 日本語 简体中文 한국어 türkçe idioma langue sprache язык 言語 语言 언어 dil língua',
+  },
   ...(import.meta.env.FIREFOX
     ? []
-    : [
+    : ([
         {
-          label: 'Tab icon',
-          where: 'Advanced',
-          page: 'advanced' as const,
+          label: 'panel.tab.icon',
+          where: 'panel.page.advanced',
+          page: 'advanced',
           target: 'tab-icon',
-          glyph: 'tab' as const,
+          glyph: 'tab',
           words: 'favicon chrome none',
         },
-      ]),
+      ] satisfies SearchEntry[])),
   {
-    label: 'Weather',
-    where: 'Advanced',
+    label: 'widget.weather',
+    where: 'panel.page.advanced',
     page: 'advanced',
     target: 'weather',
     glyph: 'weather',
@@ -2251,40 +2373,40 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
       'forecast temperature celsius fahrenheit provider google open-meteo api key',
   },
   {
-    label: 'Keyboard shortcuts',
-    where: 'Advanced',
+    label: 'panel.keys.shortcuts',
+    where: 'panel.page.advanced',
     page: 'advanced',
     target: 'keys',
     glyph: 'keyboard',
     words: 'keys hotkeys',
   },
   {
-    label: 'Back up and restore',
-    where: 'Advanced',
+    label: 'panel.backup.search',
+    where: 'panel.page.advanced',
     page: 'advanced',
     target: 'backup',
     glyph: 'share',
     words: 'backup export import file save restore previous setup update',
   },
   {
-    label: 'Reset to defaults',
-    where: 'Advanced',
+    label: 'panel.backup.reset',
+    where: 'panel.page.advanced',
     page: 'advanced',
     target: 'reset',
     glyph: 'reset',
     words: 'reset defaults start over',
   },
   {
-    label: 'settings.json',
-    where: 'Advanced',
+    label: 'panel.json.file',
+    where: 'panel.page.advanced',
     page: 'advanced',
     target: 'json',
     glyph: 'doc',
     words: 'json raw edit developer',
   },
   {
-    label: 'Version and diagnostics',
-    where: 'Advanced',
+    label: 'panel.about.search',
+    where: 'panel.page.advanced',
     page: 'advanced',
     target: 'about',
     glyph: 'info',

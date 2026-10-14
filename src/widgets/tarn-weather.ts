@@ -7,8 +7,8 @@ import {LitElement, css, html, nothing, type PropertyValues} from 'lit';
 import {browser} from 'wxt/browser';
 import {DEFAULT_SETTINGS, type WeatherSettings} from '../settings/schema';
 import {loadSettings, watchSettings} from '../settings/store';
-import {CONDITION_NAMES} from '../weather/conditions';
-import {roundCoordinate} from '../weather/config';
+import {conditionName} from '../weather/conditions';
+import {roundCoordinate, watchGoogleKey} from '../weather/config';
 import {REFRESH_MS, fetchForecast, isCurrent} from '../weather/forecast';
 import {weatherGlyph} from '../weather/glyphs';
 import {searchPlaces} from '../weather/open-meteo';
@@ -20,15 +20,31 @@ import {
   watchWidgetData,
 } from './data';
 import {sheetStyles, widgetStyles} from './styles';
+import {LocaleController, locale, t} from '../i18n';
 
 interface WeatherData {
   readonly place: Place | null;
   readonly forecast: Forecast | null;
+  /** After a failed update, when the next try may happen (epoch ms). */
+  readonly retryAt?: number;
 }
 
 const EMPTY: WeatherData = {place: null, forecast: null};
 /** After a failed request, try again this much later. */
 const RETRY_MS = 5 * 60_000;
+/** After a rejected key or a used-up quota: until the key changes, or this. */
+const KEY_RETRY_MS = 6 * 60 * 60_000;
+
+/** Whether `zone` is a time zone this browser can format in. */
+function isTimeZone(zone: unknown): zone is string {
+  if (typeof zone !== 'string') return false;
+  try {
+    new Intl.DateTimeFormat(undefined, {timeZone: zone});
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const isNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v);
@@ -44,6 +60,7 @@ function normalize(raw: unknown): WeatherData {
           detail: typeof p.detail === 'string' ? p.detail.slice(0, 120) : '',
           lat: p.lat,
           lon: p.lon,
+          ...(p.here === true ? {here: true} : {}),
         }
       : null;
   const f = forecast as Partial<Forecast> | null;
@@ -52,11 +69,24 @@ function normalize(raw: unknown): WeatherData {
     f &&
     isNumber(f.fetched) &&
     isNumber(f.now?.temp) &&
+    isTimeZone(f.timeZone) &&
     Array.isArray(f.hours) &&
     Array.isArray(f.days)
-      ? (f as Forecast)
+      ? {
+          ...(f as Forecast),
+          hours: f.hours.filter(h => isNumber(h?.time) && isNumber(h?.temp)),
+          days: f.days.filter(
+            d =>
+              typeof d?.date === 'string' && isNumber(d.min) && isNumber(d.max),
+          ),
+        }
       : null;
-  return {place: validPlace, forecast: validForecast};
+  const {retryAt} = raw as {retryAt?: unknown};
+  return {
+    place: validPlace,
+    forecast: validForecast,
+    ...(isNumber(retryAt) ? {retryAt} : {}),
+  };
 }
 
 /**
@@ -68,7 +98,6 @@ export class TarnWeather extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
     heading: {attribute: false},
-    inline: {type: Boolean, reflect: true},
     data: {state: true},
     settings: {state: true},
     problem: {state: true},
@@ -339,41 +368,52 @@ export class TarnWeather extends LitElement {
         }
       }
 
-      /* Inline, on the clock's date line: a glyph and a temperature. */
-      :host([inline]) {
-        display: inline-flex;
-        flex-direction: row;
-        height: auto;
-        padding: 0;
-        vertical-align: baseline;
-        color: inherit;
-        text-shadow: inherit;
-        font: inherit;
-      }
-
-      .inline {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3em;
-        padding: 0;
-        font: inherit;
-        color: inherit;
-        background: none;
-        border: 0;
-        cursor: pointer;
-        opacity: 1;
-        transition: opacity 150ms ease;
-      }
-
-      .inline:hover {
-        opacity: 0.8;
-      }
-
-      .inline .icon {
-        display: inline-block;
-        width: 1.15em;
-        height: 1.15em;
-        vertical-align: -0.2em;
+      /* Small and stretched to two rows (beside a large tile): now on
+         top, then the next hours as a short list, nothing squeezed. */
+      @container (max-width: 200px) and (min-height: 250px) {
+        .body {
+          gap: 14px;
+        }
+        .now {
+          height: auto;
+          grid-template-rows: auto auto auto;
+          row-gap: 2px;
+        }
+        .temp {
+          align-self: start;
+          font-size: 48px;
+        }
+        .hours {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+          font-size: 13px;
+        }
+        .hour {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+        .hour .icon {
+          width: 18px;
+          height: 18px;
+        }
+        .hour > :last-child {
+          min-width: 2.4em;
+          text-align: end;
+        }
+        .hours .hour:nth-child(n + 5) {
+          display: flex;
+        }
+        .hours .hour:nth-child(n + 7) {
+          display: none;
+        }
+        .days {
+          display: none;
+        }
+        .credit {
+          display: block;
+          font-size: 9px;
+        }
       }
 
       /* The picker. */
@@ -423,8 +463,6 @@ export class TarnWeather extends LitElement {
   declare widgetId: string;
   /** The widget's name: the user's, or the default. */
   declare heading: string;
-  /** Compact, for the clock's date line: a glyph and a temperature. */
-  declare inline: boolean;
   declare data: WeatherData;
   /** Provider and units, from settings (null until loaded). */
   declare settings: WeatherSettings | null;
@@ -437,6 +475,7 @@ export class TarnWeather extends LitElement {
 
   private unwatch: () => void = () => {};
   private unwatchSettings: () => void = () => {};
+  private unwatchKey: () => void = () => {};
   private timer = 0;
   private searchTimer = 0;
   private searchId = 0;
@@ -444,9 +483,10 @@ export class TarnWeather extends LitElement {
 
   constructor() {
     super();
+    // Re-renders in a newly chosen language.
+    new LocaleController(this);
     this.widgetId = '';
-    this.heading = 'Weather';
-    this.inline = false;
+    this.heading = t('widget.weather');
     this.data = EMPTY;
     this.settings = null;
     this.problem = '';
@@ -462,6 +502,8 @@ export class TarnWeather extends LitElement {
     this.unwatch = watchWidgetData(this.widgetId, normalize, this.apply);
     void loadSettings().then(s => this.useSettings(s.weather));
     this.unwatchSettings = watchSettings(s => this.useSettings(s.weather));
+    // A new Google key: try again now rather than waiting out the error.
+    this.unwatchKey = watchGoogleKey(() => this.retryNow());
     document.addEventListener('visibilitychange', this.refresh);
   }
 
@@ -469,6 +511,7 @@ export class TarnWeather extends LitElement {
     super.disconnectedCallback();
     this.unwatch();
     this.unwatchSettings();
+    this.unwatchKey();
     document.removeEventListener('visibilitychange', this.refresh);
     clearTimeout(this.timer);
     clearTimeout(this.searchTimer);
@@ -485,13 +528,12 @@ export class TarnWeather extends LitElement {
 
   override render() {
     const {place, forecast} = this.data;
-    if (this.inline) return this.renderInline(place, forecast);
     if (!place) {
       return html`
         <h3>${this.heading}</h3>
         <div class="empty">
-          <span>See the weather where you are, or anywhere.</span>
-          <button @click=${this.openPicker}>Choose a Place</button>
+          <span>${t('weather.empty')}</span>
+          <button @click=${this.openPicker}>${t('weather.choose')}</button>
         </div>
         ${this.renderPicker()}
       `;
@@ -511,51 +553,23 @@ export class TarnWeather extends LitElement {
     `;
   }
 
-  private renderInline(place: Place | null, forecast: Forecast | null) {
-    if (!place) {
-      return html`<button class="inline" @click=${this.openPicker}>
-          Add weather
-        </button>
-        ${this.renderPicker()}`;
-    }
-    const shown =
-      forecast && forecast.lat === place.lat && forecast.lon === place.lon
-        ? forecast
-        : null;
-    const today = shown?.days[0];
-    const summary = shown
-      ? `${place.name}: ${CONDITION_NAMES[shown.now.condition]}${
-          today ? `, H ${deg(today.max)} L ${deg(today.min)}` : ''
-        }. ${this.creditText()}.`
-      : place.name;
-    return html`<button
-        class="inline"
-        title=${this.problem || summary}
-        aria-label=${summary}
-        @click=${this.openPicker}
-      >
-        ${
-          shown
-            ? html`<span class="icon"
-                  >${weatherGlyph(shown.now.condition, shown.now.day)}</span
-                >${deg(shown.now.temp)}`
-            : '–°'
-        }
-      </button>
-      ${this.renderPicker()}`;
-  }
-
   private renderNow(place: Place, forecast: Forecast | null) {
     const today = forecast?.days[0];
     const condition = forecast
-      ? `${CONDITION_NAMES[forecast.now.condition]}${
-          today ? ` · H ${deg(today.max)} L ${deg(today.min)}` : ''
+      ? `${conditionName(forecast.now.condition)}${
+          today
+            ? ` · ${t('weather.highLow', {high: deg(today.max), low: deg(today.min)})}`
+            : ''
         }`
       : '';
     return html`
       <div class="now" title=${this.creditText()}>
-        <button class="place" title="Change place" @click=${this.openPicker}>
-          ${place.name}
+        <button
+          class="place"
+          title=${t('weather.change')}
+          @click=${this.openPicker}
+        >
+          ${placeName(place)}
         </button>
         <div class="temp">${forecast ? deg(forecast.now.temp) : '–°'}</div>
         <div class="icon">
@@ -567,7 +581,7 @@ export class TarnWeather extends LitElement {
   }
 
   private renderHours(forecast: Forecast) {
-    const hour = new Intl.DateTimeFormat(undefined, {
+    const hour = new Intl.DateTimeFormat(locale(), {
       hour: 'numeric',
       timeZone: forecast.timeZone,
     });
@@ -579,7 +593,7 @@ export class TarnWeather extends LitElement {
           (h, i) => html`
             <div class="hour">
               <span class="when"
-                >${i === 0 ? 'Now' : shortHour(safeFormat(hour, h.time))}</span
+                >${i === 0 ? t('weather.now') : shortHour(hour, h.time)}</span
               >
               <span class="icon">${weatherGlyph(h.condition, h.day)}</span>
               <span>${deg(h.temp)}</span>
@@ -596,7 +610,7 @@ export class TarnWeather extends LitElement {
     const low = Math.min(...days.map(d => d.min));
     const high = Math.max(...days.map(d => d.max));
     const span = Math.max(high - low, 1);
-    const weekday = new Intl.DateTimeFormat(undefined, {
+    const weekday = new Intl.DateTimeFormat(locale(), {
       weekday: 'short',
       timeZone: 'UTC',
     });
@@ -606,7 +620,7 @@ export class TarnWeather extends LitElement {
           (d, i) => html`
             <div class="day">
               <span
-                >${i === 0 ? 'Today' : safeFormat(weekday, Date.parse(`${d.date}T12:00:00Z`))}</span
+                >${i === 0 ? t('weather.today') : safeFormat(weekday, Date.parse(`${d.date}T12:00:00Z`))}</span
               >
               <span class="icon">${weatherGlyph(d.condition)}</span>
               <span class="min">${deg(d.min)}</span>
@@ -626,7 +640,7 @@ export class TarnWeather extends LitElement {
   private credit() {
     return this.provider() === 'google'
       ? 'Includes weather data from Google'
-      : html`Weather by
+      : html`${t('weather.by')}
           <a href="https://open-meteo.com/" target="_blank" rel="noopener"
             >Open-Meteo</a
           >`;
@@ -635,7 +649,7 @@ export class TarnWeather extends LitElement {
   private creditText(): string {
     return this.provider() === 'google'
       ? 'Includes weather data from Google'
-      : 'Weather by Open-Meteo.com';
+      : `${t('weather.by')} Open-Meteo.com`;
   }
 
   private provider() {
@@ -648,11 +662,11 @@ export class TarnWeather extends LitElement {
     return html`
       <dialog data-edit @close=${this.closePicker}>
         <form method="dialog" @submit=${this.onPickerSubmit}>
-          <h4>Choose a Place</h4>
+          <h4>${t('weather.choose')}</h4>
           <input
             type="search"
-            aria-label="City"
-            placeholder="Search for a city"
+            aria-label=${t('weather.city')}
+            placeholder=${t('weather.search')}
             autocomplete="off"
             spellcheck="false"
             @input=${this.onSearchInput}
@@ -682,17 +696,16 @@ export class TarnWeather extends LitElement {
             class="use-location"
             @click=${this.useMyLocation}
           >
-            Use My Location
+            ${t('weather.useLocation')}
           </button>
           <p class="privacy">
-            City search goes to Open-Meteo. Forecasts come from
-            ${google ? 'Google, with your API key' : 'Open-Meteo'}. Only the
-            place you choose is sent, rounded to about a kilometer, and only to
-            get its weather.
+            ${t('weather.privacy', {
+              provider: google ? t('weather.providerGoogle') : 'Open-Meteo',
+            })}
           </p>
           <div class="buttons">
             <button type="button" @click=${() => this.closePicker()}>
-              Cancel
+              ${t('common.cancel')}
             </button>
           </div>
         </form>
@@ -712,10 +725,22 @@ export class TarnWeather extends LitElement {
       settings.provider !== this.settings?.provider ||
       settings.units !== this.settings?.units;
     this.settings = settings;
-    if (changed) {
-      this.problem = '';
+    if (changed) this.retryNow();
+  }
+
+  /** Something that could fix a failure changed: forget the wait, try now. */
+  private retryNow(): void {
+    this.problem = '';
+    if (this.data.retryAt === undefined) {
       this.refresh();
+      return;
     }
+    const rest: WeatherData = {
+      place: this.data.place,
+      forecast: this.data.forecast,
+    };
+    this.data = rest;
+    void saveWidgetData(this.widgetId, rest).then(() => this.refresh());
   }
 
   /**
@@ -724,49 +749,66 @@ export class TarnWeather extends LitElement {
    */
   private refresh = () => {
     clearTimeout(this.timer);
-    const {place, forecast} = this.data;
+    const {place, forecast, retryAt} = this.data;
     const settings = this.settings;
-    if (!place || !settings || document.visibilityState !== 'visible') return;
+    if (!this.isConnected || !place || !settings) return;
+    if (document.visibilityState !== 'visible') return;
     if (isCurrent(forecast, place, settings)) {
       const due = forecast.fetched + REFRESH_MS - Date.now();
       this.timer = window.setTimeout(this.refresh, Math.max(due, 1000));
+      return;
+    }
+    // A failed update waits its turn, across tab switches and new tabs.
+    if (retryAt !== undefined && retryAt > Date.now()) {
+      this.timer = window.setTimeout(this.refresh, retryAt - Date.now());
       return;
     }
     void this.fetchNow();
   };
 
   private async fetchNow(): Promise<void> {
-    if (this.fetching) return;
+    if (this.fetching || !this.isConnected) return;
     const settings = this.settings;
     if (!settings) return;
     this.fetching = true;
+    let stored: WeatherData = this.data;
     try {
       // Another tab may have just fetched it.
-      const stored = await loadWidgetData(this.widgetId, normalize);
+      stored = await loadWidgetData(this.widgetId, normalize);
       const place = stored.place;
       if (!place) return;
       if (isCurrent(stored.forecast, place, settings)) {
         this.data = stored;
-        this.fetching = false;
-        this.refresh();
         return;
       }
       const forecast = await fetchForecast(place, settings);
+      // The place may have changed while the request was out: keep the new
+      // one, and fetch for it next.
+      const latest = await loadWidgetData(this.widgetId, normalize);
+      if (latest.place?.lat !== place.lat || latest.place.lon !== place.lon) {
+        this.data = latest;
+        return;
+      }
       this.problem = '';
-      const next = {place, forecast};
+      const next = {place: latest.place, forecast};
       this.data = next;
       await saveWidgetData(this.widgetId, next);
     } catch (error) {
       this.problem = describe(error, this.data.forecast);
-      // A key problem waits for the settings to change; others retry.
-      if (!(error instanceof WeatherError && error.reason === 'key')) {
-        this.timer = window.setTimeout(this.refresh, RETRY_MS);
-      }
-      return;
+      const keyProblem =
+        error instanceof WeatherError &&
+        (error.reason === 'key' || error.reason === 'quota');
+      const next = {
+        ...stored,
+        retryAt: Date.now() + (keyProblem ? KEY_RETRY_MS : RETRY_MS),
+      };
+      this.data = next;
+      await saveWidgetData(this.widgetId, next);
     } finally {
       this.fetching = false;
+      // Every way out schedules what comes next (a timer, or nothing).
+      this.refresh();
     }
-    this.refresh();
   }
 
   // ---- Picker --------------------------------------------------------------
@@ -782,8 +824,13 @@ export class TarnWeather extends LitElement {
     this.picking = false;
   };
 
-  private onPickerSubmit = (event: Event) => {
+  /** Enter picks the best match for what's typed now, not a moment ago. */
+  private onPickerSubmit = async (event: Event) => {
     event.preventDefault();
+    clearTimeout(this.searchTimer);
+    const input =
+      this.renderRoot.querySelector<HTMLInputElement>('dialog input');
+    await this.search(input?.value ?? '');
     const first = this.results[0];
     if (first) this.pick(first);
   };
@@ -802,12 +849,12 @@ export class TarnWeather extends LitElement {
       return;
     }
     try {
-      const results = await searchPlaces(query);
+      const results = await searchPlaces(query, locale());
       if (id !== this.searchId) return;
       this.results = results;
-      this.note = results.length ? '' : 'No places by that name.';
+      this.note = results.length ? '' : t('weather.noPlaces');
     } catch {
-      if (id === this.searchId) this.note = 'Can’t search right now.';
+      if (id === this.searchId) this.note = t('weather.cantSearch');
     }
   }
 
@@ -817,19 +864,23 @@ export class TarnWeather extends LitElement {
       .request({permissions: ['geolocation']})
       .catch(() => false);
     if (!granted) {
-      this.note = 'Location wasn’t allowed. You can search for a city instead.';
+      this.note = t('weather.locationDenied');
       return;
     }
-    this.note = 'Finding you…';
+    this.note = t('weather.finding');
     navigator.geolocation.getCurrentPosition(
-      position =>
+      position => {
+        // Cancelled while waiting: leave the place as it was.
+        if (!this.picking) return;
         this.pick({
-          name: 'My Location',
+          name: '',
+          here: true,
           lat: position.coords.latitude,
           lon: position.coords.longitude,
-        }),
+        });
+      },
       () => {
-        this.note = 'Couldn’t find your location. Try searching instead.';
+        this.note = t('weather.locationFailed');
       },
       {maximumAge: REFRESH_MS, timeout: 15_000},
     );
@@ -849,14 +900,30 @@ export class TarnWeather extends LitElement {
   }
 }
 
+/** A place's name; "My location" in the current language. */
+function placeName(place: Place): string {
+  return place.here ? t('weather.myLocation') : place.name;
+}
+
 /** A temperature, rounded, with a degree sign. */
 function deg(value: number): string {
   return `${Math.round(value)}°`;
 }
 
-/** "10 PM" -> "10PM": hour labels sit close together. */
-function shortHour(label: string): string {
-  return label.replace(/[\s\u202f]+(?=[AaPp]\.?[Mm])/, '');
+/**
+ * Just the hour, as tightly as the language allows: "10PM", "21" (not
+ * "21 Uhr" or "21時"); hour labels sit close together.
+ */
+function shortHour(format: Intl.DateTimeFormat, time: number): string {
+  try {
+    return format
+      .formatToParts(time)
+      .filter(part => part.type === 'hour' || part.type === 'dayPeriod')
+      .map(part => part.value.replace(/\./g, ''))
+      .join('');
+  } catch {
+    return '';
+  }
 }
 
 function safeFormat(format: Intl.DateTimeFormat, time: number): string {
@@ -870,13 +937,13 @@ function safeFormat(format: Intl.DateTimeFormat, time: number): string {
 /** A short line for the widget when the forecast can't update. */
 function describe(error: unknown, shown: Forecast | null): string {
   if (error instanceof WeatherError && error.reason === 'key') {
-    return 'Check the Google API key in Settings';
+    return t('weather.checkKey');
   }
-  if (!shown) return 'Can’t get the weather right now';
+  if (!shown) return t('weather.unavailable');
   const minutes = Math.round((Date.now() - shown.fetched) / 60_000);
   if (minutes < 90) return '';
   const hours = Math.round(minutes / 60);
-  return `Offline · updated ${hours} h ago`;
+  return t('weather.offline', {hours});
 }
 
 customElements.define('tarn-weather', TarnWeather);
