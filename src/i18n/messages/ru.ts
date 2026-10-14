@@ -172,8 +172,6 @@ export const ru: Catalog = {
   'panel.face.pixel': 'Пиксели',
   'panel.face.glass': 'Стекло',
   'panel.face.rounded': 'Округлый',
-  'panel.face.duo': 'Дуо',
-  'panel.face.tall': 'Высокий',
   'panel.face.analog': 'Стрелочный',
   'panel.face.none': 'Нет',
   'panel.face.off': 'Выкл.',

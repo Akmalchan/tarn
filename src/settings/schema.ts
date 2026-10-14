@@ -35,8 +35,6 @@ export type ClockStyle =
   | 'pixel'
   | 'glass'
   | 'rounded'
-  | 'duo'
-  | 'tall'
   | 'analog'
   | 'none';
 /** In the order settings shows them. */
@@ -45,8 +43,6 @@ export const CLOCK_STYLES: readonly ClockStyle[] = [
   'glass',
   'bold',
   'rounded',
-  'duo',
-  'tall',
   'minimal',
   'serif',
   'stacked',

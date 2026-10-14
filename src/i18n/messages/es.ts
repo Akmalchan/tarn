@@ -170,8 +170,6 @@ export const es: Catalog = {
   'panel.face.pixel': 'Píxel',
   'panel.face.glass': 'Cristal',
   'panel.face.rounded': 'Redondeado',
-  'panel.face.duo': 'Dúo',
-  'panel.face.tall': 'Alto',
   'panel.face.analog': 'Analógico',
   'panel.face.none': 'Ninguno',
   'panel.face.off': 'No',

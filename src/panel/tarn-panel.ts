@@ -2611,8 +2611,6 @@ const FACE_NAMES: Record<ClockStyle, MessageKey> = {
   pixel: 'panel.face.pixel',
   glass: 'panel.face.glass',
   rounded: 'panel.face.rounded',
-  duo: 'panel.face.duo',
-  tall: 'panel.face.tall',
   analog: 'panel.face.analog',
   none: 'panel.face.none',
 };
@@ -2704,7 +2702,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic glass bold rounded duo tall minimal serif stacked outline pixel 8-bit retro analog dial hide',
+      'time date face classic glass bold rounded minimal serif stacked outline pixel 8-bit retro analog dial hide',
   },
   {
     label: 'panel.page.widgets',

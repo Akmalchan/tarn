@@ -13,7 +13,7 @@ import {LocaleController, locale} from '../i18n';
  * a phone-narrow window gets a smaller one. It updates once a minute, on the
  * minute, and not at all while the tab is hidden. `face` picks the style
  * (clock-faces.ts): classic (thin, with the date), glass, bold, rounded,
- * duo (heavy hours, hairline minutes), tall, minimal (time only), serif,
+ * minimal (time only), serif,
  * stacked, outline, pixel (8-bit) or analog. None loads a font: serif uses
  * the system's; glass, rounded and outline are SVG filters over the
  * bundled one; pixel and analog are drawn.

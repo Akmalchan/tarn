@@ -166,8 +166,6 @@ export const zhCN: Catalog = {
   'panel.face.pixel': '像素',
   'panel.face.glass': '玻璃',
   'panel.face.rounded': '圆润',
-  'panel.face.duo': '对比',
-  'panel.face.tall': '修长',
   'panel.face.analog': '指针',
   'panel.face.none': '无',
   'panel.face.off': '关',

@@ -172,8 +172,6 @@ export const ptBR: Catalog = {
   'panel.face.pixel': 'Pixel',
   'panel.face.glass': 'Vidro',
   'panel.face.rounded': 'Arredondado',
-  'panel.face.duo': 'Duo',
-  'panel.face.tall': 'Alto',
   'panel.face.analog': 'Analógico',
   'panel.face.none': 'Nenhum',
   'panel.face.off': 'Desl.',

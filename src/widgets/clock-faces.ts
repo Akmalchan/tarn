@@ -20,16 +20,6 @@ export function clockTime(face: ClockStyle, time: string, now?: Date) {
     return html`<span class="hh">${hours}</span
       ><span class="mm">${minutes}</span>`;
   }
-  if (face === 'duo') {
-    const [hours, minutes] = time.split(/(\D+)/);
-    const separator = time.slice(
-      hours!.length,
-      time.length - (minutes ?? '').length,
-    );
-    const rest = time.slice(hours!.length + separator.length);
-    return html`<span class="hh">${hours}</span
-      ><span class="sep">${separator}</span><span class="mm">${rest}</span>`;
-  }
   return time;
 }
 
@@ -198,31 +188,6 @@ export const faceStyles = css`
   /* Too small to melt: a thumbnail just shows the heavy weight. */
   .thumb .t.rounded {
     filter: none;
-  }
-
-  .t.duo {
-    letter-spacing: -0.03em;
-  }
-
-  .t.duo .hh {
-    font-weight: 760;
-  }
-
-  .t.duo .sep {
-    font-weight: 300;
-    opacity: 0.5;
-  }
-
-  .t.duo .mm {
-    font-weight: 150;
-  }
-
-  .t.tall {
-    display: inline-block;
-    font-weight: 330;
-    letter-spacing: -0.07em;
-    transform: scaleY(1.5);
-    margin-block: 0.24em;
   }
 
   .t .pixel {
