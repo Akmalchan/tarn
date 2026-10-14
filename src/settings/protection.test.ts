@@ -29,7 +29,7 @@ const FROM_NEWER = {
   version: SETTINGS_VERSION + 1,
   enabled: true,
   scene: 'lagoon',
-  clock: 'neon',
+  clock: 'hologram',
   tabIcon: 'chrome',
   accent: {hue: 210},
   widgets: [
@@ -52,7 +52,7 @@ describe('saving keeps what this version does not understand', () => {
     expect(stored).toMatchObject({
       version: SETTINGS_VERSION + 1,
       scene: 'lagoon',
-      clock: 'neon',
+      clock: 'hologram',
       accent: {hue: 210},
       tabIcon: 'none',
     });
