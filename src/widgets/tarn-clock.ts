@@ -72,6 +72,8 @@ export class TarnClock extends LitElement {
 
   declare now: Date;
   declare face: Exclude<ClockStyle, 'none'>;
+  /** The time shown before this one, so the flip face can flip from it. */
+  private previous = '';
   private timer = 0;
 
   constructor() {
@@ -96,6 +98,7 @@ export class TarnClock extends LitElement {
 
   override render() {
     const time = clockText(this.now);
+    const previous = this.previous || time;
     const date = this.now.toLocaleDateString(locale(), {
       weekday: 'long',
       month: 'long',
@@ -104,7 +107,7 @@ export class TarnClock extends LitElement {
     return html`
       ${faceFilters}
       <time class="t ${this.face}" datetime=${this.now.toISOString()}
-        >${clockTime(this.face, time, this.now)}</time
+        >${clockTime(this.face, time, this.now, previous)}</time
       >
       ${
         this.face === 'minimal'
@@ -116,6 +119,7 @@ export class TarnClock extends LitElement {
 
   private tick = () => {
     clearTimeout(this.timer);
+    this.previous = clockText(this.now);
     this.now = new Date();
     if (document.visibilityState !== 'visible') return;
     const untilNextMinute = 60_000 - (Date.now() % 60_000) + 20;

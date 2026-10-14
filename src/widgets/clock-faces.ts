@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {css, html, svg} from 'lit';
+import {css, html, nothing, svg} from 'lit';
 import {keyed} from 'lit/directives/keyed.js';
 import {locale} from '../i18n';
 import type {ClockStyle} from '../settings/schema';
@@ -13,10 +13,15 @@ import type {ClockStyle} from '../settings/schema';
  * the face thumbnails in settings, so a thumbnail is a true small copy.
  * Sizes come from the caller's CSS; nothing here loads a font.
  */
-export function clockTime(face: ClockStyle, time: string, now?: Date) {
+export function clockTime(
+  face: ClockStyle,
+  time: string,
+  now?: Date,
+  previous?: string,
+) {
   if (face === 'pixel') return pixelTime(time);
   if (face === 'analog') return analogTime(time, now);
-  if (face === 'flip') return flipTime(time);
+  if (face === 'flip') return flipTime(time, previous);
   if (face === 'nixie') return nixieTime(time);
   if (face === 'lcd') return lcdTime(time);
   if (face === 'stacked') {
@@ -28,32 +33,58 @@ export function clockTime(face: ClockStyle, time: string, now?: Date) {
 }
 
 /**
- * The flip face: hours and minutes on two split-flap cards. A card whose
- * number changed flips down into place (keyed, so it is a new element).
+ * The flip face: hours and minutes on split-flap cards. Each card is two
+ * halves meeting at a hinge in the middle. When its number changes, the
+ * old top half falls forward over the hinge, uncovering the new top, and
+ * the new bottom half swings down after it and lands; `previous` is the
+ * time shown before (the same as `time` when nothing should move).
  */
-export function flipTime(time: string) {
+export function flipTime(time: string, previous: string = time) {
   const [hours, minutes] = splitTime(time);
-  return html`${keyed(hours, html`<span class="card">${hours}</span>`)}${keyed(
-    minutes,
-    html`<span class="card">${minutes}</span>`,
-  )}`;
+  const [oldHours, oldMinutes] = splitTime(previous);
+  return html`${flipCard(hours, oldHours)}${flipCard(minutes, oldMinutes)}`;
+}
+
+function flipCard(value: string, old: string) {
+  const moving = value !== old;
+  // A new key per change: a fresh element, so the flip plays each time.
+  return keyed(
+    `${old}>${value}`,
+    html`<span class="card"
+      ><span class="face top">${value}</span
+      ><span class="face bottom">${moving ? old : value}</span>${
+        moving
+          ? html`<span class="face flap top" aria-hidden="true">${old}</span
+              ><span class="face flap bottom" aria-hidden="true"
+                >${value}</span
+              >`
+          : nothing
+      }</span
+    >`,
+  );
 }
 
 /**
- * The nixie face: each digit glowing in its own glass tube, the other
- * cathodes faintly visible behind it; a dot between hours and minutes.
+ * The nixie face: each digit a glowing wire inside its own glass tube, the
+ * nine unlit cathodes faintly behind it, a honeycomb anode mesh in front,
+ * a socket below; two glowing dots between hours and minutes.
  */
 export function nixieTime(time: string) {
   const [hours, minutes] = splitTime(time);
   const tube = (digit: string) =>
     html`<span class="tube"
-      ><span class="ghost">8</span><span class="ghost">0</span
-      ><span class="lit">${digit}</span></span
-    >`;
-  return html`${[...hours].map(tube)}<span class="dot"></span>${[
-      ...minutes,
-    ].map(tube)}`;
+      ><span class="glass"
+        >${CATHODES.filter(c => c !== digit).map(
+          c => html`<span class="wire">${c}</span>`,
+        )}<span class="lit">${digit}</span><span class="mesh"></span></span
+      ><span class="base"></span
+    ></span>`;
+  return html`${[...hours].map(tube)}<span class="colon"><i></i><i></i></span
+    >${[...minutes].map(tube)}`;
 }
+
+/** A nixie tube's cathodes, back to front. */
+const CATHODES = ['1', '7', '4', '0', '3', '5', '6', '9', '2', '8'];
 
 /** Which segments each digit lights, a-g clockwise from the top, g middle. */
 const SEGMENTS: Record<string, string> = {
@@ -323,7 +354,9 @@ export const faceStyles = css`
     font-weight: 650;
   }
 
-  /* Flip: two split-flap cards, dark in any light, with a hinge line. */
+  /* Flip: split-flap cards, dark in any light. Every layer is a whole
+     card face cut to its top or bottom half; the flaps turn about the
+     hinge line in the middle. */
   .t.flip {
     display: flex;
     justify-content: center;
@@ -335,102 +368,187 @@ export const faceStyles = css`
 
   .t.flip .card {
     position: relative;
-    padding: 0.04em 0.14em;
-    border-radius: 0.14em;
+    display: inline-grid;
     color: #f2f2f2;
-    background: linear-gradient(#2a2c31, #1d1f23 50%, #16171a 50%, #1d1f23);
-    box-shadow:
-      0 0.09em 0.27em rgb(0 0 0 / 0.35),
-      inset 0 1px 0 rgb(255 255 255 / 0.08);
-    transform-origin: 50% 0;
-    animation: card-flip 520ms cubic-bezier(0.3, 1.3, 0.5, 1) both;
+    border-radius: 0.14em;
+    box-shadow: 0 0.09em 0.27em rgb(0 0 0 / 0.35);
+    perspective: 3.2em;
   }
 
+  .t.flip .face {
+    grid-area: 1 / 1;
+    padding: 0.04em 0.14em;
+    border-radius: 0.14em;
+    background: linear-gradient(#2a2c31, #212327 50%, #17181b 50%, #1e2023);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  .t.flip .top {
+    clip-path: inset(0 0 50% 0);
+  }
+
+  .t.flip .bottom {
+    clip-path: inset(50% 0 0 0);
+  }
+
+  /* The hinge: a dark gap across the middle. */
   .t.flip .card::after {
     content: '';
     position: absolute;
     inset: 50% 0 auto;
+    z-index: 2;
     height: 0.018em;
-    background: rgb(0 0 0 / 0.55);
+    margin-top: -0.009em;
+    background: rgb(0 0 0 / 0.6);
   }
 
-  @keyframes card-flip {
-    from {
-      transform: perspective(4em) rotateX(-75deg);
-      opacity: 0.35;
+  .t.flip .flap {
+    z-index: 1;
+    transform-origin: 50% 50%;
+    backface-visibility: hidden;
+  }
+
+  .t.flip .flap.top {
+    animation: flap-fall 260ms cubic-bezier(0.55, 0, 0.9, 0.55) both;
+  }
+
+  .t.flip .flap.bottom {
+    animation: flap-land 340ms 250ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  }
+
+  @keyframes flap-fall {
+    to {
+      transform: rotateX(-90deg);
+      filter: brightness(0.55);
     }
   }
 
-  /* Nixie: digits glowing orange in glass tubes. */
+  @keyframes flap-land {
+    from {
+      transform: rotateX(90deg);
+      filter: brightness(0.6);
+    }
+  }
+
+  /* Nixie: glowing wires in glass tubes. */
   .t.nixie {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 0.09em;
+    gap: 0.1em;
     text-shadow: none;
   }
 
   .t.nixie .tube {
     position: relative;
     width: 0.66em;
-    height: 1.14em;
+    height: 1.32em;
+  }
+
+  .t.nixie .glass {
+    position: absolute;
+    inset: 0 0 0.14em;
     overflow: hidden;
-    border-radius: 0.33em 0.33em 0.09em 0.09em;
+    border-radius: 0.33em 0.33em 0.06em 0.06em / 0.3em 0.3em 0.04em 0.04em;
     background: radial-gradient(
-      ellipse at 50% 60%,
-      rgb(255 120 40 / 0.12),
-      rgb(20 12 8 / 0.35) 70%
+      ellipse 70% 55% at 50% 55%,
+      rgb(255 110 30 / 0.16),
+      rgb(255 90 20 / 0.04) 60%,
+      rgb(10 6 4 / 0.35) 100%
     );
     box-shadow:
-      inset 0 0 0 0.013em rgb(255 220 190 / 0.2),
-      inset 0.05em 0 0.12em rgb(255 255 255 / 0.05),
-      0 0.05em 0.18em rgb(0 0 0 / 0.3);
+      inset 0 0 0 0.012em rgb(255 235 215 / 0.28),
+      inset 0.06em 0 0.08em -0.03em rgb(255 255 255 / 0.12),
+      inset -0.04em 0 0.08em -0.03em rgb(255 255 255 / 0.08),
+      0 0.06em 0.2em rgb(0 0 0 / 0.35);
   }
 
-  .t.nixie .tube::before {
+  /* Reflections on the glass. */
+  .t.nixie .glass::after {
     content: '';
     position: absolute;
-    inset: 0.07em;
-    border-radius: 0.27em 0.27em 0.05em 0.05em;
-    background-image:
-      linear-gradient(rgb(255 200 150 / 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 200 150 / 0.08) 1px, transparent 1px);
-    background-size: 0.054em 0.054em;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(
+        90deg,
+        transparent 12%,
+        rgb(255 255 255 / 0.16) 17%,
+        transparent 24%,
+        transparent 76%,
+        rgb(255 255 255 / 0.07) 81%,
+        transparent 86%
+      ),
+      radial-gradient(
+        ellipse 30% 12% at 38% 7%,
+        rgb(255 255 255 / 0.25),
+        transparent
+      );
   }
 
-  .t.nixie .ghost,
+  .t.nixie .wire,
   .t.nixie .lit {
     position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    font-size: 0.82em;
-    font-weight: 250;
+    inset: 0.16em 0 auto;
+    font-size: 0.78em;
     line-height: 1;
+    text-align: center;
   }
 
-  .t.nixie .ghost {
-    color: rgb(255 210 170 / 0.09);
+  .t.nixie .wire {
+    font-weight: 150;
+    color: rgb(170 150 135 / 0.22);
   }
 
   .t.nixie .lit {
-    color: #ffb070;
+    font-weight: 170;
+    color: #ffd2a6;
     text-shadow:
-      0 0 0.04em #ff8a3d,
-      0 0 0.12em #ff6a1a,
-      0 0 0.28em rgb(255 90 20 / 0.7),
-      0 0 0.48em rgb(255 70 10 / 0.45);
+      0 0 0.015em #fff2e0,
+      0 0 0.05em #ff9a3c,
+      0 0 0.12em #ff6a14,
+      0 0 0.26em rgb(255 80 10 / 0.75),
+      0 0 0.5em rgb(255 70 10 / 0.4);
   }
 
-  .t.nixie .dot {
-    width: 0.09em;
-    height: 0.09em;
-    margin: 0 0.04em 0.3em;
-    border-radius: 50%;
-    background: #ffb070;
+  /* The honeycomb anode, in front of the digits. */
+  .t.nixie .mesh {
+    position: absolute;
+    inset: 0.08em 0.06em 0.2em;
+    border-radius: 0.27em 0.27em 0.04em 0.04em / 0.25em 0.25em 0.03em 0.03em;
+    opacity: 0.55;
+    mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='17.32' viewBox='0 0 10 17.32'%3E%3Cpath d='M5 0l5 2.887v5.773L5 11.547 0 8.66V2.887zM5 11.547V17.32M0 2.887L-5 0M10 2.887L15 0' fill='none' stroke='%23c9a27e' stroke-width='0.5' stroke-opacity='0.5'/%3E%3C/svg%3E");
+    background-size: 0.07em 0.121em;
+  }
+
+  .t.nixie .base {
+    position: absolute;
+    inset: auto 0.03em 0;
+    height: 0.17em;
+    border-radius: 0.03em 0.03em 0.05em 0.05em;
+    background: linear-gradient(#3b3836, #1a1817 40%, #0e0d0c);
     box-shadow:
-      0 0 0.09em #ff6a1a,
-      0 0 0.2em rgb(255 90 20 / 0.6);
+      inset 0 0.01em 0 rgb(255 255 255 / 0.12),
+      0 0.04em 0.1em rgb(0 0 0 / 0.4);
+  }
+
+  .t.nixie .colon {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+    margin: 0 0.02em 0.42em;
+  }
+
+  .t.nixie .colon i {
+    width: 0.07em;
+    height: 0.07em;
+    border-radius: 50%;
+    background: #ffd2a6;
+    box-shadow:
+      0 0 0.04em #ff9a3c,
+      0 0 0.12em #ff6a14,
+      0 0 0.24em rgb(255 80 10 / 0.6);
   }
 
   /* LCD: seven-segment digits. */
@@ -459,8 +577,12 @@ export const faceStyles = css`
       0 0 0.62em rgb(255 61 154 / 0.35);
   }
 
+  /* No motion: the new number simply appears. */
   @media (prefers-reduced-motion: reduce) {
-    .t.flip .card {
+    .t.flip .flap.top {
+      display: none;
+    }
+    .t.flip .flap.bottom {
       animation: none;
     }
   }
