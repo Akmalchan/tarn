@@ -24,52 +24,51 @@ export class TarnClock extends LitElement {
     face: {type: String, reflect: true},
   };
 
-  static override styles = [
-    faceStyles,
-    css`
-      :host {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        color: var(--ink);
-        text-shadow: var(--ink-shadow);
-        user-select: none;
-      }
+  static override styles = css`
+    ${faceStyles}
 
+    :host {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      color: var(--ink);
+      text-shadow: var(--ink-shadow);
+      user-select: none;
+    }
+
+    time {
+      font-size: 112px;
+      font-weight: 200;
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    :host([face='stacked']) time {
+      font-size: 104px;
+    }
+
+    :host([face='pixel']) time {
+      line-height: 1;
+    }
+
+    .date {
+      margin-top: 12px;
+      font-size: 19px;
+      font-weight: 450;
+      color: var(--ink-dim);
+    }
+
+    @media (max-width: 480px) {
       time {
-        font-size: 112px;
-        font-weight: 200;
-        line-height: 0.92;
-        letter-spacing: -0.04em;
-        font-variant-numeric: tabular-nums;
+        font-size: 72px;
       }
-
-      time.stacked {
-        font-size: 104px;
-      }
-
-      time.pixel {
-        line-height: 1;
-      }
-
       .date {
-        margin-top: 12px;
-        font-size: 19px;
-        font-weight: 450;
-        color: var(--ink-dim);
+        font-size: 16px;
       }
-
-      @media (max-width: 480px) {
-        time {
-          font-size: 72px;
-        }
-        .date {
-          font-size: 16px;
-        }
-      }
-    `,
-  ];
+    }
+  `;
 
   declare now: Date;
   declare face: Exclude<ClockStyle, 'none'>;
