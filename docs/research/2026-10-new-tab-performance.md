@@ -72,6 +72,35 @@ How noisy it is:
      because its content fades in from transparent. They would score it
      wrongly; measure first paint instead.
 
+## Re-run on 2026-10-13 (first pilot build)
+
+Same method and machine, same extension downloads, with the build given
+to the first pilot (0.1.0): a fresh install, so Tarn shows its start
+setup (clock plus 4 widgets). _Tarn, calm_ is the same page measured
+after 75 s without input, when the scene has eased to its calm pace.
+
+| New tab              | Page CPU | Graphics CPU | Layouts + style updates (10 s idle) | Memory (JS) | Network at load (outside servers) |
+| -------------------- | -------- | ------------ | ----------------------------------- | ----------- | --------------------------------- |
+| **Tarn**             | 6.1%     | 12.4%        | 0                                   | 7.0 MB      | 0                                 |
+| **Tarn, calm**       | 4.0%     | 8.8%         | 0                                   | 4.4 MB      | 0                                 |
+| Chrome's own new tab | 5.0%     | 7.9%         | 338                                 | 7.9 MB      | 4                                 |
+| Momentum             | 0.8%     | 2.5%         | 0                                   | 10.9 MB     | 2                                 |
+| Bonjourr             | 0.7%     | 2.7%         | 20                                  | 2.0 MB      | 1                                 |
+| Tabliss              | 0.9%     | 2.0%         | 0                                   | 4.7 MB      | 2                                 |
+| Infinity New Tab     | 0.8%     | 2.0%         | 0                                   | 18.4 MB     | 62                                |
+| Earth View (Google)  | 0.7%     | 1.9%         | 0                                   | 7.5 MB      | 4                                 |
+| daily.dev            | 44.7%    | 34.9%        | 1441                                | 58.1 MB     | 113                               |
+| Mue                  | 0.5%     | 3.1%         | 1                                   | 9.3 MB      | 0                                 |
+
+- Tarn is unchanged from the first run (5.9% / 11.6%), now with 4
+  widgets on screen. Its page main thread is 0.36% busy.
+- The calm pace saves about a third of both numbers.
+- daily.dev was far heavier than on 2026-10-12 (0.8%): its feed now
+  animates while idle.
+- First paint: Tarn 60-72 ms, the others 52-92 ms. Chrome's "first
+  contentful paint" is not meaningful for Tarn: its content fades in from
+  transparent, and Chrome records it seconds later.
+
 ## What to do next
 
 - **The background animation is Tarn's one real cost.** Ideas to make it
