@@ -352,9 +352,7 @@ export const ko: Catalog = {
   'keys.title': '키보드 단축키',
   'keys.search': '검색',
   'keys.sites': '북마크 열기',
-  'keys.timer': '타이머 시작 또는 일시정지',
-  'keys.notes': '메모 쓰기',
-  'keys.settings': '설정 열기',
   'keys.help': '단축키 보기',
   'keys.leave': '입력란에서 나가기',
+  'keys.or': '또는',
 };

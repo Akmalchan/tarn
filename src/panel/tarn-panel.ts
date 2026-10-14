@@ -73,7 +73,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
-import {SHORTCUT_LIST} from '../app/shortcuts';
+import {chordKeys, shortcutFor, shortcutList} from '../app/shortcuts';
 import {
   clockText,
   clockTime,
@@ -1683,16 +1683,12 @@ export class TarnPanel extends LitElement {
                 </div>
                 ${
                   this.settings.shortcuts
-                    ? SHORTCUT_LIST.map(
-                        ({keys, label}) => html`
+                    ? shortcutList().map(
+                        row => html`
                           <div class="row">
                             <span class="ico blank"></span>
-                            <span class="txt">${t(label)}</span>
-                            <span class="keys">
-                              ${keys.map(key =>
-                                key === '–' ? '–' : html`<kbd>${key}</kbd>`,
-                              )}
-                            </span>
+                            <span class="txt">${t(row.label)}</span>
+                            <span class="keys">${chordKeys(row)}</span>
                           </div>
                         `,
                       )
@@ -1701,7 +1697,7 @@ export class TarnPanel extends LitElement {
                 <div class="row">
                   ${icon('search')}
                   <span class="txt">${t('panel.searchSettings')}</span>
-                  <span class="keys"><kbd>/</kbd></span>
+                  <span class="keys">${chordKeys(shortcutList()[0]!)}</span>
                 </div>
               </div>
               <p class="note">${t('panel.keys.note')}</p>
@@ -2239,14 +2235,15 @@ export class TarnPanel extends LitElement {
     }
   };
 
+  /** Cmd/Ctrl+K, or / when not typing, puts the cursor in search. */
   private onKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== '/' || event.metaKey || event.ctrlKey) return;
+    const shortcut = shortcutFor(event);
+    if (shortcut?.kind !== 'search') return;
     const active = this.shadowRoot?.activeElement;
-    if (
+    const typing =
       active instanceof HTMLInputElement ||
-      active instanceof HTMLTextAreaElement
-    )
-      return;
+      active instanceof HTMLTextAreaElement;
+    if (typing && !(event.metaKey || event.ctrlKey)) return;
     event.preventDefault();
     this.renderRoot
       .querySelector<HTMLInputElement>('input[type=search]')

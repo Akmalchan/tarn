@@ -394,11 +394,9 @@ export const en = {
   'keys.title': 'Keyboard shortcuts',
   'keys.search': 'Search',
   'keys.sites': 'Open a bookmark',
-  'keys.timer': 'Start or pause the timer',
-  'keys.notes': 'Write a note',
-  'keys.settings': 'Open settings',
   'keys.help': 'Show shortcuts',
   'keys.leave': 'Leave a text field',
+  'keys.or': 'or',
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof en;

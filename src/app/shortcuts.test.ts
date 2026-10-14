@@ -4,49 +4,78 @@
  */
 
 import {describe, expect, it} from 'vitest';
-import {shortcutFor, type KeyPress} from './shortcuts';
+import {shortcutFor, shortcutList, type KeyPress} from './shortcuts';
 
-const press = (key: string, extra: Partial<KeyPress> = {}): KeyPress => ({
-  key,
-  code: '',
-  ctrlKey: false,
-  metaKey: false,
-  altKey: false,
-  repeat: false,
-  isComposing: false,
-  ...extra,
-});
+const press = (key: string, code: string, extra: Partial<KeyPress> = {}) =>
+  ({
+    key,
+    code,
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    shiftKey: false,
+    repeat: false,
+    isComposing: false,
+    ...extra,
+  }) satisfies KeyPress;
 
 describe('shortcutFor', () => {
-  it('maps the single keys', () => {
-    expect(shortcutFor(press('/'))).toEqual({kind: 'search'});
-    expect(shortcutFor(press('t'))).toEqual({kind: 'timer'});
-    expect(shortcutFor(press('N'))).toEqual({kind: 'notes'});
-    expect(shortcutFor(press(','))).toEqual({kind: 'settings'});
-    expect(shortcutFor(press('?'))).toEqual({kind: 'help'});
+  it('searches with Cmd+K on a Mac and Ctrl+K elsewhere, or /', () => {
+    const k = press('k', 'KeyK');
+    expect(shortcutFor({...k, metaKey: true}, true)).toEqual({kind: 'search'});
+    expect(shortcutFor({...k, ctrlKey: true}, false)).toEqual({
+      kind: 'search',
+    });
+    expect(shortcutFor({...k, ctrlKey: true}, true)).toBeNull();
+    expect(shortcutFor({...k, metaKey: true}, false)).toBeNull();
+    expect(shortcutFor(press('/', 'Slash'))).toEqual({kind: 'search'});
   });
 
-  it('finds letters by their physical key in other alphabets', () => {
-    expect(shortcutFor(press('е', {code: 'KeyT'}))).toEqual({kind: 'timer'});
-    expect(shortcutFor(press('ㅜ', {code: 'KeyN'}))).toEqual({kind: 'notes'});
+  it('finds K by its physical key in other alphabets', () => {
+    expect(shortcutFor(press('л', 'KeyK', {ctrlKey: true}), false)).toEqual({
+      kind: 'search',
+    });
   });
 
-  it('opens bookmarks 1 to 9, not 0', () => {
-    expect(shortcutFor(press('1'))).toEqual({kind: 'site', number: 1});
-    expect(shortcutFor(press('9'))).toEqual({kind: 'site', number: 9});
-    expect(shortcutFor(press('0'))).toBeNull();
+  it('opens bookmarks with Alt or Option + 1 to 9', () => {
+    expect(shortcutFor(press('¡', 'Digit1', {altKey: true}), true)).toEqual({
+      kind: 'site',
+      number: 1,
+    });
+    expect(shortcutFor(press('9', 'Digit9', {altKey: true}), false)).toEqual({
+      kind: 'site',
+      number: 9,
+    });
+    expect(shortcutFor(press('0', 'Digit0', {altKey: true}))).toBeNull();
+  });
+
+  it('leaves bare numbers and letters alone', () => {
+    expect(shortcutFor(press('1', 'Digit1'))).toBeNull();
+    expect(shortcutFor(press('t', 'KeyT'))).toBeNull();
+    expect(shortcutFor(press('k', 'KeyK'))).toBeNull();
   });
 
   it("leaves the browser's own shortcuts alone", () => {
-    expect(shortcutFor(press('t', {metaKey: true}))).toBeNull();
-    expect(shortcutFor(press('1', {ctrlKey: true}))).toBeNull();
-    expect(shortcutFor(press('n', {altKey: true}))).toBeNull();
+    expect(shortcutFor(press('1', 'Digit1', {metaKey: true}), true)).toBeNull();
+    expect(
+      shortcutFor(press('1', 'Digit1', {ctrlKey: true}), false),
+    ).toBeNull();
+    expect(
+      shortcutFor(press('K', 'KeyK', {ctrlKey: true, shiftKey: true}), false),
+    ).toBeNull();
   });
 
-  it('ignores held keys, typing in progress and other keys', () => {
-    expect(shortcutFor(press('t', {repeat: true}))).toBeNull();
-    expect(shortcutFor(press('n', {isComposing: true}))).toBeNull();
-    expect(shortcutFor(press('x'))).toBeNull();
-    expect(shortcutFor(press('Enter'))).toBeNull();
+  it('shows the list with ?, and ignores held keys', () => {
+    expect(shortcutFor(press('?', 'Slash', {shiftKey: true}))).toEqual({
+      kind: 'help',
+    });
+    expect(shortcutFor(press('/', 'Slash', {repeat: true}))).toBeNull();
+  });
+});
+
+describe('shortcutList', () => {
+  it("names this platform's keys", () => {
+    expect(shortcutList(true)[0]!.chords[0]).toEqual(['⌘', 'K']);
+    expect(shortcutList(false)[0]!.chords[0]).toEqual(['Ctrl', 'K']);
   });
 });
