@@ -37,7 +37,6 @@ export const tr: Catalog = {
   'tasks.done': 'Tamamlandı',
   'tasks.notDone': 'Tamamlanmadı',
   'start.note': "Tarn'a hoş geldiniz.\nBuraya istediğinizi yazın.",
-  'focus.title': 'Odak',
   'focus.start': 'Başlat',
   'focus.pause': 'Duraklat',
   'focus.resume': 'Sürdür',
@@ -211,7 +210,7 @@ export const tr: Catalog = {
   'panel.widgetAbout.tasks': 'Kısa bir yapılacaklar listesi',
   'panel.widgetAbout.weather': 'Bugün ve önümüzdeki hafta',
   'panel.widgetAbout.calendar': 'Bu ay tek bakışta',
-  'panel.widgetAbout.focus': 'Tek bir görev ve bir zamanlayıcı',
+  'panel.widgetAbout.focus': 'İstediğin uzunlukta bir geri sayım',
   'panel.language.auto': 'Tarayıcıyla aynı',
   'panel.language.note':
     '“Tarayıcıyla aynı”, Tarn destekliyorsa tarayıcınızın dilini, desteklemiyorsa İngilizceyi kullanır.',

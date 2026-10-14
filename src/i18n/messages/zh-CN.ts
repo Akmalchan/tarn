@@ -36,7 +36,6 @@ export const zhCN: Catalog = {
   'tasks.done': '已完成',
   'tasks.notDone': '未完成',
   'start.note': '欢迎使用 Tarn。\n在这里随便写点什么。',
-  'focus.title': '专注',
   'focus.start': '开始',
   'focus.pause': '暂停',
   'focus.resume': '继续',
@@ -205,7 +204,7 @@ export const zhCN: Catalog = {
   'panel.widgetAbout.tasks': '简短的待办清单',
   'panel.widgetAbout.weather': '今天和未来一周',
   'panel.widgetAbout.calendar': '本月一目了然',
-  'panel.widgetAbout.focus': '一项任务，一个计时器',
+  'panel.widgetAbout.focus': '任意时长的倒计时',
   'panel.language.auto': '与浏览器相同',
   'panel.language.note':
     '“与浏览器相同”会在 Tarn 支持时使用浏览器的语言，否则使用英语。',

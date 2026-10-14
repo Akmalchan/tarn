@@ -37,7 +37,6 @@ export const ru: Catalog = {
   'tasks.done': 'Готово',
   'tasks.notDone': 'Не готово',
   'start.note': 'Добро пожаловать в Tarn.\nПишите здесь что угодно.',
-  'focus.title': 'Фокус',
   'focus.start': 'Старт',
   'focus.pause': 'Пауза',
   'focus.resume': 'Продолжить',
@@ -213,7 +212,7 @@ export const ru: Catalog = {
   'panel.widgetAbout.tasks': 'Короткий список дел',
   'panel.widgetAbout.weather': 'Сегодня и на неделю вперёд',
   'panel.widgetAbout.calendar': 'Весь месяц с одного взгляда',
-  'panel.widgetAbout.focus': 'Одна задача и таймер',
+  'panel.widgetAbout.focus': 'Обратный отсчёт любой длины',
   'panel.language.auto': 'Как в браузере',
   'panel.language.note':
     '«Как в браузере» следует языку браузера, если Tarn его поддерживает, а иначе — английскому.',

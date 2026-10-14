@@ -8,7 +8,7 @@ import {layoutBands, type LayoutItem} from '../layout/bands';
 // Where each tile sits on the board, in CSS pixels. Pure, so the board and
 // drag-to-reorder share one source of truth, and it's easy to test.
 
-/** Tile and gap sizes, the same on every screen (docs/design/widget-layout.md). */
+/** Tile and gap sizes, the same on every screen (docs/widgets.md). */
 export const CELL = 136;
 export const GAP = 24;
 export const PITCH = CELL + GAP;

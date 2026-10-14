@@ -37,7 +37,6 @@ export const ptBR: Catalog = {
   'tasks.done': 'Concluída',
   'tasks.notDone': 'Não concluída',
   'start.note': 'Boas-vindas ao Tarn.\nEscreva aqui o que quiser.',
-  'focus.title': 'Foco',
   'focus.start': 'Iniciar',
   'focus.pause': 'Pausar',
   'focus.resume': 'Continuar',
@@ -213,7 +212,7 @@ export const ptBR: Catalog = {
   'panel.widgetAbout.tasks': 'Uma pequena lista de tarefas',
   'panel.widgetAbout.weather': 'Hoje e a semana que vem',
   'panel.widgetAbout.calendar': 'O mês todo de relance',
-  'panel.widgetAbout.focus': 'Uma tarefa e um timer',
+  'panel.widgetAbout.focus': 'Uma contagem regressiva do tempo que quiser',
   'panel.language.auto': 'Igual ao navegador',
   'panel.language.note':
     '“Igual ao navegador” segue o idioma do seu navegador quando o Tarn o oferece, e o inglês caso contrário.',

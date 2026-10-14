@@ -5,7 +5,7 @@
 
 // How much each scene asks of the computer, measured (not guessed): % of
 // one CPU core for the page and for the GPU process, M4, headed Chrome,
-// active pace (docs/design/backgrounds.md, "Measured cost"). Settings
+// active pace (docs/wallpapers.md, "Measured cost"). Settings
 // shows it as a small gauge on each wallpaper. Add a row with every new
 // scene, and update it when a scene changes.
 

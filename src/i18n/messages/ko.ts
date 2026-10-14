@@ -36,7 +36,6 @@ export const ko: Catalog = {
   'tasks.done': '완료',
   'tasks.notDone': '미완료',
   'start.note': 'Tarn에 오신 것을 환영해요.\n여기에 무엇이든 적어 보세요.',
-  'focus.title': '집중',
   'focus.start': '시작',
   'focus.pause': '일시정지',
   'focus.resume': '계속',
@@ -209,7 +208,7 @@ export const ko: Catalog = {
   'panel.widgetAbout.tasks': '짧은 할 일 목록',
   'panel.widgetAbout.weather': '오늘과 앞으로 일주일',
   'panel.widgetAbout.calendar': '이번 달을 한눈에',
-  'panel.widgetAbout.focus': '하나의 할 일과 타이머',
+  'panel.widgetAbout.focus': '원하는 길이의 카운트다운',
   'panel.language.auto': '브라우저와 같게',
   'panel.language.note':
     '‘브라우저와 같게’는 Tarn이 지원하면 브라우저 언어를, 아니면 영어를 사용해요.',
