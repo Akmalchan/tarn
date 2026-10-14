@@ -50,7 +50,7 @@ const LENS_UPLOAD = () =>
 const LENS_BY_URL = (url: string) =>
   `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(url)}&hl=${encodeURIComponent(locale())}`;
 
-const MAX_BOOKMARKS = 4;
+const MAX_BOOKMARKS = 6;
 
 type Recognition = {
   lang: string;
@@ -311,7 +311,8 @@ export class TarnSearch extends LitElement {
       right: 0;
       left: 0;
       margin: 0;
-      padding: 0 0 10px;
+      padding: 0 0 12px;
+      overflow: hidden;
       color: var(--box-ink);
       list-style: none;
       background: var(--open-bg);
@@ -332,16 +333,18 @@ export class TarnSearch extends LitElement {
       content: '';
       display: block;
       height: 1px;
-      margin: 0 18px 8px;
+      margin: 0 18px 6px;
       background: var(--box-line);
     }
 
+    /* Slim rows like Google's, icons and text lined up with the box's. */
     li {
       display: flex;
       align-items: center;
-      gap: 14px;
-      min-height: 40px;
-      padding: 4px 18px;
+      gap: 12px;
+      min-height: 34px;
+      padding: 0 16px;
+      font-size: 15px;
       cursor: pointer;
     }
 
