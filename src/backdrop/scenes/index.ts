@@ -944,8 +944,10 @@ const contour: Scene = {
   colors: ['#f4f1ea', '#dfe7ec', '#3d5468', '#e9b99c'],
   base: '#f1eee7',
   speed: 0.12,
-  // Hairlines need every pixel the screen has (like a photo).
-  resolution: Math.min(globalThis.devicePixelRatio || 1, 2),
+  // Hairlines need more pixels than the soft scenes: the screen's
+  // density, capped at 1.5 (at 2 the lines look the same and the frame
+  // costs ~75 MB more graphics memory on a 2x screen).
+  resolution: Math.min(globalThis.devicePixelRatio || 1, 1.5),
   fragment: /* glsl */ `
 // A topographic map whose land slowly reshapes: contour lines flow, merge
 // and part; every fifth line is drawn bolder, as on a real map. Drawn at
