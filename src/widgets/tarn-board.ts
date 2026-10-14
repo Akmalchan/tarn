@@ -389,11 +389,13 @@ export class TarnBoard extends LitElement {
         box-shadow 180ms ease;
     }
 
+    /* Under the widgets, in open space: above them it was squeezed
+       between the search box and the tiles' name holders. */
     .hint {
       position: absolute;
       left: 0;
       right: 0;
-      top: -44px;
+      top: calc(100% + 28px);
       margin: 0;
       text-align: center;
       font: 500 13px var(--font-sans);
