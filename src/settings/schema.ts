@@ -172,14 +172,17 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /**
- * Scenes that were replaced (2026-10-14), and the nearest of today's, so
+ * Scenes that were replaced or removed (2026-10-14), and the nearest of
+ * today's, so
  * whoever picked one keeps a similar background instead of the default.
  */
 const REPLACED_SCENES: Readonly<Record<string, string>> = {
   rain: 'window',
   nebula: 'comet',
-  dunes: 'sora',
+  dunes: 'contour',
   mist: 'contour',
+  sora: 'sakura',
+  fireflies: 'comet',
 };
 
 /**

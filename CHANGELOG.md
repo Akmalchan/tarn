@@ -8,10 +8,12 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Eight new backgrounds: Sora (an anime summer sky), Sakura, Comet, Koi,
-  Window (rain at night), Fireflies, Lumen (light through haze) and
-  Contour (a living topographic map). They replace Mist, Dunes, Rain and
-  Nebula; whoever picked one gets its nearest new one. Silk is brighter.
+- Six new backgrounds: Sakura (a blossom branch over falling petals),
+  Comet (an anime twilight over a hillside town), Koi (a pond from above),
+  Window (rain on glass over a city in bokeh), Lumen (light through haze)
+  and Contour (a living topographic map, drawn at full screen sharpness).
+  They replace Mist, Dunes, Rain and Nebula; whoever picked one gets the
+  nearest new one. Silk is brighter.
 - A first look: a new install starts with the clock, Favorites, Notes,
   Weather and Focus, with a few examples to try.
 - Calendar widget: today (small), this week (medium) or the month with
