@@ -8,8 +8,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Five new clock faces: Glass (translucent digits with a lit bevel, like
-  Apple's), Rounded, Duo (heavy hours, hairline minutes), Tall and Analog.
+- Three new clock faces: Glass (translucent digits with a lit bevel, like
+  Apple's), Rounded and Analog.
 - Settings, polished: search on Widgets and Language filters that page
   ("german" finds Deutsch); wallpaper cards show a gauge of how much each
   asks of your computer, and play the real animation while you hover;

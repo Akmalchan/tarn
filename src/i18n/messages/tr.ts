@@ -170,8 +170,6 @@ export const tr: Catalog = {
   'panel.face.pixel': 'Piksel',
   'panel.face.glass': 'Cam',
   'panel.face.rounded': 'Yuvarlak',
-  'panel.face.duo': 'İkili',
-  'panel.face.tall': 'Uzun',
   'panel.face.analog': 'Analog',
   'panel.face.none': 'Yok',
   'panel.face.off': 'Kapalı',

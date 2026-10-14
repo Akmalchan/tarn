@@ -169,8 +169,6 @@ export const ja: Catalog = {
   'panel.face.pixel': 'ピクセル',
   'panel.face.glass': 'ガラス',
   'panel.face.rounded': 'ラウンド',
-  'panel.face.duo': 'デュオ',
-  'panel.face.tall': 'トール',
   'panel.face.analog': 'アナログ',
   'panel.face.none': 'なし',
   'panel.face.off': 'オフ',

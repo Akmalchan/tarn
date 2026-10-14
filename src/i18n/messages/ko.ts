@@ -168,8 +168,6 @@ export const ko: Catalog = {
   'panel.face.pixel': '픽셀',
   'panel.face.glass': '글래스',
   'panel.face.rounded': '라운드',
-  'panel.face.duo': '듀오',
-  'panel.face.tall': '톨',
   'panel.face.analog': '아날로그',
   'panel.face.none': '없음',
   'panel.face.off': '끔',
