@@ -686,6 +686,27 @@ export class TarnPanel extends LitElement {
       background: var(--field);
     }
 
+    /* Example setups: a compact row, not a list of rows. */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chips button {
+      padding: 7px 12px;
+      font: 500 12.5px var(--font-sans);
+      color: var(--ink);
+      background: var(--group);
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .chips button:hover {
+      background: var(--field);
+    }
+
     /* Widgets to add: cards that look like something to pick up. */
     .lead {
       margin: -4px var(--row-x) 4px;
@@ -1503,28 +1524,6 @@ export class TarnPanel extends LitElement {
             </section>`
           : nothing
       }
-      ${
-        query
-          ? nothing
-          : html`<section data-target="examples">
-              <h2>${t('panel.examples')}</h2>
-              <div class="group">
-                ${EXAMPLES.map(
-                  example => html`
-                    <button
-                      class="row"
-                      @click=${() => void this.tryExample(example)}
-                    >
-                      ${icon('grid')}
-                      <span class="txt">${t(example.name)}</span>
-                      <span class="value">${example.widgets.length}</span>
-                    </button>
-                  `,
-                )}
-              </div>
-              <p class="note">${t('panel.examples.note')}</p>
-            </section>`
-      }
     `;
   }
 
@@ -1714,6 +1713,19 @@ export class TarnPanel extends LitElement {
             </section>`
           : nothing
       }
+
+      <section data-target="examples">
+        <h2>${t('panel.examples')}</h2>
+        <div class="chips">
+          ${EXAMPLES.map(
+            example =>
+              html`<button @click=${() => void this.tryExample(example)}>
+                ${t(example.name)}
+              </button>`,
+          )}
+        </div>
+        <p class="note">${t('panel.examples.note')}</p>
+      </section>
 
       <section>
         <h2>${t('panel.about')}</h2>
@@ -2831,6 +2843,14 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'keys',
     glyph: 'keyboard',
     words: 'keys hotkeys',
+  },
+  {
+    label: 'panel.examples',
+    where: 'panel.page.advanced',
+    page: 'advanced',
+    target: 'examples',
+    glyph: 'grid',
+    words: 'examples setups layouts sample demo try',
   },
   {
     label: 'panel.backup.search',

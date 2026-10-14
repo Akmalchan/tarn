@@ -14,7 +14,7 @@ import {
 import {saveWidgetData} from './data';
 import {t, type MessageKey} from '../i18n';
 
-// Example setups, in Settings > Widgets: one click shows what a page can
+// Example setups, in Settings > Advanced: one click shows what a page can
 // look like, with sample content, and Undo brings the user's own widgets
 // back (their content is never touched: samples get new widget ids).
 // Sample weather tiles have no place, so trying an example sends nothing.
