@@ -13,10 +13,14 @@ import {
 } from './data';
 import {widgetStyles} from './styles';
 import {LocaleController, t} from '../i18n';
-
-const DEFAULT_MS = 25 * 60_000;
-const MIN_MS = 10_000;
-const MAX_MS = 10 * 60 * 60_000;
+import {
+  DEFAULT_MS,
+  MAX_MS,
+  MIN_MS,
+  cleanDuration,
+  format,
+  parseDuration,
+} from './focus-time';
 
 /**
  * Timer state. While running, only the end time is stored, so every open
@@ -43,39 +47,16 @@ const inRange = (value: unknown, min: number, max: number): value is number =>
 function normalize(raw: unknown): FocusState {
   if (typeof raw !== 'object' || raw === null) return idle();
   const {duration, endsAt, remaining} = raw as Record<string, unknown>;
-  const length = inRange(duration, MIN_MS, MAX_MS) ? duration : DEFAULT_MS;
+  // Lengths from before the 9-hour limit come back as 9 hours.
+  const length = inRange(duration, MIN_MS, Infinity)
+    ? Math.min(duration, MAX_MS)
+    : DEFAULT_MS;
   return {
     duration: length,
     endsAt:
       typeof endsAt === 'number' && Number.isFinite(endsAt) ? endsAt : null,
     remaining: inRange(remaining, 0, length) ? remaining : length,
   };
-}
-
-/** "25:00", or "1:30:00" past an hour. */
-function format(ms: number): string {
-  const total = Math.ceil(ms / 1000);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = String(total % 60).padStart(2, '0');
-  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
-}
-
-/**
- * What the user typed as a length: "45" is minutes, "12:30" minutes and
- * seconds, "1:30:00" hours too. Null if it isn't a time.
- */
-export function parseDuration(text: string): number | null {
-  const parts = text.trim().split(':');
-  if (parts.length > 3 || parts.some(p => !/^\d{1,3}$/.test(p))) return null;
-  const [a, b, c] = parts.map(Number) as [number, number?, number?];
-  const ms =
-    parts.length === 1
-      ? a * 60_000
-      : parts.length === 2
-        ? a * 60_000 + b! * 1000
-        : a * 3_600_000 + b! * 60_000 + c! * 1000;
-  return ms >= MIN_MS && ms <= MAX_MS ? ms : null;
 }
 
 /**
@@ -103,7 +84,10 @@ export class TarnFocus extends LitElement {
         margin-top: auto;
         padding: 0;
         font: inherit;
-        font-size: 34px;
+        /* As big as the tile allows (its width less the 18px sides):
+           --chars is the text's length and a digit is about 0.53em wide,
+           so "9:00:00" still fits a small tile. */
+        font-size: min(34px, calc((100cqw - 36px) / (var(--chars, 5) * 0.53)));
         font-weight: 250;
         line-height: 1;
         letter-spacing: -0.03em;
@@ -154,7 +138,10 @@ export class TarnFocus extends LitElement {
 
       @container (min-width: 250px) {
         .time {
-          font-size: 48px;
+          font-size: min(
+            48px,
+            calc((100cqw - 36px) / (var(--chars, 5) * 0.53))
+          );
         }
       }
 
@@ -219,8 +206,10 @@ export class TarnFocus extends LitElement {
         inputmode="numeric"
         autocomplete="off"
         spellcheck="false"
+        style="--chars: ${format(left).length}"
         ?readonly=${running}
         .value=${live(format(left))}
+        @input=${this.onTimeInput}
         @focus=${this.onTimeFocus}
         @keydown=${this.onTimeKey}
         @change=${this.onTimeChange}
@@ -279,9 +268,26 @@ export class TarnFocus extends LitElement {
     const input = event.target as HTMLInputElement;
     if (event.key === 'Enter') input.blur();
     if (event.key === 'Escape') {
-      input.value = format(this.left());
+      this.showLeft(input);
       input.blur();
     }
+  };
+
+  /** Drops letters and other stray characters as they're typed. */
+  private onTimeInput = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const clean = cleanDuration(input.value);
+    if (clean !== input.value) {
+      const caret = Math.min(
+        clean.length,
+        (input.selectionStart ?? clean.length) -
+          (input.value.length - clean.length),
+      );
+      input.value = clean;
+      input.setSelectionRange(Math.max(caret, 0), Math.max(caret, 0));
+    }
+    // The text shrinks to fit while it grows.
+    input.style.setProperty('--chars', String(Math.max(clean.length, 5)));
   };
 
   /** A typed length becomes the timer's new length, ready to start. */
@@ -291,12 +297,19 @@ export class TarnFocus extends LitElement {
     if (duration !== null && this.state.endsAt === null) {
       this.store(idle(duration));
     }
-    input.value = format(this.left());
+    this.showLeft(input);
   };
 
   private onTimeBlur = (event: FocusEvent) => {
-    (event.target as HTMLInputElement).value = format(this.left());
+    this.showLeft(event.target as HTMLInputElement);
   };
+
+  /** Back to the time left, at its own size. */
+  private showLeft(input: HTMLInputElement): void {
+    const text = format(this.left());
+    input.value = text;
+    input.style.setProperty('--chars', String(text.length));
+  }
 
   /** One tick per second while running and visible; nothing otherwise. */
   private schedule = () => {

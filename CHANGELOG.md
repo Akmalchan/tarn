@@ -77,3 +77,11 @@ follow [Semantic Versioning](https://semver.org/).
   long-lived tabs, self-healing warm process.
 - Take-over page that switches off other new-tab extensions (optional
   `management` permission) and restores them when Tarn is turned off.
+
+### Fixed
+
+- Weather: long or negative temperatures (-40°, 118°) fit every tile size,
+  and the small tile keeps its icon in view.
+- Focus timer: lengths up to 9 hours fit the small tile; typing accepts
+  leading zeros ("0009"), ignores letters, reads "1.30" as 1:30, and caps
+  anything longer at 9 hours.
