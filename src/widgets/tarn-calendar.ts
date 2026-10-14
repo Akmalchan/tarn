@@ -52,14 +52,12 @@ export class TarnCalendar extends LitElement {
         min-height: 20px;
       }
 
-      .month {
-        margin: 0;
+      /* The same heading as every widget: the month (or the two months a
+         week spans), after the widget's own name if it has one. */
+      h3 {
         overflow: hidden;
-        font-size: 13px;
-        font-weight: 600;
         white-space: nowrap;
         text-overflow: ellipsis;
-        text-transform: capitalize;
       }
 
       .nav {
@@ -98,15 +96,27 @@ export class TarnCalendar extends LitElement {
         height: 16px;
       }
 
+      /* Weekday letters sit right above the dates; the week (medium) is
+         centered in the tile, the month's weeks (large) spread to fill it. */
       .grid {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .weekdays,
+      .days {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        flex: 1;
-        align-content: space-evenly;
-        row-gap: 2px;
         text-align: center;
         font-size: 12.5px;
         font-variant-numeric: tabular-nums;
+      }
+
+      .days {
+        row-gap: 2px;
       }
 
       .weekday {
@@ -156,14 +166,21 @@ export class TarnCalendar extends LitElement {
         justify-content: center;
       }
 
+      /* Like a heading, so it lines up with the other widgets' names. */
       .single .weekday-name {
-        font-size: 13px;
+        overflow: hidden;
+        font-size: 12px;
         font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        text-overflow: ellipsis;
         color: var(--ink-dim);
-        text-transform: capitalize;
       }
 
       .single .date {
+        /* Pulls the digits' built-in left space back to the text edge. */
+        margin-left: -0.05em;
         font-size: 52px;
         font-weight: 250;
         line-height: 1.05;
@@ -198,6 +215,14 @@ export class TarnCalendar extends LitElement {
           display: flex;
         }
         .grid {
+          gap: 4px;
+        }
+        .days {
+          flex: 1;
+          align-content: space-evenly;
+        }
+        .weekdays,
+        .days {
           font-size: 13px;
         }
         .day {
@@ -255,19 +280,15 @@ export class TarnCalendar extends LitElement {
     const weeks = this.tall
       ? monthWeeks(tall.getFullYear(), tall.getMonth(), first)
       : [weekOf(this.today, first)];
-    const shownMonth = this.tall ? tall : this.today;
     const busy = new Set(this.events.flatMap(eventDays));
     const narrow = new Intl.DateTimeFormat(locale(), {weekday: 'narrow'});
-    const monthName = new Intl.DateTimeFormat(locale(), {
-      month: 'long',
-      year:
-        shownMonth.getFullYear() === this.today.getFullYear()
-          ? undefined
-          : 'numeric',
-    }).format(shownMonth);
+    const monthName = this.tall
+      ? monthLabel(tall, this.today)
+      : weekLabel(weeks[0]!, this.today);
+    const named = this.heading !== t('widget.calendar');
     return html`
       <div class="head">
-        <h3 class="month">${monthName}</h3>
+        <h3>${named ? `${this.heading} · ${monthName}` : monthName}</h3>
         <div class="nav">
           ${
             this.isThisMonth()
@@ -297,28 +318,29 @@ export class TarnCalendar extends LitElement {
         </div>
       </div>
       <div class="grid" role="grid" aria-label=${monthName}>
-        ${weeks[0]!.map(
-          day =>
-            html`<span class="weekday" aria-hidden="true"
-              >${narrow.format(day)}</span
-            >`,
-        )}
-        ${weeks.flat().map(day => {
-          const today = sameDay(day, this.today);
-          const other = this.tall && day.getMonth() !== tall.getMonth();
-          const classes = [
-            'day',
-            today ? 'today' : '',
-            other ? 'other' : '',
-            busy.has(dayKey(day)) ? 'busy' : '',
-          ].join(' ');
-          return html`<span
-            class=${classes}
-            role="gridcell"
-            aria-current=${today ? 'date' : nothing}
-            >${day.getDate()}</span
-          >`;
-        })}
+        <div class="weekdays" aria-hidden="true">
+          ${weeks[0]!.map(
+            day => html`<span class="weekday">${narrow.format(day)}</span>`,
+          )}
+        </div>
+        <div class="days">
+          ${weeks.flat().map(day => {
+            const today = sameDay(day, this.today);
+            const other = this.tall && day.getMonth() !== tall.getMonth();
+            const classes = [
+              'day',
+              today ? 'today' : '',
+              other ? 'other' : '',
+              busy.has(dayKey(day)) ? 'busy' : '',
+            ].join(' ');
+            return html`<span
+              class=${classes}
+              role="gridcell"
+              aria-current=${today ? 'date' : nothing}
+              >${day.getDate()}</span
+            >`;
+          })}
+        </div>
       </div>
       ${this.renderSingle()}
     `;
@@ -334,7 +356,7 @@ export class TarnCalendar extends LitElement {
         <span class="weekday-name">${weekday.format(this.today)}</span>
         <span class="date">${this.today.getDate()}</span>
         <span class="next"
-          >${next ? next.title : month.format(this.today)}</span
+          >${next ? next.title : capitalize(month.format(this.today))}</span
         >
       </div>
     `;
@@ -399,6 +421,28 @@ export class TarnCalendar extends LitElement {
     );
     this.events = await eventsIn({from: from.getTime(), to: to.getTime()});
   }
+}
+
+/** "October", or "October 2027" for another year. */
+function monthLabel(month: Date, today: Date): string {
+  return new Intl.DateTimeFormat(locale(), {
+    month: 'long',
+    year: month.getFullYear() === today.getFullYear() ? undefined : 'numeric',
+  }).format(month);
+}
+
+/** The week's month, or both months when it spans two ("Sep – Oct"). */
+function weekLabel(week: readonly Date[], today: Date): string {
+  const first = week[0]!;
+  const last = week[week.length - 1]!;
+  if (first.getMonth() === last.getMonth()) return monthLabel(first, today);
+  const short = new Intl.DateTimeFormat(locale(), {month: 'short'});
+  return `${short.format(first)} – ${short.format(last)}`;
+}
+
+/** A month name as a label: "октябрь" becomes "Октябрь". */
+function capitalize(text: string): string {
+  return text.charAt(0).toLocaleUpperCase(locale()) + text.slice(1);
 }
 
 /** The local days an event covers, as day keys. */

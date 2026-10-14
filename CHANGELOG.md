@@ -85,3 +85,7 @@ follow [Semantic Versioning](https://semver.org/).
 - Focus timer: lengths up to 9 hours fit the small tile; typing accepts
   leading zeros ("0009"), ignores letters, reads "1.30" as 1:30, and caps
   anything longer at 9 hours.
+- Calendar: its heading matches the other widgets (and shows a name you
+  give it), a week across two months says so ("Sep – Oct"), weekday
+  letters sit right above the dates, the week is centered in its tile, and
+  the small tile's month starts with a capital in every language.
