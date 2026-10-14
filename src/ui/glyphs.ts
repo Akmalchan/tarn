@@ -14,6 +14,7 @@ export const GLYPHS = {
   photo: svg`<path fill-rule="evenodd" d="M4 4.5h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2zM8 7.3a1.9 1.9 0 1 0 0 3.8 1.9 1.9 0 0 0 0-3.8zM4.5 17h15l-4.6-5.6-3.3 3.9-2.2-2.3z"/>`,
   clock: svg`<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zM11 6v6.6l4.4 2.6 1-1.7-3.4-2V6z"/>`,
   widgets: svg`<rect x="3" y="3" width="8" height="8" rx="2.2"/><rect x="13" y="3" width="8" height="8" rx="2.2"/><rect x="3" y="13" width="18" height="8" rx="2.2"/>`,
+  contrast: svg`<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2v16a8 8 0 0 0 0-16z"/>`,
   sliders: svg`<rect x="3" y="5.2" width="18" height="1.8" rx=".9"/><rect x="3" y="11.1" width="18" height="1.8" rx=".9"/><rect x="3" y="17" width="18" height="1.8" rx=".9"/><circle cx="8" cy="6.1" r="2.7"/><circle cx="15.5" cy="12" r="2.7"/><circle cx="10" cy="17.9" r="2.7"/>`,
   tab: svg`<path d="M2 8.5A3.5 3.5 0 0 1 5.5 5h4.2c.9 0 1.7.4 2.2 1.1L13 7.5h5.5A3.5 3.5 0 0 1 22 11v6.5a3.5 3.5 0 0 1-3.5 3.5h-13A3.5 3.5 0 0 1 2 17.5z"/>`,
   keyboard: svg`<path fill-rule="evenodd" d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM5 8v2h2V8zm4 0v2h2V8zm4 0v2h2V8zm4 0v2h2V8zM5 12v2h2v-2zm12 0v2h2v-2zm-9 3.3v1.7h8v-1.7z"/>`,

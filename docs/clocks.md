@@ -128,12 +128,20 @@ The clock follows the "Arrival" rules in `architecture.md`:
 
 ### Color and tone
 
-The clock uses `--ink`, `--ink-dim` and `--ink-shadow` from `tarn-app.ts`.
-`tarn-app` sets `tone="light"` or `"dark"` from the scene, and light scenes
-switch the ink to dark text with no shadow. Faces that ignore tone on
+The clock's ink comes from `src/ui/ink.ts` (`darkInk`, `lightInk`: `--ink`,
+`--ink-dim`, `--ink-faint`, `--ink-shadow`), the same values `tarn-app`
+uses for the rest of the page. `tarn-app` passes the clock a `tone`:
+`clockTone(settings.clockColor, sceneTone(scene))` in `clock-faces.ts`.
+With **Color** on Auto (the default) that is the wallpaper's tone: light
+digits on dark scenes, dark digits with no shadow on light ones. **Light**
+and **Dark** fix the digits on any wallpaper (owner, 2026-10-14: for people
+who don't like the black clock on light scenes); light digits are drawn
+as on a dark wallpaper, so `clockColor: 'light'` gives `tone="dark"`. The
+clock sets its own ink from `tone` (`:host([tone=…])` in `tarn-clock.ts`),
+so the widgets keep the wallpaper's ink. Faces that ignore tone on
 purpose: Flip (dark cards with light digits in any light) and Neon (fixed
-near-white with a pink glow). Glass switches to a second filter on light
-scenes (see below).
+near-white with a pink glow). Glass switches to a second filter on a light
+tone (see below).
 
 ### How faces are applied
 
@@ -142,9 +150,9 @@ Two mechanisms, both in `src/widgets/clock-faces.ts`:
 1. **CSS: `faceStyles`.** A `css` block with rules for `.t.<face>`. Any
    element with classes `t <face>` gets the look, both the clock's
    `<time>` and the panel's thumbnail `<span>`. Sizes stay with the caller.
-   A light background is detected by `:host([tone='light'])` (the clock
-   reflects the wallpaper's tone, which `tarn-app` passes in) or a `.light`
-   ancestor (the panel thumbnails).
+   Dark digits are detected by `:host([tone='light'])` (the clock's tone,
+   from the wallpaper or the user's color) or a `.light` ancestor (the
+   panel thumbnails).
 2. **Markup: `clockTime(face, time, now?, previous?)`.** Returns the plain
    text for most faces, and markup for five:
    - `stacked`: `<span class="hh">` and `<span class="mm">` (grid, hours
@@ -220,6 +228,10 @@ does not animate: the new number just appears.
 anything else into `'center'`. `'center'` is the Classic face; its id
 predates the other faces and was kept so stored settings keep working.
 
+`Settings.clockColor: ClockColor` (`'auto' | 'light' | 'dark'`, default
+`'auto'`, `CLOCK_COLORS`); anything else reads as `'auto'`. It is mirrored
+for first paint with the face (`app/mirror.ts`).
+
 Settings sync between computers on different Tarn versions.
 `saveSettings` (`src/settings/store.ts`) rewrites only the fields a change
 touches, so a face this version does not know (written by a newer Tarn, or
@@ -238,8 +250,9 @@ tile is the current wallpaper, blurred, with a grid glyph.
 
 ### The Clock page
 
-`renderClock()` shows every face in `CLOCK_STYLES` order, two per row,
-16:10 tiles. The page's search field ("Search Clocks") filters by the
+`renderClock()` starts with one row under the search field: **Color**
+(Auto, Light, Dark; `panel.clockColor.*`, the `contrast` glyph), then
+every face in `CLOCK_STYLES` order, two per row, 16:10 tiles. The page's search field ("Search Clocks") filters by the
 face's name **in the current language** (`t(FACE_NAMES[face])`); no match
 shows `panel.noClocks`.
 
@@ -258,8 +271,10 @@ shows `panel.noClocks`.
   its hands from the text and Flip never animates.
 - The `none` tile shows the word "Off" (`panel.face.off`) instead of a
   clock; its name under the tile is "None".
-- The tile's class is the wallpaper's tone (`dark` or `light`), which sets
-  the text color and lets `.light .t.glass` pick the light glass filter.
+- The tile's class is the clock's tone (`clockTone` of the user's color
+  and the wallpaper's tone), which sets the text color and lets
+  `.light .t.glass` pick the light glass filter. So the thumbnails show
+  the chosen color.
 - Thumbnail text is sized in container units (`.thumb .t`: 27cqi on the
   home tiles, 17cqi on the Clock page; the date 7.5cqi and 5cqi), so a
   thumbnail is the real clock scaled down at any panel width.

@@ -33,6 +33,8 @@ import {
   WIDGET_SIZE_OPTIONS,
   newWidgetId,
   type ClockStyle,
+  CLOCK_COLORS,
+  type ClockColor,
   type SearchStyle,
   type SearchSettings,
   type Settings,
@@ -73,6 +75,7 @@ import {wordmark} from '../ui/wordmark';
 import {
   clockText,
   clockTime,
+  clockTone,
   faceFilters,
   faceStyles,
 } from '../widgets/clock-faces';
@@ -1359,17 +1362,48 @@ export class TarnPanel extends LitElement {
     const faces = CLOCK_STYLES.filter(face =>
       t(FACE_NAMES[face]).toLowerCase().includes(query),
     );
-    if (!faces.length) {
-      return html`<p class="none">
-        ${t('panel.noClocks', {query: this.query.trim()})}
-      </p>`;
-    }
+    const {clockColor} = this.settings;
     return html`
-      <section data-target="all-faces">
-        <div class="scenes" role="radiogroup" aria-label=${t('panel.clock')}>
-          ${faces.map(face => this.faceButton(face, preview))}
+      <section data-target="clock-color">
+        <div class="group">
+          <div class="row">
+            ${icon('contrast')}
+            <span class="txt">${t('panel.clockColor')}</span>
+            <span
+              class="seg"
+              role="radiogroup"
+              aria-label=${t('panel.clockColor')}
+            >
+              ${CLOCK_COLORS.map(
+                value => html`
+                  <button
+                    role="radio"
+                    aria-checked=${value === clockColor}
+                    @click=${() => this.applyPatch({clockColor: value})}
+                  >
+                    ${t(CLOCK_COLOR_NAMES[value])}
+                  </button>
+                `,
+              )}
+            </span>
+          </div>
         </div>
       </section>
+      ${
+        faces.length
+          ? html`<section data-target="all-faces">
+              <div
+                class="scenes"
+                role="radiogroup"
+                aria-label=${t('panel.clock')}
+              >
+                ${faces.map(face => this.faceButton(face, preview))}
+              </div>
+            </section>`
+          : html`<p class="none">
+              ${t('panel.noClocks', {query: this.query.trim()})}
+            </p>`
+      }
     `;
   }
 
@@ -1983,7 +2017,10 @@ export class TarnPanel extends LitElement {
         aria-checked=${face === this.settings.clock}
         @click=${() => this.applyPatch({clock: face})}
       >
-        <span class="thumb ${art.tone}" style="background: ${art.background}">
+        <span
+          class="thumb ${clockTone(this.settings.clockColor, art.tone)}"
+          style="background: ${art.background}"
+        >
           ${
             face === 'none'
               ? html`<span class="off">${t('panel.face.off')}</span>`
@@ -2752,6 +2789,12 @@ const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
   calendar: 'calendar',
 };
 
+const CLOCK_COLOR_NAMES: Record<ClockColor, MessageKey> = {
+  auto: 'panel.clockColor.auto',
+  light: 'panel.clockColor.light',
+  dark: 'panel.clockColor.dark',
+};
+
 const STYLE_NAMES: Record<SearchStyle, MessageKey> = {
   auto: 'panel.search.auto',
   light: 'panel.search.light',
@@ -2804,7 +2847,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic glass bold rounded minimal serif stacked outline pixel 8-bit retro flip lcd digital neon gothic fraktur gotisch analog dial hide',
+      'time date face color colour light dark white black classic glass bold rounded minimal serif stacked outline pixel 8-bit retro flip lcd digital neon gothic fraktur gotisch analog dial hide',
   },
   {
     label: 'panel.page.widgets',
