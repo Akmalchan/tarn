@@ -66,6 +66,7 @@ function normalize(raw: unknown): FocusState {
 export class TarnFocus extends LitElement {
   static override properties = {
     widgetId: {attribute: false},
+    heading: {attribute: false},
     state: {state: true},
     now: {state: true},
   };
@@ -155,6 +156,8 @@ export class TarnFocus extends LitElement {
   ];
 
   declare widgetId: string;
+  /** The widget's name: the user's, or the default ("Timer"). */
+  declare heading: string;
   declare state: FocusState;
   declare now: number;
   private timer = 0;
@@ -165,6 +168,7 @@ export class TarnFocus extends LitElement {
     // Re-renders in a newly chosen language.
     new LocaleController(this);
     this.widgetId = '';
+    this.heading = t('widget.focus');
     this.state = idle();
     this.now = Date.now();
   }
@@ -197,7 +201,7 @@ export class TarnFocus extends LitElement {
         ? t('focus.resume')
         : t('focus.start');
     return html`
-      <h3>${t('focus.title')}</h3>
+      <h3>${this.heading}</h3>
       <input
         class="time"
         role="timer"

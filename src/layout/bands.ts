@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Tarn's widget layout ("bands"), see docs/design/widget-layout.md.
+// Tarn's widget layout ("bands"), see docs/widgets.md.
 // A pure function: no DOM, so it is cheap to run and easy to test.
 
 export type WidgetSize = 's' | 'm' | 'l' | 'xl';

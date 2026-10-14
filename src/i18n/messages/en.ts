@@ -53,7 +53,6 @@ export const en = {
   'start.note': 'Welcome to Tarn.\nWrite anything here.',
 
   // Focus timer
-  'focus.title': 'Focus',
   'focus.start': 'Start',
   'focus.pause': 'Pause',
   'focus.resume': 'Resume',
@@ -247,7 +246,7 @@ export const en = {
   'panel.widgetAbout.tasks': 'A short to-do list',
   'panel.widgetAbout.weather': 'Today and the week ahead',
   'panel.widgetAbout.calendar': 'This month at a glance',
-  'panel.widgetAbout.focus': 'One task and a timer',
+  'panel.widgetAbout.focus': 'A countdown, any length you like',
 
   // Settings panel: language
   'panel.language.auto': 'Same as browser',

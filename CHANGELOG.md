@@ -110,6 +110,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A renamed Timer shows its new name, and an empty Weather tile opens its
+  place picker while arranging widgets.
 - The Outline clock no longer draws stray lines inside 2, 6 and 9.
 - Weather: long or negative temperatures (-40°, 118°) fit every tile size,
   and the small tile keeps its icon in view.

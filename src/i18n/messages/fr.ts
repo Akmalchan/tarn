@@ -37,7 +37,6 @@ export const fr: Catalog = {
   'tasks.done': 'Terminée',
   'tasks.notDone': 'À faire',
   'start.note': 'Bienvenue dans Tarn.\nÉcrivez ce que vous voulez ici.',
-  'focus.title': 'Concentration',
   'focus.start': 'Démarrer',
   'focus.pause': 'Pause',
   'focus.resume': 'Reprendre',
@@ -213,7 +212,7 @@ export const fr: Catalog = {
   'panel.widgetAbout.tasks': 'Une courte liste de tâches',
   'panel.widgetAbout.weather': 'Aujourd’hui et la semaine à venir',
   'panel.widgetAbout.calendar': 'Ce mois-ci en un coup d’œil',
-  'panel.widgetAbout.focus': 'Une tâche et un minuteur',
+  'panel.widgetAbout.focus': 'Un compte à rebours de la durée de votre choix',
   'panel.language.auto': 'Comme le navigateur',
   'panel.language.note':
     '« Comme le navigateur » suit la langue de votre navigateur si Tarn la propose, et l’anglais sinon.',

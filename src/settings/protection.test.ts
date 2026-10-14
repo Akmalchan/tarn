@@ -103,6 +103,54 @@ describe('saving keeps what this version does not understand', () => {
   });
 });
 
+// A future online library (docs/library.md) will name its items `lib:…`.
+// Whatever this version is given from a newer one (synced, or restored
+// from a backup) must survive untouched, shown here as a fallback.
+describe('library items from a later Tarn survive this one', () => {
+  beforeEach(() => fakeBrowser.reset());
+
+  const WITH_LIBRARY = {
+    version: SETTINGS_VERSION + 3,
+    scene: 'lib:studio-ghibli-sky',
+    clock: 'lib:sundial',
+    widgets: [
+      {id: 'notes-a', kind: 'notes', size: 'm'},
+      {id: 'lib-stocks-1', kind: 'lib:stocks', size: 'l', symbols: ['AAPL']},
+    ],
+    library: {installed: ['lib:studio-ghibli-sky', 'lib:sundial']},
+  };
+
+  it('shows the defaults, and keeps every library value when saving', async () => {
+    await store(WITH_LIBRARY);
+    const shown = await loadSettings();
+    expect(shown.scene).toBe(DEFAULT_SETTINGS.scene);
+    expect(shown.clock).toBe(DEFAULT_SETTINGS.clock);
+    expect(shown.widgets.map(w => w.id)).toEqual(['notes-a']);
+    await saveSettings({widgets: shown.widgets, tabIcon: 'none'});
+    expect(await storedSettings()).toMatchObject({
+      scene: 'lib:studio-ghibli-sky',
+      clock: 'lib:sundial',
+      widgets: WITH_LIBRARY.widgets,
+      library: WITH_LIBRARY.library,
+    });
+  });
+
+  it("keep a library widget's content through a backup and a restore", async () => {
+    await store(WITH_LIBRARY);
+    await fakeBrowser.storage.local.set({'widget.lib-stocks-1': {pinned: 3}});
+    const backup = await createBackup();
+    await replaceSettings(DEFAULT_SETTINGS);
+    await fakeBrowser.storage.local.remove('widget.lib-stocks-1');
+    await restoreBackup(backup);
+    expect(await storedSettings()).toMatchObject({
+      scene: 'lib:studio-ghibli-sky',
+      widgets: WITH_LIBRARY.widgets,
+    });
+    const local = await fakeBrowser.storage.local.get('widget.lib-stocks-1');
+    expect(local['widget.lib-stocks-1']).toEqual({pinned: 3});
+  });
+});
+
 describe('every past shape still loads', () => {
   beforeEach(() => fakeBrowser.reset());
 

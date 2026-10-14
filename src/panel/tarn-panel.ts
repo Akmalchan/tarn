@@ -93,7 +93,7 @@ import {
 /**
  * The pages of the panel. Home shows what most people change; each section
  * ends in a row that opens more, and Advanced sits last. See
- * docs/design/settings-panel.md.
+ * docs/settings.md.
  */
 type Page =
   | 'home'

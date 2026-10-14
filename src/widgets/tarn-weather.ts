@@ -347,6 +347,19 @@ export class TarnWeather extends LitElement {
         text-wrap: balance;
       }
 
+      button.cta {
+        justify-self: start;
+        padding: 0;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+        text-align: start;
+        background: none;
+        border: 0;
+        cursor: pointer;
+      }
+
       .empty .cta span {
         display: inline-block;
         margin-left: 5px;
@@ -727,17 +740,27 @@ export class TarnWeather extends LitElement {
   override render() {
     const {place, forecast} = this.data;
     if (!place) {
-      // Waiting for a place: the shape of a forecast, faint, with the one
-      // thing to do. The whole tile picks a place.
+      // Waiting for a place: the widget's name, a calm glyph and what to
+      // do. The whole tile picks a place; while arranging, the tile drags
+      // and only "Add a place" picks (data-edit keeps it from dragging).
+      const parts = html`<span class="heading">${this.heading}</span>
+        <span class="icon">${weatherGlyph('partly', true)}</span>
+        <span class="note">${t('weather.empty')}</span>`;
+      const cta = html`${t('weather.add')}<span aria-hidden="true">›</span>`;
       return html`
-        <button class="empty" @click=${this.openPicker}>
-          <span class="heading">${this.heading}</span>
-          <span class="icon">${weatherGlyph('partly', true)}</span>
-          <span class="cta"
-            >${t('weather.add')}<span aria-hidden="true">›</span></span
-          >
-          <span class="note">${t('weather.empty')}</span>
-        </button>
+        ${
+          this.editing
+            ? html`<div class="empty">
+                ${parts}
+                <button class="cta" data-edit @click=${this.openPicker}>
+                  ${cta}
+                </button>
+              </div>`
+            : html`<button class="empty" @click=${this.openPicker}>
+                ${parts}
+                <span class="cta">${cta}</span>
+              </button>`
+        }
         ${this.renderPicker()}
       `;
     }

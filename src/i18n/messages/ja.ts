@@ -36,7 +36,6 @@ export const ja: Catalog = {
   'tasks.done': '完了',
   'tasks.notDone': '未完了',
   'start.note': 'Tarn へようこそ。\nここに何でも書けます。',
-  'focus.title': '集中',
   'focus.start': '開始',
   'focus.pause': '一時停止',
   'focus.resume': '再開',
@@ -210,7 +209,7 @@ export const ja: Catalog = {
   'panel.widgetAbout.tasks': '短いやることリスト',
   'panel.widgetAbout.weather': '今日と、この先 1 週間',
   'panel.widgetAbout.calendar': '今月をひと目で',
-  'panel.widgetAbout.focus': 'ひとつのタスクとタイマー',
+  'panel.widgetAbout.focus': '好きな長さのカウントダウン',
   'panel.language.auto': 'ブラウザと同じ',
   'panel.language.note':
     '「ブラウザと同じ」は、Tarn が対応していればブラウザの言語に、対応していなければ英語になります。',

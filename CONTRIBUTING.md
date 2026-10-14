@@ -15,18 +15,9 @@ runs the tests and builds, which is the same as CI.
 
 ## How the code is organized
 
-```
-src/
-  entrypoints/newtab/   The new tab page (WXT entrypoint).
-  app/                  The root <tarn-app> element and first-paint helpers.
-  backdrop/             Animated background.
-    renderer.ts         WebGL2 loop: sizing, frame cap, pausing, context loss.
-    render.worker.ts    Runs the renderer off the main thread.
-    tarn-backdrop.ts    <tarn-backdrop>: owns the canvas, picks worker or main thread.
-    scenes/             Scenes: one fragment shader + colors each.
-  settings/             Typed settings, synced through browser storage.
-  styles/               Global CSS and design tokens.
-```
+The map of the code, and a doc for every area (background, clocks,
+widgets, search, settings, design), is in [docs/README.md](docs/README.md),
+starting with [docs/architecture.md](docs/architecture.md).
 
 ## Principles
 
@@ -40,22 +31,10 @@ src/
 - **Minimal permissions.** Every manifest permission must be justified in
   the pull request.
 
-## Adding a background scene
+## Adding a scene, a clock face or a widget
 
-The full guide, with each scene's cost and what was rejected, is
-`docs/design/backgrounds.md`.
-
-1. Add a `Scene` to `src/backdrop/scenes/index.ts`: an id, a name, four
-   colors, a base color, speed, resolution and a fragment body defining
-   `vec3 scene(vec2 uv, float t)`.
-2. Write the shader yourself, or use code under a compatible license with
-   attribution. Do not copy shaders from sites or products without a
-   license.
-3. Keep it cheap: soft scenes should render at `resolution` 0.5 or lower.
-4. Render its settings thumbnail from the real shader, picking a good
-   moment in `MOMENTS`:
-   `CHROME=/path/to/chrome node scripts/scene-previews.mjs`. It writes
-   `public/scenes/<id>.webp` (a few KB).
+Each has a checklist in its doc: [docs/wallpapers.md](docs/wallpapers.md),
+[docs/clocks.md](docs/clocks.md), [docs/widgets.md](docs/widgets.md).
 
 ## Style
 

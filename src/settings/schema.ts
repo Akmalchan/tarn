@@ -208,9 +208,10 @@ export interface Settings {
 }
 
 /**
- * What a brand-new install shows under the clock: the three widgets people
- * use most (quick links, notes, to-do; docs/research), in one clean row.
- * Their first content comes from widgets/start.ts until the user edits it.
+ * What a brand-new install shows under the clock: Bookmarks (the browser's
+ * bookmarks bar, or examples), Notes, Weather and Timer, in one clean
+ * band. Their first content comes from widgets/start.ts until the user
+ * edits it.
  */
 export const START_WIDGETS: readonly WidgetEntry[] = [
   {id: 'favorites-start', kind: 'favorites', size: 'l'},

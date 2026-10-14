@@ -21,7 +21,9 @@
 - **Living backgrounds.** Twelve hand-written WebGL2 shaders: Tarn,
   Ember, Bloom, Wave, Aurora, Silk, Sakura, Comet, Koi, Window, Lumen and
   Contour. Hover one in settings to watch it move, with a gauge for how
-  much it asks of your computer.
+  much it asks of your computer. Or use your own photos.
+- **Clock faces.** Thirteen of them, from Classic to Flip, LCD, Neon,
+  Analog and two gothic ones, or no clock at all.
 - **Light on your machine.** Renders off the main thread at reduced
   resolution, caps at 30fps, stops completely when the tab is hidden, and
   holds a still frame if you prefer reduced motion.
@@ -34,9 +36,9 @@
   new-tab extension (like Momentum) is in the way, Tarn can switch it off
   for you, and back on when you turn Tarn off.
 - **Widgets.** Bookmarks (your browser's bookmarks bar from the first
-  tab, then folders and your own icons), notes, tasks,
-  a calendar, a focus timer and weather, on a calm grid you arrange while
-  settings is open.
+  tab, then folders and your own icons), notes, tasks, a calendar, a
+  timer and weather, on a calm grid you arrange while settings is open.
+  Example setups show what a page can look like.
 - **Search box.** Under the clock, shaped like your browser's own: Enter
   searches with your browser's search engine, typed addresses and your
   bookmarks come up as you type, and voice, Google Lens and AI Mode are
@@ -74,7 +76,15 @@ The first time, load `dist/chrome-mv3-dev` as an unpacked extension
 no longer lets tools sideload extensions automatically, so this one step is
 manual.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organized.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
+
+## Documentation
+
+Everything about how Tarn works, area by area (the background engine and
+every scene, every clock face, every widget, the search box, settings,
+design, and the planned online library) starts at
+[docs/README.md](docs/README.md). AI agents: read [AGENTS.md](AGENTS.md)
+first.
 
 ## Product research
 
