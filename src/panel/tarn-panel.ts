@@ -2736,7 +2736,6 @@ const FACE_NAMES: Record<ClockStyle, MessageKey> = {
   rounded: 'panel.face.rounded',
   analog: 'panel.face.analog',
   flip: 'panel.face.flip',
-  nixie: 'panel.face.nixie',
   lcd: 'panel.face.lcd',
   neon: 'panel.face.neon',
   fraktur: 'panel.face.fraktur',
@@ -2838,7 +2837,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic glass bold rounded minimal serif stacked outline pixel 8-bit retro flip nixie lcd digital neon gothic fraktur gotisch analog dial hide',
+      'time date face classic glass bold rounded minimal serif stacked outline pixel 8-bit retro flip lcd digital neon gothic fraktur gotisch analog dial hide',
   },
   {
     label: 'panel.page.widgets',

@@ -174,7 +174,6 @@ export const ru: Catalog = {
   'panel.face.rounded': 'Округлый',
   'panel.face.analog': 'Стрелочный',
   'panel.face.flip': 'Перекидные',
-  'panel.face.nixie': 'Никси',
   'panel.face.lcd': 'LCD',
   'panel.face.neon': 'Неон',
   'panel.face.fraktur': 'Фрактура',

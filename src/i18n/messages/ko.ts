@@ -170,7 +170,6 @@ export const ko: Catalog = {
   'panel.face.rounded': '라운드',
   'panel.face.analog': '아날로그',
   'panel.face.flip': '플립',
-  'panel.face.nixie': '닉시',
   'panel.face.lcd': 'LCD',
   'panel.face.neon': '네온',
   'panel.face.fraktur': '프락투어',
