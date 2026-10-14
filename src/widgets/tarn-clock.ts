@@ -5,16 +5,18 @@
 
 import {LitElement, css, html, nothing} from 'lit';
 import type {ClockStyle} from '../settings/schema';
-import {clockText, clockTime} from './clock-faces';
+import {clockText, clockTime, faceFilters, faceStyles} from './clock-faces';
 import {LocaleController, locale} from '../i18n';
 
 /**
  * The big clock and date above the widgets. One size on every screen; only
  * a phone-narrow window gets a smaller one. It updates once a minute, on the
- * minute, and not at all while the tab is hidden. `face` picks the style:
- * classic (thin, with the date), bold, minimal (time only), serif, stacked
- * (hours over minutes), outline, or pixel (8-bit). None loads a font: serif
- * uses the system's, pixel is drawn (clock-faces.ts).
+ * minute, and not at all while the tab is hidden. `face` picks the style
+ * (clock-faces.ts): classic (thin, with the date), glass, bold, rounded,
+ * duo (heavy hours, hairline minutes), tall, minimal (time only), serif,
+ * stacked, outline, pixel (8-bit) or analog. None loads a font: serif uses
+ * the system's; glass, rounded and outline are SVG filters over the
+ * bundled one; pixel and analog are drawn.
  */
 export class TarnClock extends LitElement {
   static override properties = {
@@ -22,77 +24,52 @@ export class TarnClock extends LitElement {
     face: {type: String, reflect: true},
   };
 
-  static override styles = css`
-    :host {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      color: var(--ink);
-      text-shadow: var(--ink-shadow);
-      user-select: none;
-    }
+  static override styles = [
+    faceStyles,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        color: var(--ink);
+        text-shadow: var(--ink-shadow);
+        user-select: none;
+      }
 
-    time {
-      font-size: 112px;
-      font-weight: 200;
-      line-height: 0.92;
-      letter-spacing: -0.04em;
-      font-variant-numeric: tabular-nums;
-    }
-
-    :host([face='bold']) time {
-      font-weight: 600;
-      letter-spacing: -0.05em;
-    }
-
-    :host([face='serif']) time {
-      font-family: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
-      font-weight: 400;
-      letter-spacing: -0.02em;
-    }
-
-    :host([face='stacked']) time {
-      display: grid;
-      font-size: 104px;
-      font-weight: 700;
-      line-height: 0.84;
-      letter-spacing: -0.05em;
-    }
-
-    :host([face='outline']) time {
-      font-weight: 500;
-      -webkit-text-fill-color: transparent;
-      -webkit-text-stroke: 1.5px var(--ink);
-      text-shadow: none;
-    }
-
-    :host([face='pixel']) time {
-      line-height: 1;
-    }
-
-    .pixel {
-      display: block;
-      height: 0.6em;
-      margin: 0.08em 0 0.1em;
-    }
-
-    .date {
-      margin-top: 12px;
-      font-size: 19px;
-      font-weight: 450;
-      color: var(--ink-dim);
-    }
-
-    @media (max-width: 480px) {
       time {
-        font-size: 72px;
+        font-size: 112px;
+        font-weight: 200;
+        line-height: 0.92;
+        letter-spacing: -0.04em;
+        font-variant-numeric: tabular-nums;
       }
+
+      time.stacked {
+        font-size: 104px;
+      }
+
+      time.pixel {
+        line-height: 1;
+      }
+
       .date {
-        font-size: 16px;
+        margin-top: 12px;
+        font-size: 19px;
+        font-weight: 450;
+        color: var(--ink-dim);
       }
-    }
-  `;
+
+      @media (max-width: 480px) {
+        time {
+          font-size: 72px;
+        }
+        .date {
+          font-size: 16px;
+        }
+      }
+    `,
+  ];
 
   declare now: Date;
   declare face: Exclude<ClockStyle, 'none'>;
@@ -126,8 +103,9 @@ export class TarnClock extends LitElement {
       day: 'numeric',
     });
     return html`
-      <time datetime=${this.now.toISOString()}
-        >${clockTime(this.face, time)}</time
+      ${faceFilters}
+      <time class="t ${this.face}" datetime=${this.now.toISOString()}
+        >${clockTime(this.face, time, this.now)}</time
       >
       ${
         this.face === 'minimal'

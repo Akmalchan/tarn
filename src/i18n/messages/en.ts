@@ -200,6 +200,11 @@ export const en = {
   'panel.face.stacked': 'Stacked',
   'panel.face.outline': 'Outline',
   'panel.face.pixel': 'Pixel',
+  'panel.face.glass': 'Glass',
+  'panel.face.rounded': 'Rounded',
+  'panel.face.duo': 'Duo',
+  'panel.face.tall': 'Tall',
+  'panel.face.analog': 'Analog',
   'panel.face.none': 'None',
   'panel.face.off': 'Off',
 
