@@ -75,7 +75,6 @@ export const fr: Catalog = {
   'weather.today': 'Auj.',
   'weather.highLow': 'Max {high} Min {low}',
   'weather.by': 'Météo par',
-  'weather.addToClock': 'Ajouter la météo',
   'weather.checkKey': 'Vérifiez la clé API Google dans les Réglages',
   'weather.unavailable': 'Météo indisponible pour le moment',
   'weather.offline': 'Hors ligne · mise à jour il y a {hours} h',
@@ -147,9 +146,6 @@ export const fr: Catalog = {
   'panel.face.pixel': 'Pixel',
   'panel.face.none': 'Aucune',
   'panel.face.off': 'Désact.',
-  'panel.clockWeather': 'Afficher la météo',
-  'panel.clockWeatherLabel': 'Afficher la météo à côté de l’horloge',
-  'panel.clockWeatherNoRoom': 'Non affichée avec le cadran {face}.',
   'panel.addPhoto': 'Ajouter une photo…',
   'panel.yourPhotos': 'Vos photos',
   'panel.live': 'Animé',
@@ -199,7 +195,7 @@ export const fr: Catalog = {
   'panel.weather.unitsLabel': 'Unités de température',
   'panel.weather.auto': 'Auto',
   'panel.weather.noteOpenMeteo':
-    'Gratuit, sans clé. La météo n’est récupérée que pour les widgets Météo que vous ajoutez et la météo à côté de l’horloge, environ toutes les 30 minutes quand un onglet est ouvert.',
+    'Gratuit, sans clé. La météo n’est récupérée que pour les widgets Météo que vous ajoutez, environ toutes les 30 minutes quand un onglet est ouvert.',
   'panel.weather.noteGoogle':
     'Les requêtes sont facturées au projet Google Cloud de votre clé, où la Weather API doit être activée. La clé reste sur cet ordinateur.',
   'panel.weather.keySaved': 'Clé API enregistrée',

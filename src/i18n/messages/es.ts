@@ -74,7 +74,6 @@ export const es: Catalog = {
   'weather.today': 'Hoy',
   'weather.highLow': 'Máx. {high} Mín. {low}',
   'weather.by': 'Tiempo de',
-  'weather.addToClock': 'Añadir el tiempo',
   'weather.checkKey': 'Revisa la clave de API de Google en Ajustes',
   'weather.unavailable': 'No se puede obtener el tiempo ahora mismo',
   'weather.offline': 'Sin conexión · actualizado hace {hours} h',
@@ -146,9 +145,6 @@ export const es: Catalog = {
   'panel.face.pixel': 'Píxel',
   'panel.face.none': 'Ninguno',
   'panel.face.off': 'No',
-  'panel.clockWeather': 'Mostrar el tiempo',
-  'panel.clockWeatherLabel': 'Mostrar el tiempo junto al reloj',
-  'panel.clockWeatherNoRoom': 'No se muestra con la esfera {face}.',
   'panel.addPhoto': 'Añadir foto…',
   'panel.yourPhotos': 'Tus fotos',
   'panel.live': 'En vivo',
@@ -198,7 +194,7 @@ export const es: Catalog = {
   'panel.weather.unitsLabel': 'Unidades de temperatura',
   'panel.weather.auto': 'Automático',
   'panel.weather.noteOpenMeteo':
-    'Gratis, sin clave. El tiempo solo se consulta para los widgets de Tiempo que añadas y para el tiempo junto al reloj, más o menos cada 30 minutos con una pestaña abierta.',
+    'Gratis, sin clave. El tiempo solo se consulta para los widgets de Tiempo que añadas, más o menos cada 30 minutos con una pestaña abierta.',
   'panel.weather.noteGoogle':
     'Las solicitudes se cobran al proyecto de Google Cloud de tu clave, que debe tener activada la Weather API. La clave se queda en este ordenador.',
   'panel.weather.keySaved': 'Clave de API guardada',

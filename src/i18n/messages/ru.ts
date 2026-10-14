@@ -75,7 +75,6 @@ export const ru: Catalog = {
   'weather.today': 'Сегодня',
   'weather.highLow': 'Макс. {high} Мин. {low}',
   'weather.by': 'Погода от',
-  'weather.addToClock': 'Добавить погоду',
   'weather.checkKey': 'Проверьте ключ API Google в настройках',
   'weather.unavailable': 'Сейчас не удаётся получить погоду',
   'weather.offline': 'Нет сети · обновлено {hours} ч назад',
@@ -147,9 +146,6 @@ export const ru: Catalog = {
   'panel.face.pixel': 'Пиксели',
   'panel.face.none': 'Нет',
   'panel.face.off': 'Выкл.',
-  'panel.clockWeather': 'Показывать погоду',
-  'panel.clockWeatherLabel': 'Показывать погоду рядом с часами',
-  'panel.clockWeatherNoRoom': 'Не показывается с циферблатом «{face}».',
   'panel.addPhoto': 'Добавить фото…',
   'panel.yourPhotos': 'Ваши фото',
   'panel.live': 'Живые',
@@ -199,7 +195,7 @@ export const ru: Catalog = {
   'panel.weather.unitsLabel': 'Единицы температуры',
   'panel.weather.auto': 'Авто',
   'panel.weather.noteOpenMeteo':
-    'Бесплатно, без ключа. Погода запрашивается только для добавленных виджетов «Погода» и погоды рядом с часами — примерно раз в 30 минут, пока открыта вкладка.',
+    'Бесплатно, без ключа. Погода запрашивается только для добавленных виджетов «Погода» — примерно раз в 30 минут, пока открыта вкладка.',
   'panel.weather.noteGoogle':
     'Запросы оплачиваются из проекта Google Cloud вашего ключа; в нём должен быть включён Weather API. Ключ остаётся на этом компьютере.',
   'panel.weather.keySaved': 'Ключ API сохранён',

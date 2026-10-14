@@ -93,7 +93,6 @@ export const en = {
   'weather.today': 'Today',
   'weather.highLow': 'H {high} L {low}',
   'weather.by': 'Weather by',
-  'weather.addToClock': 'Add weather',
   'weather.checkKey': 'Check the Google API key in Settings',
   'weather.unavailable': 'Can’t get the weather right now',
   'weather.offline': 'Offline · updated {hours} h ago',
@@ -176,9 +175,6 @@ export const en = {
   'panel.face.pixel': 'Pixel',
   'panel.face.none': 'None',
   'panel.face.off': 'Off',
-  'panel.clockWeather': 'Show weather',
-  'panel.clockWeatherLabel': 'Show weather beside the clock',
-  'panel.clockWeatherNoRoom': 'Not shown with the {face} face.',
 
   // Settings panel: wallpapers and photos
   'panel.addPhoto': 'Add Photo…',
@@ -235,7 +231,7 @@ export const en = {
   'panel.weather.unitsLabel': 'Temperature units',
   'panel.weather.auto': 'Auto',
   'panel.weather.noteOpenMeteo':
-    'Free, no key needed. Weather is only fetched for Weather widgets you add and the weather beside the clock, about every 30 minutes while a tab is open.',
+    'Free, no key needed. Weather is only fetched for Weather widgets you add, about every 30 minutes while a tab is open.',
   'panel.weather.noteGoogle':
     'Requests are billed to your key’s Google Cloud project, which needs the Weather API turned on. The key stays on this computer.',
   'panel.weather.keySaved': 'API key saved',

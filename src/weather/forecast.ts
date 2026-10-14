@@ -31,8 +31,8 @@ export function isCurrent(
 }
 
 /**
- * The forecast for a place: a fresh one another widget (or the clock)
- * already fetched, or a new request. Shared by place, so two widgets for
+ * The forecast for a place: a fresh one another widget already fetched,
+ * or a new request. Shared by place, so two widgets for
  * the same city make one request between them.
  */
 export async function fetchForecast(

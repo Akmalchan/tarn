@@ -232,10 +232,7 @@ export class TarnApp extends LitElement {
           ${
             clock === 'none'
               ? nothing
-              : html`<tarn-clock
-                  face=${clock}
-                  .weather=${this.settings.weather.clock}
-                ></tarn-clock>`
+              : html`<tarn-clock face=${clock}></tarn-clock>`
           }
           ${
             widgets.length

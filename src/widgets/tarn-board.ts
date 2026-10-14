@@ -242,30 +242,33 @@ export class TarnBoard extends LitElement {
       background: rgb(214 64 69 / 0.92);
     }
 
-    /* Arranging: a corner grip resizes the tile, snapping to its sizes. */
+    /* Arranging: a grip just outside the tile's corner resizes it,
+       following its rounded edge, so it never covers the content. */
     .grip {
       position: absolute;
-      right: 2px;
-      bottom: 2px;
+      right: -10px;
+      bottom: -10px;
       z-index: 1;
-      display: grid;
-      place-items: center;
-      width: 30px;
-      height: 30px;
+      display: block;
+      width: 34px;
+      height: 34px;
       color: var(--ink);
-      opacity: 0.45;
+      opacity: 0.5;
       cursor: nwse-resize;
       touch-action: none;
       transition: opacity 150ms ease;
     }
 
     .grip svg {
-      width: 22px;
-      height: 22px;
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
       fill: none;
       stroke: currentColor;
-      stroke-width: 2.4;
+      stroke-width: 3;
       stroke-linecap: round;
+      filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
     }
 
     .tile:hover .grip,
@@ -576,8 +579,8 @@ export class TarnBoard extends LitElement {
               ${
                 this.editing
                   ? html`<span class="grip" data-resize aria-hidden="true"
-                      ><svg viewBox="0 0 24 24">
-                        <path d="M19 9a10 10 0 0 1-10 10" /></svg
+                      ><svg viewBox="0 0 34 34">
+                        <path d="M28.3 9.5a29 29 0 0 1-18.8 18.8" /></svg
                     ></span>`
                   : nothing
               }

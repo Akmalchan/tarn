@@ -129,8 +129,6 @@ export const WEATHER_UNITS: readonly WeatherUnits[] = [
 export interface WeatherSettings {
   readonly provider: WeatherProvider;
   readonly units: WeatherUnits;
-  /** Show the weather on the clock's date line (faces that have one). */
-  readonly clock: boolean;
 }
 
 /** Everything the user can change. Small and serializable; synced across devices. */
@@ -153,7 +151,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tabIcon: 'chrome',
   clock: 'center',
   widgets: [],
-  weather: {provider: 'open-meteo', units: 'auto', clock: false},
+  weather: {provider: 'open-meteo', units: 'auto'},
   language: 'auto',
 };
 
@@ -203,7 +201,6 @@ function normalizeWeather(raw: unknown): WeatherSettings {
     units: WEATHER_UNITS.includes(value.units as WeatherUnits)
       ? (value.units as WeatherUnits)
       : fallback.units,
-    clock: typeof value.clock === 'boolean' ? value.clock : fallback.clock,
   };
 }
 

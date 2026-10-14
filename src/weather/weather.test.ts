@@ -154,7 +154,6 @@ describe('isCurrent', () => {
   const settings = {
     provider: 'open-meteo',
     units: 'celsius',
-    clock: false,
   } as const;
   const forecast = parseOpenMeteo(
     {

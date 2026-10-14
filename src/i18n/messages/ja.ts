@@ -74,7 +74,6 @@ export const ja: Catalog = {
   'weather.today': '今日',
   'weather.highLow': '最高 {high} 最低 {low}',
   'weather.by': '天気の提供:',
-  'weather.addToClock': '天気を追加',
   'weather.checkKey': '設定で Google API キーを確認してください',
   'weather.unavailable': 'いまは天気を取得できません',
   'weather.offline': 'オフライン・{hours} 時間前に更新',
@@ -145,9 +144,6 @@ export const ja: Catalog = {
   'panel.face.pixel': 'ピクセル',
   'panel.face.none': 'なし',
   'panel.face.off': 'オフ',
-  'panel.clockWeather': '天気を表示',
-  'panel.clockWeatherLabel': '時計の横に天気を表示',
-  'panel.clockWeatherNoRoom': '「{face}」の文字盤では表示されません。',
   'panel.addPhoto': '写真を追加…',
   'panel.yourPhotos': 'あなたの写真',
   'panel.live': 'ライブ',
@@ -197,7 +193,7 @@ export const ja: Catalog = {
   'panel.weather.unitsLabel': '温度の単位',
   'panel.weather.auto': '自動',
   'panel.weather.noteOpenMeteo':
-    '無料で、キーは不要です。天気を取得するのは、追加した天気ウィジェットと時計の横の天気だけで、タブを開いている間、約 30 分ごとです。',
+    '無料で、キーは不要です。天気を取得するのは追加した天気ウィジェットだけで、タブを開いている間、約 30 分ごとです。',
   'panel.weather.noteGoogle':
     'リクエストはキーの Google Cloud プロジェクトに課金されます。そのプロジェクトで Weather API を有効にしてください。キーはこのコンピュータに保存されます。',
   'panel.weather.keySaved': 'API キーを保存しました',

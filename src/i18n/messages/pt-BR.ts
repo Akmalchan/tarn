@@ -75,7 +75,6 @@ export const ptBR: Catalog = {
   'weather.today': 'Hoje',
   'weather.highLow': 'Máx. {high} Mín. {low}',
   'weather.by': 'Clima por',
-  'weather.addToClock': 'Adicionar clima',
   'weather.checkKey': 'Verifique a chave de API do Google nos Ajustes',
   'weather.unavailable': 'Não é possível obter o clima agora',
   'weather.offline': 'Sem conexão · atualizado há {hours} h',
@@ -147,9 +146,6 @@ export const ptBR: Catalog = {
   'panel.face.pixel': 'Pixel',
   'panel.face.none': 'Nenhum',
   'panel.face.off': 'Desl.',
-  'panel.clockWeather': 'Mostrar clima',
-  'panel.clockWeatherLabel': 'Mostrar o clima ao lado do relógio',
-  'panel.clockWeatherNoRoom': 'Não aparece com o mostrador {face}.',
   'panel.addPhoto': 'Adicionar foto…',
   'panel.yourPhotos': 'Suas fotos',
   'panel.live': 'Ao vivo',
@@ -199,7 +195,7 @@ export const ptBR: Catalog = {
   'panel.weather.unitsLabel': 'Unidades de temperatura',
   'panel.weather.auto': 'Automático',
   'panel.weather.noteOpenMeteo':
-    'Grátis, sem chave. O clima só é buscado para os widgets de Clima que você adicionar e para o clima ao lado do relógio, a cada 30 minutos mais ou menos com uma guia aberta.',
+    'Grátis, sem chave. O clima só é buscado para os widgets de Clima que você adicionar, a cada 30 minutos mais ou menos com uma guia aberta.',
   'panel.weather.noteGoogle':
     'As solicitações são cobradas do projeto do Google Cloud da sua chave, que precisa ter a Weather API ativada. A chave fica neste computador.',
   'panel.weather.keySaved': 'Chave de API salva',

@@ -73,7 +73,6 @@ export const ko: Catalog = {
   'weather.today': '오늘',
   'weather.highLow': '최고 {high} 최저 {low}',
   'weather.by': '날씨 제공:',
-  'weather.addToClock': '날씨 추가',
   'weather.checkKey': '설정에서 Google API 키를 확인하세요',
   'weather.unavailable': '지금은 날씨를 가져올 수 없어요',
   'weather.offline': '오프라인 · {hours}시간 전 업데이트',
@@ -144,9 +143,6 @@ export const ko: Catalog = {
   'panel.face.pixel': '픽셀',
   'panel.face.none': '없음',
   'panel.face.off': '끔',
-  'panel.clockWeather': '날씨 표시',
-  'panel.clockWeatherLabel': '시계 옆에 날씨 표시',
-  'panel.clockWeatherNoRoom': '{face} 시계 모양에서는 표시되지 않아요.',
   'panel.addPhoto': '사진 추가…',
   'panel.yourPhotos': '내 사진',
   'panel.live': '라이브',
@@ -195,7 +191,7 @@ export const ko: Catalog = {
   'panel.weather.unitsLabel': '온도 단위',
   'panel.weather.auto': '자동',
   'panel.weather.noteOpenMeteo':
-    '무료이고 키가 필요 없어요. 추가한 날씨 위젯과 시계 옆 날씨에 대해서만, 탭이 열려 있는 동안 약 30분마다 날씨를 가져와요.',
+    '무료이고 키가 필요 없어요. 추가한 날씨 위젯에 대해서만, 탭이 열려 있는 동안 약 30분마다 날씨를 가져와요.',
   'panel.weather.noteGoogle':
     '요청 비용은 키의 Google Cloud 프로젝트에 청구되며, 이 프로젝트에서 Weather API를 사용 설정해야 해요. 키는 이 컴퓨터에만 저장돼요.',
   'panel.weather.keySaved': 'API 키를 저장했어요',

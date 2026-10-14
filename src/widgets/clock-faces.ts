@@ -21,15 +21,6 @@ export function clockTime(face: ClockStyle, time: string) {
   return time;
 }
 
-/**
- * Whether a face shows the weather on its date line. Minimal and none have
- * no date line; the pixel face's 8-bit digits don't sit well with line
- * glyphs.
- */
-export function clockShowsWeather(face: ClockStyle): boolean {
-  return face !== 'minimal' && face !== 'none' && face !== 'pixel';
-}
-
 /** "7:42" -> ["07", "42"]: stacked faces read better with two digits. */
 export function splitTime(time: string): [string, string] {
   const [hours = '', minutes = ''] = time.split(/\D+/);

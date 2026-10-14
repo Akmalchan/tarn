@@ -75,7 +75,6 @@ export const de: Catalog = {
   'weather.today': 'Heute',
   'weather.highLow': 'H {high} T {low}',
   'weather.by': 'Wetter von',
-  'weather.addToClock': 'Wetter hinzufügen',
   'weather.checkKey': 'Prüfe den Google-API-Schlüssel in den Einstellungen',
   'weather.unavailable': 'Wetter gerade nicht verfügbar',
   'weather.offline': 'Offline · vor {hours} Std. aktualisiert',
@@ -147,9 +146,6 @@ export const de: Catalog = {
   'panel.face.pixel': 'Pixel',
   'panel.face.none': 'Keine',
   'panel.face.off': 'Aus',
-  'panel.clockWeather': 'Wetter zeigen',
-  'panel.clockWeatherLabel': 'Wetter neben der Uhr zeigen',
-  'panel.clockWeatherNoRoom': 'Beim Zifferblatt „{face}“ nicht sichtbar.',
   'panel.addPhoto': 'Foto hinzufügen …',
   'panel.yourPhotos': 'Deine Fotos',
   'panel.live': 'Animiert',
@@ -198,7 +194,7 @@ export const de: Catalog = {
   'panel.weather.unitsLabel': 'Temperatureinheit',
   'panel.weather.auto': 'Auto',
   'panel.weather.noteOpenMeteo':
-    'Kostenlos, ohne Schlüssel. Wetter wird nur für deine Wetter-Widgets und das Wetter neben der Uhr abgerufen, etwa alle 30 Minuten, solange ein Tab offen ist.',
+    'Kostenlos, ohne Schlüssel. Wetter wird nur für deine Wetter-Widgets abgerufen, etwa alle 30 Minuten, solange ein Tab offen ist.',
   'panel.weather.noteGoogle':
     'Anfragen werden dem Google-Cloud-Projekt deines Schlüssels berechnet; dort muss die Weather API aktiviert sein. Der Schlüssel bleibt auf diesem Computer.',
   'panel.weather.keySaved': 'API-Schlüssel gesichert',

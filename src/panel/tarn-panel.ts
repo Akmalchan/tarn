@@ -64,7 +64,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
-import {clockShowsWeather, clockTime} from '../widgets/clock-faces';
+import {clockTime} from '../widgets/clock-faces';
 import {
   addWallpaper,
   deleteWallpaper,
@@ -1143,7 +1143,6 @@ export class TarnPanel extends LitElement {
             ${showAll(preview.art)} ${t('panel.showAll')}
           </button>
         </div>
-        ${this.clockWeatherRow()}
       </section>
 
       <div class="group">
@@ -1507,39 +1506,6 @@ export class TarnPanel extends LitElement {
         </div>
         <p class="note">${t('panel.language.note')}</p>
       </section>
-    `;
-  }
-
-  /**
-   * "Show weather" beside the clock's date. Stays in place, disabled, for
-   * faces with no room for it, so the list doesn't jump while picking.
-   */
-  private clockWeatherRow() {
-    const {clock} = this.settings;
-    const fits = clockShowsWeather(clock);
-    const on = this.settings.weather.clock;
-    return html`
-      <div class="group">
-        <div class="row" data-target="clock-weather">
-          ${icon('weather')}
-          <span class="txt">${t('panel.clockWeather')}</span>
-          <button
-            class="sw"
-            role="switch"
-            aria-label=${t('panel.clockWeatherLabel')}
-            aria-checked=${on && fits}
-            ?disabled=${!fits}
-            @click=${() => this.setWeather({clock: !on})}
-          ></button>
-        </div>
-      </div>
-      ${
-        fits
-          ? nothing
-          : html`<p class="note">
-              ${t('panel.clockWeatherNoRoom', {face: t(FACE_NAMES[clock])})}
-            </p>`
-      }
     `;
   }
 
@@ -2092,7 +2058,6 @@ export class TarnPanel extends LitElement {
     patch: Partial<{
       provider: WeatherProvider;
       units: WeatherUnits;
-      clock: boolean;
     }>,
   ): void {
     this.applyPatch({weather: {...this.settings.weather, ...patch}});
@@ -2369,7 +2334,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide weather temperature',
+      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide',
   },
   {
     label: 'panel.page.widgets',

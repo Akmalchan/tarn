@@ -74,7 +74,6 @@ export const tr: Catalog = {
   'weather.today': 'Bugün',
   'weather.highLow': 'Y {high} D {low}',
   'weather.by': 'Hava durumu:',
-  'weather.addToClock': 'Hava durumu ekle',
   'weather.checkKey': "Ayarlar'da Google API anahtarını kontrol edin",
   'weather.unavailable': 'Hava durumu şu anda alınamıyor',
   'weather.offline': 'Çevrimdışı · {hours} sa önce güncellendi',
@@ -145,9 +144,6 @@ export const tr: Catalog = {
   'panel.face.pixel': 'Piksel',
   'panel.face.none': 'Yok',
   'panel.face.off': 'Kapalı',
-  'panel.clockWeather': 'Hava durumunu göster',
-  'panel.clockWeatherLabel': 'Saatin yanında hava durumunu göster',
-  'panel.clockWeatherNoRoom': '{face} kadranında gösterilmez.',
   'panel.addPhoto': 'Fotoğraf ekle…',
   'panel.yourPhotos': 'Fotoğraflarınız',
   'panel.live': 'Canlı',
@@ -197,7 +193,7 @@ export const tr: Catalog = {
   'panel.weather.unitsLabel': 'Sıcaklık birimi',
   'panel.weather.auto': 'Otomatik',
   'panel.weather.noteOpenMeteo':
-    "Ücretsiz, anahtar gerekmez. Hava durumu yalnızca eklediğiniz Hava durumu widget'ları ve saatin yanındaki hava durumu için, bir sekme açıkken yaklaşık 30 dakikada bir alınır.",
+    "Ücretsiz, anahtar gerekmez. Hava durumu yalnızca eklediğiniz Hava durumu widget'ları için, bir sekme açıkken yaklaşık 30 dakikada bir alınır.",
   'panel.weather.noteGoogle':
     'İstekler, anahtarınızın Google Cloud projesine faturalandırılır; bu projede Weather API açık olmalıdır. Anahtar bu bilgisayarda kalır.',
   'panel.weather.keySaved': 'API anahtarı kaydedildi',

@@ -72,7 +72,6 @@ export const zhCN: Catalog = {
   'weather.today': '今天',
   'weather.highLow': '最高 {high} 最低 {low}',
   'weather.by': '天气数据：',
-  'weather.addToClock': '添加天气',
   'weather.checkKey': '请在设置中检查 Google API 密钥',
   'weather.unavailable': '暂时无法获取天气',
   'weather.offline': '离线 · {hours} 小时前更新',
@@ -142,9 +141,6 @@ export const zhCN: Catalog = {
   'panel.face.pixel': '像素',
   'panel.face.none': '无',
   'panel.face.off': '关',
-  'panel.clockWeather': '显示天气',
-  'panel.clockWeatherLabel': '在时钟旁显示天气',
-  'panel.clockWeatherNoRoom': '“{face}”表盘不显示天气。',
   'panel.addPhoto': '添加照片…',
   'panel.yourPhotos': '你的照片',
   'panel.live': '动态',
@@ -191,7 +187,7 @@ export const zhCN: Catalog = {
   'panel.weather.unitsLabel': '温度单位',
   'panel.weather.auto': '自动',
   'panel.weather.noteOpenMeteo':
-    '免费，无需密钥。只会为你添加的天气小组件和时钟旁的天气获取天气，在标签页打开时大约每 30 分钟一次。',
+    '免费，无需密钥。只会为你添加的天气小组件获取天气，在标签页打开时大约每 30 分钟一次。',
   'panel.weather.noteGoogle':
     '请求费用计入密钥所属的 Google Cloud 项目，该项目需开启 Weather API。密钥只保存在这台电脑上。',
   'panel.weather.keySaved': '已保存 API 密钥',

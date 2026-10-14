@@ -5,8 +5,7 @@
 
 import {LitElement, css, html, nothing} from 'lit';
 import type {ClockStyle} from '../settings/schema';
-import {clockShowsWeather, clockTime} from './clock-faces';
-import './tarn-weather';
+import {clockTime} from './clock-faces';
 import {LocaleController, locale} from '../i18n';
 
 /**
@@ -21,7 +20,6 @@ export class TarnClock extends LitElement {
   static override properties = {
     now: {state: true},
     face: {type: String, reflect: true},
-    weather: {type: Boolean},
   };
 
   static override styles = css`
@@ -86,10 +84,6 @@ export class TarnClock extends LitElement {
       color: var(--ink-dim);
     }
 
-    .dot {
-      margin: 0 0.45em;
-    }
-
     @media (max-width: 480px) {
       time {
         font-size: 72px;
@@ -102,8 +96,6 @@ export class TarnClock extends LitElement {
 
   declare now: Date;
   declare face: Exclude<ClockStyle, 'none'>;
-  /** Show the weather on the date line (Settings > Clock), if the face can. */
-  declare weather: boolean;
   private timer = 0;
 
   constructor() {
@@ -112,7 +104,6 @@ export class TarnClock extends LitElement {
     new LocaleController(this);
     this.now = new Date();
     this.face = 'center';
-    this.weather = false;
   }
 
   override connectedCallback(): void {
@@ -143,17 +134,7 @@ export class TarnClock extends LitElement {
       ${
         this.face === 'minimal'
           ? nothing
-          : html`<div class="date">
-              ${date}${
-                this.weather && clockShowsWeather(this.face)
-                  ? html`<span class="dot" aria-hidden="true">·</span
-                      ><tarn-weather
-                        inline
-                        .widgetId=${'clock'}
-                      ></tarn-weather>`
-                  : nothing
-              }
-            </div>`
+          : html`<div class="date">${date}</div>`
       }
     `;
   }
