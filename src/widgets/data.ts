@@ -61,26 +61,6 @@ export async function loadWidgetData<T>(
   return normalize(value);
 }
 
-/**
- * Whether the widget holds content of its own yet, rather than the start
- * content (start.ts), from the first-paint copy; may be slightly stale.
- */
-export function peekWidgetDataStored(id: string): boolean {
-  try {
-    return localStorage.getItem(mirrorKey(id)) !== null;
-  } catch {
-    return false;
-  }
-}
-
-/** Whether the widget holds content of its own yet. */
-export async function widgetDataStored(id: string): Promise<boolean> {
-  const area = localArea();
-  if (!area) return peekWidgetDataStored(id);
-  const stored = await area.get(key(id));
-  return stored[key(id)] !== undefined;
-}
-
 export async function saveWidgetData(
   id: string,
   value: unknown,
