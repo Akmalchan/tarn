@@ -410,6 +410,204 @@ export class TarnWeather extends LitElement {
       }
 
       .use-location {
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink);
+        border: 0;
+        border-radius: 999px;
+        background: var(--chip);
+        cursor: pointer;
+      }
+
+      .use-location:hover {
+        background: var(--chip-hover);
+      }
+
+      /* Medium: the next hours beside now. */
+      @container (min-width: 250px) and (max-height: 140px) {
+        .body {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+          gap: 10px;
+          align-items: center;
+        }
+        /* The glyph beside the place, so the temperature has the column's
+           whole width; a long one ("-40°", "118°") gets a little smaller. */
+        .now {
+          grid-template-areas:
+            'place icon'
+            'temp temp'
+            'cond cond';
+          align-items: center;
+        }
+        .now .icon {
+          width: 24px;
+          height: 24px;
+          margin: 0;
+        }
+        .temp {
+          font-size: min(
+            44px,
+            calc((100cqw - 46px) / 2.25 / (var(--chars) * 0.57))
+          );
+        }
+        .hours {
+          display: grid;
+          --count: 4;
+        }
+        .hours .hour:nth-child(n + 5) {
+          display: none;
+        }
+        .credit {
+          display: block;
+          position: absolute;
+          right: 18px;
+          bottom: 8px;
+          font-size: 9px;
+        }
+      }
+
+      /* Large: now, the next hours, and the days ahead. */
+      @container (min-height: 250px) {
+        .body {
+          gap: 12px;
+        }
+        .hours {
+          display: grid;
+          --count: 6;
+        }
+        .hours .hour:nth-child(n + 7) {
+          display: none;
+        }
+        .days {
+          display: flex;
+          min-height: 0;
+          overflow: hidden;
+        }
+        .credit {
+          display: block;
+        }
+        .days .day:nth-child(n + 4) {
+          display: none;
+        }
+      }
+
+      /* Small: place and glyph on top, a big temperature, the summary
+         at the foot, so the square is filled evenly. */
+      @container (max-width: 200px) {
+        .now {
+          height: 100%;
+          grid-template-rows: auto 1fr auto;
+        }
+        .now {
+          grid-template-areas:
+            'place icon'
+            'temp temp'
+            'cond cond';
+        }
+        .now .icon {
+          width: 24px;
+          height: 24px;
+          margin: 0;
+        }
+        /* As big as fits: --chars is the temperature's length. */
+        .temp {
+          align-self: center;
+          font-size: min(50px, calc((100cqw - 36px) / (var(--chars) * 0.57)));
+        }
+        .cond {
+          align-self: end;
+        }
+      }
+
+      /* Small and stretched to two rows (beside a large tile): now on
+         top, then the next hours as a short list, nothing squeezed. */
+      @container (max-width: 200px) and (min-height: 250px) {
+        .body {
+          gap: 14px;
+        }
+        .now {
+          height: auto;
+          grid-template-rows: auto auto auto;
+          row-gap: 2px;
+        }
+        .temp {
+          align-self: start;
+          font-size: min(48px, calc((100cqw - 36px) / (var(--chars) * 0.57)));
+        }
+        .hours {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+          font-size: 13px;
+        }
+        .hour {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+        .hour .icon {
+          width: 18px;
+          height: 18px;
+        }
+        .hour > :last-child {
+          min-width: 2.4em;
+          text-align: end;
+        }
+        .hours .hour:nth-child(n + 5) {
+          display: flex;
+        }
+        .hours .hour:nth-child(n + 7) {
+          display: none;
+        }
+        .days {
+          display: none;
+        }
+        .credit {
+          display: block;
+          font-size: 9px;
+        }
+      }
+
+      /* The picker. */
+      .search-results {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .result {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 7px 10px;
+        text-align: start;
+        background: transparent;
+        border: 0;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      .result:hover,
+      .result:focus-visible {
+        background: var(--chip);
+      }
+
+      .result small {
+        font-size: 12px;
+        color: var(--ink-dim);
+      }
+
+      .privacy {
+        margin: 0;
+        font-size: 11.5px;
+        line-height: 1.45;
+        color: var(--ink-dim);
+      }
+
+      .use-location {
         align-self: flex-start;
       }
     `,

@@ -133,9 +133,14 @@ export class TarnApp extends LitElement {
       animation: none;
     }
 
-    /* The search box sits closer to the clock than the widgets do. */
+    /* The search box belongs with the clock (32px under it) and sits a
+       little closer to the widgets than the clock does (40px). */
     tarn-clock + tarn-search {
       margin-top: -24px;
+    }
+
+    tarn-search {
+      margin-bottom: -16px;
     }
 
     /* Controls arrive after the scene, never before it: nothing but the

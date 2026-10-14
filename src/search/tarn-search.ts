@@ -146,6 +146,12 @@ export class TarnSearch extends LitElement {
       --listening: #f28b82;
     }
 
+    @media (max-width: 663.98px) {
+      :host {
+        width: 296px;
+      }
+    }
+
     @media (prefers-color-scheme: dark) {
       :host([look='auto']) {
         --box: #303134;
@@ -187,7 +193,10 @@ export class TarnSearch extends LitElement {
       position: relative;
       z-index: 5;
       display: block;
-      width: min(584px, calc(100vw - 48px));
+      /* As wide as four widget columns (4 x 136 + 3 x 24), so its edges
+         line up with the tiles below; on a 6-column page it spans the
+         middle four. Under 664px the page has 2 columns, and so does it. */
+      width: 616px;
       font-family: var(--font-sans);
       text-shadow: none;
     }
