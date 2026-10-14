@@ -53,7 +53,11 @@ owner's taste. The essentials:
   via the favicon API) and "None" (a transparent icon once the page exists).
   `management` is
   _optional_, requested only when the user asks Tarn to switch off another
-  new-tab extension (Chromium only). Adding any permission needs a stated reason.
+  new-tab extension (Chromium only). Adding any permission needs a stated
+  reason. Planned (owner-approved 2026-10-13, place in the UI not decided
+  yet): an optional `bookmarks` permission for "Use my bookmarks", asked
+  at that moment, the bar copied once (`widgets/bookmarks.ts`,
+  `fromBookmarks`/`mergeImported`) and the permission given back.
 - **Performance:** never block first paint; animate only transform/opacity;
   backgrounds pause when hidden and honor `prefers-reduced-motion`.
 - **Words:** every visible word goes through `t()` (`src/i18n/`); never
@@ -208,6 +212,19 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   it and never stored before. A stored empty list stays empty.
 - Widget content lives in `storage.local` (`widget.<id>`), apart from synced
   settings; removing a widget keeps its content.
+- **Favorites** (`widgets/tarn-favorites.ts`, model in `favorites-model.ts`,
+  dragging in `favorites-drag.ts`): sites and folders of sites, one level
+  deep, stored as one array (content from before folders reads unchanged).
+  A folder shows its first four icons and opens as a sheet over the page.
+  While arranging: drag a site to move it (it moves after resting ~0.1s
+  over a slot), rest it on another site's icon (~0.4s) to make a folder or
+  drop it into one, drag it out of an open folder to take it out; arrow
+  keys move a focused site. The editor's extras sit behind "More": the
+  user's own icon (a 112px image stored with the site, opaque so it never
+  clashes) and which folder it's in. Icons that are nearly all white on
+  clear (GitHub, ChatGPT; `isLight` in `site-icon.ts`) get a dark chip.
+  Only a grid exists; the model doesn't depend on it, so a list view
+  (planned, owner 2026-10-13) can reuse it.
 
 ## Rendering performance
 

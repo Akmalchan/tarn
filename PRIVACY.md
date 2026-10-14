@@ -13,8 +13,8 @@ choose: the Weather widget (below).
 - **Your photos**, if you add your own wallpaper, are saved on this
   computer only, in the browser's storage for Tarn. They're never synced
   or uploaded.
-- **Widget content** (your favorite sites, notes, timer) is saved on this
-  computer only.
+- **Widget content** (your favorite sites and folders, the images you pick
+  as their icons, notes, timer) is saved on this computer only.
 - **Site icons** for your favorites are read from your browser's own icon
   cache, without contacting the sites.
 
