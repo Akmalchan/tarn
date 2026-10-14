@@ -5,9 +5,22 @@ interface Resize {
   pointerId: number;
   startX: number;
   startY: number;
-  /** The size when the grip was picked up, and the one shown now. */
+  /** The size when the grip was picked up, and the one it would snap to. */
   from: WidgetSize;
   size: WidgetSize;
+  /** The tile's top-left on the board; it stays put while the corner moves. */
+  x: number;
+  y: number;
+  /** Its box when picked up, and now (following the pointer), in px. */
+  startWidth: number;
+  startHeight: number;
+  width: number;
+  height: number;
+  /** The smallest and largest box its sizes allow. */
+  minWidth: number;
+  maxWidth: number;
+  minHeight: number;
+  maxHeight: number;
 }
 
 /**
@@ -23,6 +36,7 @@ import {
   unsafeCSS,
   type PropertyValues,
 } from 'lit';
+import {keyed} from 'lit/directives/keyed.js';
 import {live} from 'lit/directives/live.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {MAX_COLUMNS, SPAN, columnsFor, type WidgetSize} from '../layout/bands';
@@ -110,6 +124,7 @@ export class TarnBoard extends LitElement {
     draggingId: {state: true},
     announcement: {state: true},
     confirming: {state: true},
+    resizing: {state: true},
   };
 
   static override styles = css`
@@ -264,6 +279,37 @@ export class TarnBoard extends LitElement {
       cursor: nwse-resize;
     }
 
+    /* Being resized: lifted like a held tile, in front of the rest. */
+    .tile[data-resizing] {
+      z-index: 2;
+      background: var(--tile-held, rgb(20 25 34 / 0.86));
+      border-color: var(--tile-line-strong);
+      box-shadow:
+        inset 0 1px 0 var(--tile-highlight),
+        0 22px 48px rgb(0 0 0 / 0.32);
+      translate: 0 0;
+    }
+
+    /* The size it will snap to, pulsing once each time that changes. */
+    .slot {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 1;
+      border-radius: ${RADIUS}px;
+      border: 1.5px solid var(--tile-line-strong);
+      background: rgb(255 255 255 / 0.05);
+      pointer-events: none;
+      animation: slot-in 220ms ${unsafeEase()} both;
+    }
+
+    @keyframes slot-in {
+      from {
+        opacity: 0.4;
+        scale: 0.97;
+      }
+    }
+
     @keyframes holder-in {
       from {
         opacity: 0;
@@ -374,7 +420,8 @@ export class TarnBoard extends LitElement {
   private appearedAt = 0;
   private reporting = 0;
   private drag: Drag | null = null;
-  private resizing: Resize | null = null;
+  /** The tile being resized from its corner, if any. */
+  declare resizing: Resize | null;
   private reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
   constructor() {
@@ -390,6 +437,7 @@ export class TarnBoard extends LitElement {
     this.draggingId = null;
     this.announcement = '';
     this.confirming = null;
+    this.resizing = null;
   }
 
   override connectedCallback(): void {
@@ -428,7 +476,12 @@ export class TarnBoard extends LitElement {
     const rects: number[] = [];
     for (const tile of tiles) {
       // The held tile is a nearly solid card: no frost to keep up with.
-      if (tile.hasAttribute('data-dragging')) continue;
+      if (
+        tile.hasAttribute('data-dragging') ||
+        tile.hasAttribute('data-resizing')
+      ) {
+        continue;
+      }
       const box = tile.getBoundingClientRect();
       rects.push(box.x, box.y, box.width, box.height);
     }
@@ -458,7 +511,8 @@ export class TarnBoard extends LitElement {
       changed.has('widgets') ||
       changed.has('columns') ||
       changed.has('preview') ||
-      changed.has('draggingId')
+      changed.has('draggingId') ||
+      changed.has('resizing')
     ) {
       this.lastBoxes.clear();
       for (const tile of this.renderRoot.querySelectorAll<HTMLElement>(
@@ -482,6 +536,7 @@ export class TarnBoard extends LitElement {
           ? html`<p class="hint">${t('board.hint')}</p>`
           : nothing
       }
+      ${this.renderSlot(tiles)}
       ${repeat(
         tiles,
         tile => tile.id,
@@ -493,12 +548,14 @@ export class TarnBoard extends LitElement {
           const y = dragged ? dragged.y : tile.y;
           const w = dragged ? dragged.width : tile.width;
           const h = dragged ? dragged.height : tile.height;
+          const resized = this.resizing?.id === tile.id ? this.resizing : null;
           const name = widgetName(widget);
           return html`
             <div
               class="tile"
               data-id=${tile.id}
               ?data-dragging=${held}
+              ?data-resizing=${resized !== null}
               tabindex=${this.editing ? '0' : '-1'}
               role=${this.editing ? 'button' : 'group'}
               aria-roledescription=${this.editing ? t('board.movable') : nothing}
@@ -507,7 +564,11 @@ export class TarnBoard extends LitElement {
                   ? t('board.position', {name, index: index + 1, count})
                   : name
               }
-              style="width:${w}px;height:${h}px;transform:translate(${x}px, ${y}px)"
+              style=${
+                resized
+                  ? `width:${resized.width}px;height:${resized.height}px;transform:translate(${resized.x}px, ${resized.y}px)`
+                  : `width:${w}px;height:${h}px;transform:translate(${x}px, ${y}px)`
+              }
               @pointerdown=${this.onPointerDown}
               @keydown=${this.onTileKey}
             >
@@ -543,8 +604,13 @@ export class TarnBoard extends LitElement {
   /** FLIP, invert and play: each tile glides from its old box to its new one. */
   private flip(): void {
     for (const tile of this.renderRoot.querySelectorAll<HTMLElement>('.tile')) {
-      // The dragged tile follows the pointer, not an animation.
-      if (tile.hasAttribute('data-dragging')) continue;
+      // A dragged or resized tile follows the pointer, not an animation.
+      if (
+        tile.hasAttribute('data-dragging') ||
+        tile.hasAttribute('data-resizing')
+      ) {
+        continue;
+      }
       const from = this.lastBoxes.get(tile.dataset.id!);
       const to = tile.getBoundingClientRect();
       const end = tile.style.transform;
@@ -778,10 +844,36 @@ export class TarnBoard extends LitElement {
   // so the corner snaps from one to the next as the pointer travels; the
   // layout reflows (and animates) only when the size actually changes.
 
+  /** Where a tile being resized will snap: a soft outline, there and then. */
+  private renderSlot(
+    tiles: readonly {
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }[],
+  ) {
+    const resize = this.resizing;
+    const slot = resize && tiles.find(tile => tile.id === resize.id);
+    if (!resize || !slot) return nothing;
+    return keyed(
+      resize.size,
+      html`<div
+        class="slot"
+        style="width:${slot.width}px;height:${slot.height}px;transform:translate(${slot.x}px, ${slot.y}px)"
+      ></div>`,
+    );
+  }
+
   private startResize(event: PointerEvent): void {
     const tile = event.currentTarget as HTMLElement;
     const widget = this.widgets.find(w => w.id === tile.dataset.id);
     if (!widget) return;
+    const box = tile.getBoundingClientRect();
+    const board = this.getBoundingClientRect();
+    const spans = WIDGET_SIZE_OPTIONS[widget.kind].map(size => SPAN[size]);
+    const px = (cells: number) => cells * PITCH - GAP;
     this.resizing = {
       id: widget.id,
       tile,
@@ -790,6 +882,16 @@ export class TarnBoard extends LitElement {
       startY: event.clientY,
       from: widget.size,
       size: widget.size,
+      x: box.left - board.left,
+      y: box.top - board.top,
+      startWidth: tile.offsetWidth,
+      startHeight: tile.offsetHeight,
+      width: tile.offsetWidth,
+      height: tile.offsetHeight,
+      minWidth: px(Math.min(...spans.map(([w]) => w))),
+      maxWidth: px(Math.max(...spans.map(([w]) => w))),
+      minHeight: px(Math.min(...spans.map(([, h]) => h))),
+      maxHeight: px(Math.max(...spans.map(([, h]) => h))),
     };
     tile.setPointerCapture(event.pointerId);
     tile.addEventListener('pointermove', this.onResizeMove);
@@ -805,13 +907,27 @@ export class TarnBoard extends LitElement {
     if (!resize || event.pointerId !== resize.pointerId) return;
     const widget = this.widgets.find(w => w.id === resize.id);
     if (!widget) return;
-    const [columns, rows] = SPAN[resize.from];
+    // The frame follows the pointer, held at the widget's smallest and
+    // largest sizes with a little give, so it feels like stretching it.
+    resize.width = rubberBand(
+      resize.startWidth + event.clientX - resize.startX,
+      resize.minWidth,
+      resize.maxWidth,
+    );
+    resize.height = rubberBand(
+      resize.startHeight + event.clientY - resize.startY,
+      resize.minHeight,
+      resize.maxHeight,
+    );
+    resize.tile.style.width = `${resize.width}px`;
+    resize.tile.style.height = `${resize.height}px`;
     const size = nearestSize(
       widget,
-      columns + (event.clientX - resize.startX) / PITCH,
-      rows + (event.clientY - resize.startY) / PITCH,
+      (resize.width + GAP) / PITCH,
+      (resize.height + GAP) / PITCH,
     );
     if (size === resize.size) return;
+    // A new size to snap to: the others make room for it.
     resize.size = size;
     this.preview = this.widgets.map(w =>
       w.id === resize.id ? {...w, size} : w,
@@ -838,6 +954,8 @@ export class TarnBoard extends LitElement {
     window.removeEventListener('keydown', this.onResizeKey);
     if (tile.hasPointerCapture(pointerId))
       tile.releasePointerCapture(pointerId);
+    // Back into the layout: the tile glides from where the pointer left it
+    // into its slot (FLIP, from the box captured before this update).
     this.resizing = null;
     this.toggleAttribute('resizing', false);
     if (!commit || resize.size === resize.from) {
@@ -1033,6 +1151,17 @@ function nearestSize(
     }
   }
   return best;
+}
+
+/**
+ * `value` held between `min` and `max`, giving a little past them (a
+ * quarter of the overshoot, at most 24px), like stretching something
+ * that won't go further.
+ */
+function rubberBand(value: number, min: number, max: number): number {
+  if (value < min) return min - Math.min((min - value) / 4, 24);
+  if (value > max) return max + Math.min((value - max) / 4, 24);
+  return value;
 }
 
 /** Whether an event started on a tile's corner grip. */

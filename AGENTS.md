@@ -159,12 +159,14 @@ Layout rules and the evidence behind them: `docs/design/widget-layout.md`.
   name (click to rename; `WidgetEntry.name`, shown as its heading) and a
   remove button that asks once before removing. The board saves both
   through the same `tarn-reorder` event as a drag. A grip in each tile's
-  corner resizes it: the pointer's travel in cells picks the nearest size
-  that widget offers (sizes are whole cells, so it snaps), the layout
-  reflows only when that changes, and release saves; + and - do the same
-  from the keyboard, Escape cancels. The tile clips its
-  content, not itself, so the holder can overlap its edge. Modules load eagerly on purpose:
-  a reload must draw every widget in its first frame.
+  corner resizes it. The tile lifts and its frame follows the pointer
+  (held at the widget's smallest and largest sizes with a little rubber-band
+  give), a soft outline shows the size it will snap to (the nearest one the
+  widget offers; sizes are whole cells), the others reflow only when that
+  changes, and on release it glides into the outline (FLIP) and saves;
+  - and - do the same from the keyboard, Escape cancels. The tile clips its
+    content, not itself, so the holder can overlap its edge. Modules load eagerly on purpose:
+    a reload must draw every widget in its first frame.
 - **Edit mode:** while the settings side panel is open (`watchSidePanel`),
   widgets can be dragged (Pointer Events + capture) or moved with arrow
   keys. Positions come from the layout engine, never free placement;
