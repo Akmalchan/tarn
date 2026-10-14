@@ -6,6 +6,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Tarn's full name is now "Tarn: Modern New Tab" (translated after the
+  colon), as the Chrome Web Store and the extensions page show it.
+
 ### Added
 
 - Lighter wallpapers for slower computers: Tarn (calmer, less shiny,

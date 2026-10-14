@@ -1,7 +1,7 @@
 {
   "extName": {
-    "message": "Tarn",
-    "description": "The extension name. Not translated."
+    "message": "Tarn: モダンな新しいタブ",
+    "description": "The store title: Tarn, then a translated tagline. Keep \"Tarn\" as is."
   },
   "extShortName": {
     "message": "設定",
