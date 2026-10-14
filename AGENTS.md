@@ -56,11 +56,14 @@ owner's taste. The essentials:
   computer only; first-paint.ts draws it in the first frame).
   `management` is
   _optional_, requested only when the user asks Tarn to switch off another
-  new-tab extension (Chromium only). Adding any permission needs a stated
-  reason. Planned (owner-approved 2026-10-13, place in the UI not decided
-  yet): an optional `bookmarks` permission for "Use my bookmarks", asked
-  at that moment, the bar copied once (`widgets/bookmarks.ts`,
-  `fromBookmarks`/`mergeImported`) and the permission given back.
+  new-tab extension (Chromium only). `bookmarks` is _required_ (owner's
+  choice 2026-10-14, before the store launch: adding a required permission
+  later would disable Tarn for existing users). A Bookmarks widget with no
+  content of its own shows the browser's bookmarks bar, live
+  (`widgets/bookmarks.ts`; folders become folders, deeper ones flatten),
+  from the first new tab; the user's first change saves a copy that is
+  theirs from then on. Read only; its install warning is "Read and change
+  your bookmarks". Adding any permission needs a stated reason.
 - **Performance:** never block first paint; animate only transform/opacity;
   backgrounds pause when hidden and honor `prefers-reduced-motion`.
 - **Words:** every visible word goes through `t()` (`src/i18n/`); never

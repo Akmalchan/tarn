@@ -33,7 +33,8 @@
 - **One-click switch.** Tarn's toolbar button turns it on or off. If another
   new-tab extension (like Momentum) is in the way, Tarn can switch it off
   for you, and back on when you turn Tarn off.
-- **Widgets.** Favorites (with folders and your own icons), notes, tasks,
+- **Widgets.** Bookmarks (your browser's bookmarks bar from the first
+  tab, then folders and your own icons), notes, tasks,
   a calendar, a focus timer and weather, on a calm grid you arrange while
   settings is open.
 - **Private.** Nothing leaves your browser. Settings sync through your

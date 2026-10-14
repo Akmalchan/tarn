@@ -18,6 +18,8 @@ first-run work.
   Favorites, live. An unpacked zip shows no warning at all.
 - **Decide before the Chrome Web Store launch.** Adding a required
   permission later disables Tarn for existing users until they approve it.
+- **Decided 2026-10-14: required.** Built: a Bookmarks widget without
+  content of its own shows the bar, live, until the user changes it.
 
 ## 2. A live bookmarks bar
 

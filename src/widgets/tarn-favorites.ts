@@ -14,10 +14,18 @@ import {
 import {live} from 'lit/directives/live.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {
+  lastBookmarksBar,
+  readBookmarksBar,
+  rememberBookmarksBar,
+  watchBookmarks,
+} from './bookmarks';
+import {
   loadWidgetData,
   peekWidgetData,
+  peekWidgetDataStored,
   saveWidgetData,
   watchWidgetData,
+  widgetDataStored,
 } from './data';
 import {SiteDrag, type DragResult, type DragState} from './favorites-drag';
 import {
@@ -25,6 +33,7 @@ import {
   MAX_ITEMS,
   allSites,
   dropInto,
+  fromBookmarks,
   isFolder,
   moveEntry,
   moveInFolder,
@@ -121,6 +130,7 @@ export class TarnFavorites extends LitElement {
     drag: {state: true},
     confirming: {state: true},
     announcement: {state: true},
+    loaded: {state: true},
   };
 
   static override styles = [
@@ -757,8 +767,13 @@ export class TarnFavorites extends LitElement {
   /** The folder whose remove badge asks for a second press. */
   declare confirming: number | null;
   declare announcement: string;
+  /** Content is in: until then an empty widget shows no "empty" note. */
+  declare loaded: boolean;
 
   private unwatch: () => void = () => {};
+  /** Showing the browser's bookmarks bar, not content of the user's own. */
+  private live = false;
+  private unwatchBar: (() => void) | undefined;
   /** Sites whose icon was looked up in this page. */
   private checked = new Set<string>();
   private dragger: SiteDrag | null = null;
@@ -783,19 +798,70 @@ export class TarnFavorites extends LitElement {
     this.drag = null;
     this.confirming = null;
     this.announcement = '';
+    this.loaded = false;
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.show(peekWidgetData(this.widgetId, normalizeItems));
-    void loadWidgetData(this.widgetId, normalizeItems).then(this.show);
-    this.unwatch = watchWidgetData(this.widgetId, normalizeItems, this.show);
+    if (peekWidgetDataStored(this.widgetId)) {
+      this.live = false;
+      this.loaded = true;
+      this.show(peekWidgetData(this.widgetId, normalizeItems));
+    } else {
+      // Not the user's own yet: the browser's bookmarks bar, as last shown
+      // (a reload's first frame), refreshed in a moment.
+      this.live = true;
+      const last = lastBookmarksBar();
+      if (last) this.show(normalizeItems(last));
+    }
+    void this.loadContent();
+    this.unwatch = watchWidgetData(this.widgetId, normalizeItems, items => {
+      this.stopLive();
+      this.show(items);
+    });
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.unwatch();
+    this.stopLive();
     this.dragger?.cancel();
+  }
+
+  /** The user's own content, or else the browser's bookmarks bar. */
+  private async loadContent(): Promise<void> {
+    if (await widgetDataStored(this.widgetId)) {
+      this.stopLive();
+      this.show(await loadWidgetData(this.widgetId, normalizeItems));
+      return;
+    }
+    this.unwatchBar ??= watchBookmarks(() => void this.showBar());
+    await this.showBar();
+  }
+
+  /**
+   * Shows the bookmarks bar, live, until the widget becomes the user's
+   * own (their first change saves a copy). An empty bar, or a browser
+   * without access, shows the start setup's examples instead.
+   */
+  private async showBar(): Promise<void> {
+    const nodes = await readBookmarksBar();
+    if (!this.live) return;
+    const items = nodes ? fromBookmarks(nodes) : [];
+    if (items.length) {
+      rememberBookmarksBar(items);
+      this.show(items);
+    } else {
+      this.show(await loadWidgetData(this.widgetId, normalizeItems));
+    }
+    this.loaded = true;
+  }
+
+  private stopLive(): void {
+    this.live = false;
+    this.loaded = true;
+    this.unwatchBar?.();
+    this.unwatchBar = undefined;
   }
 
   override willUpdate(changed: PropertyValues<this>): void {
@@ -850,7 +916,7 @@ export class TarnFavorites extends LitElement {
   // ---- Rendering ----------------------------------------------------------
 
   override render() {
-    const empty = !this.items.length && !this.editing;
+    const empty = !this.items.length && !this.editing && this.loaded;
     return html`
       <h3>${this.heading}</h3>
       ${
@@ -1519,6 +1585,9 @@ export class TarnFavorites extends LitElement {
   };
 
   private save(items: Item[]): void {
+    // The first change makes the widget the user's own: no longer the
+    // browser's bar, but a copy they arrange.
+    this.stopLive();
     // Indices may shift: a pending "Remove?" no longer points anywhere.
     this.confirming = null;
     this.show(items);
