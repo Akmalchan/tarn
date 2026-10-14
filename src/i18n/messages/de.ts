@@ -80,6 +80,7 @@ export const de: Catalog = {
   'favorites.movedInto': '{title} nach {folder} verschoben.',
   'weather.empty': 'Das Wetter, wo du bist – oder irgendwo.',
   'weather.choose': 'Ort wählen',
+  'weather.add': 'Ort hinzufügen',
   'weather.change': 'Ort ändern',
   'weather.city': 'Stadt',
   'weather.search': 'Nach einer Stadt suchen',

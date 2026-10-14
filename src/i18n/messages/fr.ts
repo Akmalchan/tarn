@@ -79,6 +79,7 @@ export const fr: Catalog = {
   'favorites.movedInto': '{title} déplacé dans {folder}.',
   'weather.empty': 'La météo là où vous êtes, ou n’importe où.',
   'weather.choose': 'Choisir un lieu',
+  'weather.add': 'Ajouter un lieu',
   'weather.change': 'Changer de lieu',
   'weather.city': 'Ville',
   'weather.search': 'Rechercher une ville',

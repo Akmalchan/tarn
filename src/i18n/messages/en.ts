@@ -98,6 +98,7 @@ export const en = {
   // Weather
   'weather.empty': 'See the weather where you are, or anywhere.',
   'weather.choose': 'Choose a Place',
+  'weather.add': 'Add a place',
   'weather.change': 'Change place',
   'weather.city': 'City',
   'weather.search': 'Search for a city',

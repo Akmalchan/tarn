@@ -77,6 +77,7 @@ export const ja: Catalog = {
   'favorites.movedInto': '{title}を{folder}に移動しました。',
   'weather.empty': 'いる場所の天気も、どこの天気も。',
   'weather.choose': '場所を選ぶ',
+  'weather.add': '場所を追加',
   'weather.change': '場所を変更',
   'weather.city': '都市',
   'weather.search': '都市を検索',

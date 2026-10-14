@@ -340,12 +340,16 @@ export class TarnWeather extends LitElement {
 
       .empty .cta {
         grid-area: cta;
-        display: inline-flex;
-        align-items: baseline;
-        gap: 5px;
+        display: block;
         font-size: 13px;
         font-weight: 600;
-        white-space: nowrap;
+        line-height: 1.3;
+        text-wrap: balance;
+      }
+
+      .empty .cta span {
+        display: inline-block;
+        margin-left: 5px;
       }
 
       .empty .cta span {
@@ -452,6 +456,26 @@ export class TarnWeather extends LitElement {
             calc((100cqw - 46px) / 2.25 / (var(--chars) * 0.57))
           );
         }
+        /* A long name ("San Francisco") gets the row; the glyph moves
+           beside the temperature, and the name shrinks a little to fit. */
+        .now.long {
+          grid-template-areas:
+            'place place'
+            'temp icon'
+            'cond cond';
+        }
+        .now.long .place {
+          font-size: max(
+            11px,
+            min(13px, calc((100cqw - 46px) / 2.25 / (var(--name) * 0.56)))
+          );
+        }
+        .now.long .temp {
+          font-size: min(
+            44px,
+            calc((100cqw - 46px) / 2.25 / (var(--chars) * 0.57) - 6px)
+          );
+        }
         .hours {
           display: grid;
           --count: 4;
@@ -518,6 +542,24 @@ export class TarnWeather extends LitElement {
         }
         .cond {
           align-self: end;
+        }
+        .now.long {
+          grid-template-areas:
+            'place place'
+            'temp icon'
+            'cond cond';
+        }
+        .now.long .place {
+          font-size: max(
+            11px,
+            min(13px, calc((100cqw - 36px) / (var(--name) * 0.56)))
+          );
+        }
+        .now.long .icon {
+          align-self: center;
+        }
+        .now.long .temp {
+          font-size: min(44px, calc((100cqw - 68px) / (var(--chars) * 0.57)));
         }
       }
 
@@ -692,7 +734,7 @@ export class TarnWeather extends LitElement {
           <span class="heading">${this.heading}</span>
           <span class="icon">${weatherGlyph('partly', true)}</span>
           <span class="cta"
-            >${t('weather.choose')}<span aria-hidden="true">›</span></span
+            >${t('weather.add')}<span aria-hidden="true">›</span></span
           >
           <span class="note">${t('weather.empty')}</span>
         </button>
@@ -732,7 +774,11 @@ export class TarnWeather extends LitElement {
       : '';
     const temp = forecast ? deg(forecast.now.temp) : '–°';
     return html`
-      <div class="now" title=${this.creditText()}>
+      <div
+        class=${placeName(place).length > LONG_NAME ? 'now long' : 'now'}
+        style="--name: ${placeName(place).length}"
+        title=${this.creditText()}
+      >
         <button
           class="place"
           data-edit
@@ -1069,6 +1115,12 @@ export class TarnWeather extends LitElement {
     void saveWidgetData(this.widgetId, next).then(() => this.refresh());
   }
 }
+
+/**
+ * Longer than this, a place's name gets the whole top row in small and
+ * medium tiles, and the glyph moves beside the temperature.
+ */
+const LONG_NAME = 9;
 
 /** A place's name; "My location" in the current language. */
 function placeName(place: Place): string {

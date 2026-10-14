@@ -79,6 +79,7 @@ export const ru: Catalog = {
   'favorites.movedInto': '{title} перемещён в {folder}.',
   'weather.empty': 'Погода там, где вы, или где угодно.',
   'weather.choose': 'Выбрать место',
+  'weather.add': 'Добавить место',
   'weather.change': 'Сменить место',
   'weather.city': 'Город',
   'weather.search': 'Найти город',
