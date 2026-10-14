@@ -20,8 +20,8 @@
 
 - **Living backgrounds.** Twelve hand-written WebGL2 shaders: Tarn,
   Ember, Bloom, Wave, Aurora, Silk, Sakura, Comet, Koi, Window, Lumen and
-  Contour. Press <kbd>1</kbd>–<kbd>9</kbd> and <kbd>0</kbd> for the first
-  ten.
+  Contour. Hover one in settings to watch it move, with a gauge for how
+  much it asks of your computer.
 - **Light on your machine.** Renders off the main thread at reduced
   resolution, caps at 30fps, stops completely when the tab is hidden, and
   holds a still frame if you prefer reduced motion.

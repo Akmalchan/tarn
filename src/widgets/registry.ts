@@ -27,7 +27,7 @@ export interface WidgetDefinition {
   readonly tag: string;
   /**
    * Has its own controls while arranging (Favorites: add and remove
-   * sites). Its content stays live then; anything else is inert, and
+   * sites; Weather: change the place). Its content stays live then; anything else is inert, and
    * dragging starts anywhere outside an element marked `data-edit`.
    */
   readonly editable?: boolean;
@@ -42,7 +42,7 @@ export const WIDGETS: Readonly<Record<WidgetKind, WidgetDefinition>> = {
   notes: {nameKey: 'widget.notes', tag: 'tarn-notes'},
   tasks: {nameKey: 'widget.tasks', tag: 'tarn-tasks'},
   focus: {nameKey: 'widget.focus', tag: 'tarn-focus'},
-  weather: {nameKey: 'widget.weather', tag: 'tarn-weather'},
+  weather: {nameKey: 'widget.weather', tag: 'tarn-weather', editable: true},
   calendar: {nameKey: 'widget.calendar', tag: 'tarn-calendar'},
 };
 

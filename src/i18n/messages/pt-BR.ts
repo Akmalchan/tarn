@@ -15,7 +15,7 @@ export const ptBR: Catalog = {
   'widget.favorites': 'Favoritos',
   'widget.notes': 'Notas',
   'widget.tasks': 'Tarefas',
-  'widget.focus': 'Timer de foco',
+  'widget.focus': 'Timer',
   'widget.weather': 'Clima',
   'widget.calendar': 'Calendário',
   'board.hint':
@@ -210,9 +210,6 @@ export const ptBR: Catalog = {
     '“Igual ao navegador” segue o idioma do seu navegador quando o Tarn o oferece, e o inglês caso contrário.',
   'panel.tab': 'Guia',
   'panel.tab.icon': 'Ícone da guia',
-  'panel.tab.chrome': 'Chrome',
-  'panel.tab.noteChrome':
-    'Novas guias mostram o ícone de nova guia do próprio Chrome.',
   'panel.tab.noteNone': 'Novas guias não mostram ícone.',
   'panel.weather.provider': 'Provedor',
   'panel.weather.providerLabel': 'Provedor do clima',
@@ -228,7 +225,6 @@ export const ptBR: Catalog = {
   'panel.weather.keySaved': 'Chave de API salva',
   'panel.weather.keyRemoved': 'Chave de API removida',
   'panel.keys': 'Teclado',
-  'panel.keys.switch': 'Trocar papel de parede',
   'panel.keys.shortcuts': 'Atalhos de teclado',
   'panel.backup': 'Backup',
   'panel.backup.export': 'Exportar backup',
@@ -260,4 +256,39 @@ export const ptBR: Catalog = {
   'panel.about.copied': 'Diagnóstico copiado',
   'panel.about.cantCopy': 'Não foi possível copiar. Use o settings.json.',
   'panel.about.search': 'Versão e diagnóstico',
+
+  // Settings polish (2026-10-14)
+  'panel.searchWidgets': 'Buscar widgets',
+  'panel.searchLanguages': 'Buscar idiomas',
+  'panel.noWidgets': 'Nenhum widget corresponde a “{query}”.',
+  'panel.noLanguages': 'Nenhum idioma corresponde a “{query}”.',
+  'panel.widgets.addHint':
+    'Arraste um para a sua página ou clique para adicionar.',
+  'panel.load': 'Carga no seu computador: {level}',
+  'panel.load.still': 'nenhuma, é uma imagem parada',
+  'panel.load.light': 'leve',
+  'panel.load.medium': 'média',
+  'panel.load.heavy': 'mais alta',
+  'panel.examples': 'Exemplos de configuração',
+  'panel.examples.note':
+    'Experimente uma página pronta com conteúdo de exemplo. Desfazer traz seus widgets de volta.',
+  'panel.examples.shown': '{name} exibido',
+  'panel.examples.bookmarks': 'Só favoritos',
+  'panel.examples.notes': 'Notas e tarefas',
+  'panel.examples.starter': 'Inicial',
+  'panel.examples.planner': 'Planejador',
+  'panel.examples.everything': 'Tudo',
+  'panel.examples.folderWork': 'Trabalho',
+  'panel.examples.folderLearn': 'Aprender',
+  'panel.examples.task1': 'Responder mensagens',
+  'panel.examples.task2': 'Marcar o dentista',
+  'panel.examples.task3': 'Regar as plantas',
+  'panel.tab.browser': 'Navegador',
+  'panel.tab.custom': 'Própria',
+  'panel.tab.change': 'Trocar imagem',
+  'panel.tab.noteBrowser':
+    'Novas abas mostram o ícone de nova aba do seu navegador.',
+  'panel.tab.noteCustom':
+    'Novas abas mostram sua imagem. Ela fica neste computador.',
+  'panel.tab.badImage': 'Não é possível usar essa imagem.',
 };

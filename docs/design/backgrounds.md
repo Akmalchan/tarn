@@ -10,10 +10,13 @@ or adding a scene. The brand side lives in `docs/brand/BRAND.md`
 ## The scenes
 
 Twelve scenes, in `src/backdrop/scenes/index.ts`. Their order in
-`SCENES` is the order in settings; the first ten also have keyboard
-shortcuts (<kbd>1</kbd>–<kbd>9</kbd>, then <kbd>0</kbd> for the tenth).
+`SCENES` is the order in settings. There are no keyboard shortcuts: the
+number keys switched scenes until 2026-10-14, when the owner removed them
+(people typed numbers and the wallpaper changed). Each scene's measured
+cost lives in `src/backdrop/scenes/load.ts` and drives the load gauge on
+its settings card; update it whenever a scene changes.
 
-| Key | Scene   | What it draws                                                                                                                                                                      | Tone  | Speed | Resolution           | Noise                   |
+| #   | Scene   | What it draws                                                                                                                                                                      | Tone  | Speed | Resolution           | Noise                   |
 | --- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | -------------------- | ----------------------- |
 | 1   | Tarn    | Light moving through still water: triple domain-warped noise in navy, teal and pale blue. The default and the brand's signature.                                                   | dark  | 0.22  | 0.5                  | exact `fbm` (must)      |
 | 2   | Ember   | Folding purple-pink-orange color waves under animated film grain.                                                                                                                  | dark  | 0.6   | 0.75                 | `noiseFast`             |
@@ -24,9 +27,9 @@ shortcuts (<kbd>1</kbd>–<kbd>9</kbd>, then <kbd>0</kbd> for the tenth).
 | 7   | Sakura  | 6.5%                                                                                                                                                                               | 9.1%  | 0.5   | 1                    | `fbmFast`               |
 | 8   | Comet   | 4.6%                                                                                                                                                                               | 8.6%  | 0.2   | 1                    | `fbmFast` + `noiseFast` |
 | 9   | Koi     | 6.8%                                                                                                                                                                               | 9.4%  | 0.5   | 1                    | `noiseFast` + `noise`   |
-| 0   | Window  | 7.5%                                                                                                                                                                               | 9.2%  | 0.6   | 1                    | `fbmFast` + `hash01`    |
-| –   | Lumen   | 6.2%                                                                                                                                                                               | 10.0% | 0.4   | 0.5                  | `fbmFast` + `noiseFast` |
-| –   | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper. | light | 0.12  | screen density (≤ 2) | exact `noise` (must)    |
+| 10  | Window  | 7.5%                                                                                                                                                                               | 9.2%  | 0.6   | 1                    | `fbmFast` + `hash01`    |
+| 11  | Lumen   | 6.2%                                                                                                                                                                               | 10.0% | 0.4   | 0.5                  | `fbmFast` + `noiseFast` |
+| 12  | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper. | light | 0.12  | screen density (≤ 2) | exact `noise` (must)    |
 
 Aurora and Silk were added on 2026-10-13 (PR #14). The owner asked for
 "something new" (they mentioned Luma as a vibe) and loved both. Silk was
@@ -128,16 +131,16 @@ To compare candidate moments without touching `public/`, pass
 1. Write the shader yourself (never copy shaders from sites or apps).
    Read the brand rules below first.
 2. Add the `Scene` to `SCENES` in `scenes/index.ts`. Its position is its
-   keyboard shortcut. `src/settings/schema.ts` needs nothing: the setting
+   place in settings. `src/settings/schema.ts` needs nothing: the setting
    is validated against `SCENES`.
 3. Look at it while tuning: render candidate frames with the preview
    script (`id@seconds`), then check it full screen in the dev build, in
    motion.
 4. Pick its moment in `MOMENTS` and regenerate `public/scenes/`.
-5. Measure its cost against the table above (switch scenes with the number
-   keys, sample `SystemInfo.getProcessInfo` CPU per process).
-6. Update this file, `README.md` (the scene list and key range) and
-   `CHANGELOG.md`.
+5. Measure its cost against the table above (switch scenes from settings,
+   sample `SystemInfo.getProcessInfo` CPU per process) and add its row to
+   `scenes/load.ts`.
+6. Update this file, `README.md` (the scene list) and `CHANGELOG.md`.
 
 `src/backdrop/scenes/scenes.test.ts` checks every scene automatically
 (four colors, a base, valid speed and resolution, the `scene()`
