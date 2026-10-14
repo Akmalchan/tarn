@@ -408,7 +408,6 @@ Settings, black and white.
 | Switch            | 34x20, knob 16px, black when on (white in dark). Safari-sized, not phone-sized.                                                                                                                                     |
 | Segmented control | `--field` track 9px radius, 2px padding; selected segment `--seg-on` with a small shadow.                                                                                                                           |
 | Picker cards      | Wallpapers: 2-column 16:10 cards, 12px radius, name left and load gauge right. Clock: a card of four square tiles. Last tile "Show All" (blurred background, grid glyph). Selected: 2px gap ring plus 2px ink ring. |
-| Live preview      | A wallpaper card plays its real scene while hovered (`src/panel/scene-live.ts`).                                                                                                                                    |
 | Load gauge        | A 20x14 arc with a needle in `--muted`/`--ink`, from measured cost (`src/backdrop/scenes/load.ts`): still, light, medium, heavy.                                                                                    |
 | Chips row         | Pills on `--group`, 12.5px 500 (example setups, in Advanced).                                                                                                                                                       |
 | Toast             | Bottom, 16px inset, inverted (`--ink` background, `--bg` text), 12px radius, optional Undo in 600; 4s.                                                                                                              |
@@ -659,7 +658,7 @@ decision log and are only summarized here.
 | Bookmarks              | `src/widgets/tarn-favorites.ts`, `src/widgets/site-icon.ts` | Chips, letter tiles, folders, editor sheet, `DARK_CHIP`, `siteHue`           |
 | Other widgets          | `src/widgets/tarn-{notes,tasks,focus,weather,calendar}.ts`  | Each widget's own styles                                                     |
 | Search box             | `src/search/tarn-search.ts`                                 | Box tokens and looks, dropdown, Lens, voice                                  |
-| Settings panel         | `src/panel/tarn-panel.ts`, `src/panel/scene-live.ts`        | Panel tokens and components; live wallpaper preview                          |
+| Settings panel         | `src/panel/tarn-panel.ts`                                   | Panel tokens and components                                                  |
 | Glyphs                 | `src/ui/glyphs.ts`                                          | `GLYPHS`                                                                     |
 | Wordmark               | `src/ui/wordmark.ts`                                        | The panel signature's wordmark                                               |
 | Switch (popup)         | `src/ui/tarn-switch.ts`                                     | 44x26 switch used outside the panel                                          |
