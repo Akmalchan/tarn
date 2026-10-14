@@ -18,9 +18,10 @@
 
 ## Features
 
-- **Living backgrounds.** Ten hand-written WebGL2 shaders: Tarn, Ember,
-  Bloom, Wave, Aurora, Silk, Mist, Dunes, Rain and Nebula. Press
-  <kbd>1</kbd>–<kbd>9</kbd> and <kbd>0</kbd> to switch.
+- **Living backgrounds.** Fourteen hand-written WebGL2 shaders: Tarn,
+  Ember, Bloom, Wave, Aurora, Silk, Sora, Sakura, Comet, Koi, Window,
+  Fireflies, Lumen and Contour. Press <kbd>1</kbd>–<kbd>9</kbd> and
+  <kbd>0</kbd> for the first ten.
 - **Light on your machine.** Renders off the main thread at reduced
   resolution, caps at 30fps, stops completely when the tab is hidden, and
   holds a still frame if you prefer reduced motion.

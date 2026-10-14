@@ -24,10 +24,14 @@ const MOMENTS = {
   wave: 12,
   aurora: 100,
   silk: 40,
-  mist: 60,
-  dunes: 10,
-  rain: 33,
-  nebula: 60,
+  sora: 60,
+  sakura: 20,
+  comet: 30,
+  koi: 150,
+  window: 40,
+  fireflies: 20,
+  lumen: 20,
+  contour: 20,
 };
 /** Twice a ~160x100 tile, for sharp thumbnails on 2x screens. */
 const WIDTH = 320;

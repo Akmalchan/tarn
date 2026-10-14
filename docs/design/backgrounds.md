@@ -9,46 +9,59 @@ or adding a scene. The brand side lives in `docs/brand/BRAND.md`
 
 ## The scenes
 
-Ten scenes, in `src/backdrop/scenes/index.ts`. Their order in `SCENES` is
-the order in settings and the keyboard shortcut (<kbd>1</kbd>–<kbd>9</kbd>,
-then <kbd>0</kbd> for the tenth).
+Fourteen scenes, in `src/backdrop/scenes/index.ts`. Their order in
+`SCENES` is the order in settings; the first ten also have keyboard
+shortcuts (<kbd>1</kbd>–<kbd>9</kbd>, then <kbd>0</kbd> for the tenth).
 
-| Key | Scene  | What it draws                                                                                                                                  | Tone  | Speed | Resolution | Noise                   |
-| --- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | ---------- | ----------------------- |
-| 1   | Tarn   | Light moving through still water: triple domain-warped noise in navy, teal and pale blue. The default and the brand's signature.               | dark  | 0.22  | 0.5        | exact `fbm` (must)      |
-| 2   | Ember  | Folding purple-pink-orange color waves under animated film grain.                                                                              | dark  | 0.6   | 0.75       | `noiseFast`             |
-| 3   | Bloom  | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                | light | 0.18  | 0.35       | `fbmFast`               |
-| 4   | Wave   | Nine luminous sine ribbons and a glowing sheet over deep blue, after the classic console wave.                                                 | dark  | 0.35  | 1          | none                    |
-| 5   | Aurora | Northern lights: two tilted curtains with sharp, bright lower edges and streaky rays, teal fading to violet, over a night sky with soft stars. | dark  | 0.25  | 0.5        | `fbmFast` + `noiseFast` |
-| 6   | Silk   | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights.                      | light | 0.2   | 0.4        | `noiseFast`             |
-| 7   | Mist   | Layered mountain ridges fading into fog bands, a soft dawn glow behind them; cool grey-blue with a peach horizon.                              | light | 0.12  | 0.4        | `fbmFast`               |
-| 8   | Dunes  | Sand dunes at golden hour: a warped sine height field with fine wind ripples, lit low from the side.                                           | light | 0.1   | 0.4        | `noiseFast`             |
-| 9   | Rain   | Raindrops on a dark pond at night: rings widen and fade in perspective, fewer and smaller toward the horizon.                                  | dark  | 0.5   | 0.5        | `hash01` + `fbmFast`    |
-| 0   | Nebula | Slow domain-warped clouds of indigo and lilac gas over a field of faint stars.                                                                 | dark  | 0.15  | 0.5        | `fbmFast`               |
+| Key | Scene     | What it draws                                                                                                                                                                                          | Tone  | Speed | Resolution | Noise                   |
+| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | ----- | ---------- | ----------------------- |
+| 1   | Tarn      | Light moving through still water: triple domain-warped noise in navy, teal and pale blue. The default and the brand's signature.                                                                       | dark  | 0.22  | 0.5        | exact `fbm` (must)      |
+| 2   | Ember     | Folding purple-pink-orange color waves under animated film grain.                                                                                                                                      | dark  | 0.6   | 0.75       | `noiseFast`             |
+| 3   | Bloom     | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                                                                        | light | 0.18  | 0.35       | `fbmFast`               |
+| 4   | Wave      | Nine luminous sine ribbons and a glowing sheet over deep blue, after the classic console wave.                                                                                                         | dark  | 0.35  | 1          | none                    |
+| 5   | Aurora    | Northern lights: two tilted curtains with sharp, bright lower edges and streaky rays, teal fading to violet, over a night sky with soft stars.                                                         | dark  | 0.25  | 0.5        | `fbmFast` + `noiseFast` |
+| 6   | Silk      | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights.                                                                              | light | 0.2   | 0.4        | `noiseFast`             |
+| 7   | Sora      | Anime summer sky: towering cumulus painted puff by puff (scalloped discs lit like balls, posterized into three bands, warm rim toward the sun), lit as whole towers, over a deep blue sky with cirrus. | dark  | 0.12  | 0.5        | `noiseFast` + `fbmFast` |
+| 8   | Sakura    | Cherry blossoms: a canopy out of focus overhead (soft branches, two layers of blossom discs), petals falling in three depths, each turning as it falls.                                                | light | 0.5   | 0.5        | `fbmFast`               |
+| 9   | Comet     | Anime twilight: indigo to a warm afterglow, the Milky Way and twinkling stars, a comet with an ion and a dust tail, an occasional shooting star, pink-lit clouds, mountains with town lights.          | dark  | 0.2   | 0.5        | `fbmFast` + `noiseFast` |
+| 0   | Koi       | A koi pond from above: five koi on slow looping paths (bodies sway, tails fan, fins paddle), their shadows on the floor, caustics, lily pads on the surface.                                           | dark  | 0.5   | 0.5        | `noiseFast` + `noise`   |
+| –   | Window    | Rain on a window at night: a city in bokeh behind the glass; beads and sliding drops act as lenses showing it flipped and shrunk, drops leave wiped trails.                                            | dark  | 0.6   | 0.5        | `hash01`                |
+| –   | Fireflies | A moonlit lake: tiered pines on the far shore mirrored in the water, a glittering moon path, mist, reeds in front, fireflies over it all, reflected.                                                   | dark  | 0.35  | 0.5        | `fbmFast` + `noiseFast` |
+| –   | Lumen     | Light through haze: shafts fanning down from an opening above, slowly shifting, with dust that glints only inside the light.                                                                           | dark  | 0.25  | 0.5        | `fbmFast` + `noiseFast` |
+| –   | Contour   | A topographic map whose land slowly reshapes: thin contour lines with every fifth bolder, cool valleys and warm heights on paper.                                                                      | light | 0.12  | 0.75       | exact `noise` (must)    |
 
 Aurora and Silk were added on 2026-10-13 (PR #14). The owner asked for
-"something new" (they mentioned Luma as a vibe) and loved both. Mist,
-Dunes, Rain and Nebula followed the same day for the first pilot ("nice
-and neat"): two light, two dark. Silk was brightened then (deeper shadows,
-stronger warm highlights), since it read too flat.
+"something new" (they mentioned Luma as a vibe) and loved both. Silk was
+brightened later that day (deeper shadows, stronger warm highlights).
+
+On 2026-10-14 the owner found the next four (Mist, Dunes, Rain, Nebula)
+"too basic, just moving something" and asked for something "more serious
+and better", Luma-like, and a few anime-like ones. They were replaced by
+the eight from Sora to Contour. A stored `rain`, `nebula`, `dunes` or
+`mist` becomes `window`, `comet`, `sora` or `contour`
+(`REPLACED_SCENES` in `settings/schema.ts`).
 
 ### Measured cost
 
 M4 MacBook, Chrome for Testing 155, headed 1440×900, active pace (30 fps),
 8 s per scene, two rounds. Percent of one CPU core.
 
-| Scene  | Page (renderer) | GPU process |
-| ------ | --------------- | ----------- |
-| Tarn   | 5.3-5.4%        | 10.4-10.8%  |
-| Ember  | 7.9-8.3%        | 10.9-11.3%  |
-| Bloom  | 4.7-5.4%        | 10.0-10.1%  |
-| Wave   | 6.4-6.7%        | 10.3-10.7%  |
-| Aurora | 4.1-5.6%        | 7.7-10.3%   |
-| Silk   | 4.4-5.3%        | 9.1-10.4%   |
-| Mist   | 4.9%            | 9.6%        |
-| Dunes  | 4.5%            | 9.5%        |
-| Rain   | 7.2%            | 9.8%        |
-| Nebula | 5.0%            | 9.5%        |
+| Scene     | Page (renderer) | GPU process |
+| --------- | --------------- | ----------- |
+| Tarn      | 5.3-5.4%        | 10.4-10.8%  |
+| Ember     | 7.9-8.3%        | 10.9-11.3%  |
+| Bloom     | 4.7-5.4%        | 10.0-10.1%  |
+| Wave      | 6.4-6.7%        | 10.3-10.7%  |
+| Aurora    | 4.1-5.6%        | 7.7-10.3%   |
+| Silk      | 4.4-5.3%        | 9.1-10.4%   |
+| Sora      | 5.0%            | 10.7%       |
+| Sakura    | 7.7-7.9%        | 10.5-11.2%  |
+| Comet     | 5.4%            | 10.4%       |
+| Koi       | 7.3%            | 10.1%       |
+| Window    | 8.4%            | 10.5-11.1%  |
+| Fireflies | 6.5%            | 10.2%       |
+| Lumen     | 5.4%            | 10.0%       |
+| Contour   | 5.1%            | 10.2%       |
 
 Most of the GPU process number is compositing 30 frames a second, not the
 shader itself, so scenes differ little. Ember is the heaviest (grain at
@@ -163,6 +176,27 @@ didn't catch these):
 
 Silk needed stronger normals and fewer, longer folds than the first try;
 weak shading read as a blurry cloud, and three equal sine waves looked busy.
+
+Lessons from the 2026-10-14 eight (each took several rendered rounds):
+
+- **Anime clouds are painted, not simulated.** Noise-shaped masses read as
+  snowy mountains; one smooth height field of domes read as plastic
+  balloons. What worked: scalloped discs (`abs(sin)` lobes on the radius)
+  shaded like balls and posterized into three bands, drawn back to front,
+  plus lighting by tower (sunward side brighter, base in shadow) so small
+  puffs don't each shout with a crescent. Keep the middle of the sky open
+  for the clock and widgets.
+- **A drop on glass is a lens.** Sample the background at
+  `uv - offset` (a shrunk, flipped view of a wider area); drawing the
+  background sharper inside drops made them dark holes.
+- **Thin lines need exact noise.** The fast texture noise has kinks its
+  bilinear filter can't hide; contour lines showed every one.
+- **Avoid two scenes of the same family.** An ink-marbling scene
+  (Suminagashi) came out as a second "lines on paper" next to Contour and
+  was swapped for Koi.
+- **Silhouettes need a real shape language.** Bumpy crowns and
+  wave-like treelines looked like clip art; tiered pines, reeds and a
+  mirrored lake made the night scene.
 
 ## Your own photos
 
