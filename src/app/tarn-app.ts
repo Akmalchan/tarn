@@ -10,6 +10,7 @@ import type {TarnBackdrop} from '../backdrop/tarn-backdrop';
 import './tarn-settings-button';
 import '../widgets/tarn-board';
 import '../widgets/tarn-clock';
+import {clockTone} from '../widgets/clock-faces';
 import '../search/tarn-search';
 import type {
   ReorderDetail,
@@ -38,6 +39,7 @@ import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
 import {useLanguage} from '../i18n';
 import {draggedKind} from '../widgets/drag-new';
+import {darkInk, lightInk} from '../ui/ink';
 
 /** Root of the new tab page. */
 export class TarnApp extends LitElement {
@@ -56,9 +58,7 @@ export class TarnApp extends LitElement {
       height: 100%;
 
       /* Widget and clock colors on dark scenes. */
-      --ink: rgb(244 247 251);
-      --ink-dim: rgb(244 247 251 / 0.66);
-      --ink-faint: rgb(244 247 251 / 0.4);
+      ${darkInk}
       --tile-line: rgb(255 255 255 / 0.14);
       --tile-fill: rgb(255 255 255 / 0.03);
       --tile-fill-solid: rgb(255 255 255 / 0.1);
@@ -68,15 +68,11 @@ export class TarnApp extends LitElement {
       --chip-strong: rgb(30 34 44 / 0.85);
       /* A widget being dragged: a nearly solid card. */
       --tile-held: rgb(20 25 34 / 0.86);
-      /* Keeps white text readable over bright patches (Ember's orange). */
-      --ink-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
     }
 
     /* Light scenes (Bloom): dark text, brighter frost. */
     :host([tone='light']) {
-      --ink: rgb(22 26 38);
-      --ink-dim: rgb(22 26 38 / 0.64);
-      --ink-faint: rgb(22 26 38 / 0.4);
+      ${lightInk}
       --tile-line: rgb(255 255 255 / 0.55);
       --tile-fill: rgb(255 255 255 / 0.06);
       --tile-fill-solid: rgb(255 255 255 / 0.45);
@@ -86,7 +82,6 @@ export class TarnApp extends LitElement {
       --chip-strong: rgb(255 255 255 / 0.9);
       --tile-held: rgb(246 246 251 / 0.88);
       --focus-ring: rgb(22 26 38 / 0.6);
-      --ink-shadow: none;
     }
 
     /* The clock and widgets: one group a little above the middle. Free space
@@ -262,7 +257,10 @@ export class TarnApp extends LitElement {
               ? nothing
               : html`<tarn-clock
                   face=${clock}
-                  tone=${sceneTone(sceneById(this.settings.scene))}
+                  tone=${clockTone(
+                    this.settings.clockColor,
+                    sceneTone(sceneById(this.settings.scene)),
+                  )}
                 ></tarn-clock>`
           }
           ${

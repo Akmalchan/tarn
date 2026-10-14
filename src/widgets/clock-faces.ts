@@ -6,7 +6,7 @@
 import {css, html, nothing, svg} from 'lit';
 import {keyed} from 'lit/directives/keyed.js';
 import {locale} from '../i18n';
-import type {ClockStyle} from '../settings/schema';
+import type {ClockColor, ClockStyle} from '../settings/schema';
 
 /**
  * How each clock face draws the time, shared by the clock on the tab and
@@ -185,6 +185,19 @@ const TICKS = (() => {
   }
   return lines;
 })();
+
+/**
+ * The tone the clock is drawn for, from the user's color and the
+ * wallpaper's tone: light digits are drawn as on a dark wallpaper.
+ */
+export function clockTone(
+  color: ClockColor,
+  sceneTone: 'light' | 'dark',
+): 'light' | 'dark' {
+  if (color === 'light') return 'dark';
+  if (color === 'dark') return 'light';
+  return sceneTone;
+}
 
 /**
  * SVG filters some faces draw through, defined once per shadow root that

@@ -21,15 +21,18 @@ export function mirrorSettings(settings: Settings): void {
   rememberEnabled(settings.enabled);
   rememberTabIcon(settings.tabIcon);
   try {
-    const {clock, widgets, search} = settings;
-    localStorage.setItem(HOME_KEY, JSON.stringify({clock, widgets, search}));
+    const {clock, clockColor, widgets, search} = settings;
+    localStorage.setItem(
+      HOME_KEY,
+      JSON.stringify({clock, clockColor, widgets, search}),
+    );
   } catch {
     // Blocked storage: the page waits for synced settings instead.
   }
 }
 
 /**
- * The clock, search box and widgets as last seen, read synchronously, so a new tab can
+ * The clock, its color, the search box and widgets as last seen, read synchronously, so a new tab can
  * lay them out at once instead of waiting for synced storage. Callers still
  * normalize it, like anything read from storage.
  */

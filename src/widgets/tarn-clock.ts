@@ -6,6 +6,7 @@
 import {LitElement, css, html, nothing} from 'lit';
 import type {ClockStyle} from '../settings/schema';
 import {clockText, clockTime, faceFilters, faceStyles} from './clock-faces';
+import {darkInk, lightInk} from '../ui/ink';
 import {LocaleController, locale} from '../i18n';
 
 /**
@@ -17,8 +18,9 @@ import {LocaleController, locale} from '../i18n';
  * neon, fraktur, gotisch or analog. Serif uses the system's font; glass,
  * rounded and outline are SVG filters over the bundled one; pixel, lcd and
  * analog are drawn; fraktur and gotisch load their own bundled fonts, only
- * when shown. `tone` is the wallpaper's (light or dark), for faces that
- * change with it.
+ * when shown. `tone` is what the clock is drawn for (a light or dark
+ * wallpaper, or the user's color; `clockTone`); it sets the ink, and
+ * faces that change with it follow.
  */
 export class TarnClock extends LitElement {
   static override properties = {
@@ -38,6 +40,14 @@ export class TarnClock extends LitElement {
       color: var(--ink);
       text-shadow: var(--ink-shadow);
       user-select: none;
+    }
+
+    :host([tone='dark']) {
+      ${darkInk}
+    }
+
+    :host([tone='light']) {
+      ${lightInk}
     }
 
     time {

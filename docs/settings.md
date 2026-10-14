@@ -7,15 +7,15 @@ in the panel.
 
 ## Where settings live
 
-| What                                                                                                        | Where                              | Synced                             | Code                                                    |
-| ----------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------- | ------------------------------------------------------- |
-| Settings (wallpaper, clock, widgets list, search box, weather source and units, language, tab icon, on/off) | `storage.sync`, key `settings.v1`  | Yes, through the browser's account | `src/settings/store.ts`                                 |
-| Widget content (notes, tasks, bookmarks, timer, weather place)                                              | `storage.local`, `widget.<id>`     | No                                 | `src/widgets/data.ts`                                   |
-| Photos                                                                                                      | IndexedDB                          | No                                 | `src/wallpapers/store.ts`                               |
-| Google Weather key                                                                                          | `storage.local`                    | No, and never exported             | `src/weather/config.ts`                                 |
-| Your own tab icon                                                                                           | localStorage `tarn.tabIcon.custom` | No                                 | `src/panel/tarn-panel.ts`, `src/app/first-paint.ts`     |
-| Mirrors for first paint (scene, base color, home settings, widget content, icons, tile rects, ghost)        | localStorage / sessionStorage      | No                                 | `src/app/mirror.ts`, `first-paint.ts`, `tile-memory.ts` |
-| Automatic backups (last 3)                                                                                  | `storage.local`, `backups.auto`    | No                                 | `src/settings/backup.ts`                                |
+| What                                                                                                                      | Where                              | Synced                             | Code                                                    |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| Settings (wallpaper, clock and its color, widgets list, search box, weather source and units, language, tab icon, on/off) | `storage.sync`, key `settings.v1`  | Yes, through the browser's account | `src/settings/store.ts`                                 |
+| Widget content (notes, tasks, bookmarks, timer, weather place)                                                            | `storage.local`, `widget.<id>`     | No                                 | `src/widgets/data.ts`                                   |
+| Photos                                                                                                                    | IndexedDB                          | No                                 | `src/wallpapers/store.ts`                               |
+| Google Weather key                                                                                                        | `storage.local`                    | No, and never exported             | `src/weather/config.ts`                                 |
+| Your own tab icon                                                                                                         | localStorage `tarn.tabIcon.custom` | No                                 | `src/panel/tarn-panel.ts`, `src/app/first-paint.ts`     |
+| Mirrors for first paint (scene, base color, home settings, widget content, icons, tile rects, ghost)                      | localStorage / sessionStorage      | No                                 | `src/app/mirror.ts`, `first-paint.ts`, `tile-memory.ts` |
+| Automatic backups (last 3)                                                                                                | `storage.local`, `backups.auto`    | No                                 | `src/settings/backup.ts`                                |
 
 The schema is `src/settings/schema.ts`: the `Settings` type, its
 defaults (`DEFAULT_SETTINGS`), the start setup (`START_WIDGETS`) and
@@ -85,7 +85,8 @@ Settings (home)
 │                                  (name on the left, a load gauge on the
 │                                  right; still thumbnails)
 ├── Clock                          a card: Classic, Minimal, None + "Show All"
-│   └── Clock                      every face (docs/clocks.md)
+│   └── Clock                      Color (Auto, Light, Dark), then every
+│                                  face (docs/clocks.md)
 ├── Widgets ›                      on your tab (size, rename, remove), then
 │                                  Add a widget (rows with a grip: drag onto
 │                                  the page, or click)

@@ -32,6 +32,7 @@ describe('normalizeSettings', () => {
         scene: 'wave',
         tabIcon: 'none',
         clock: 'none',
+        clockColor: 'light',
         widgets,
         weather: {provider: 'google', units: 'fahrenheit'},
         search: {
@@ -48,6 +49,7 @@ describe('normalizeSettings', () => {
       scene: 'wave',
       tabIcon: 'none',
       clock: 'none',
+      clockColor: 'light',
       widgets,
       weather: {provider: 'google', units: 'fahrenheit'},
       search: {
@@ -76,6 +78,7 @@ describe('normalizeSettings', () => {
         scene: 'wave',
         tabIcon: 'tarn',
         clock: 'left',
+        clockColor: 'pink',
         widgets: 'many',
       }),
     ).toEqual({...DEFAULT_SETTINGS, scene: 'wave', widgets: []});

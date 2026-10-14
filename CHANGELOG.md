@@ -8,6 +8,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Clock color: Auto follows the wallpaper as before; Light or Dark keeps
+  the clock that color on any wallpaper (Settings > Clock).
 - A search box under the clock, shaped like the browser's own: it searches
   with your browser's engine, opens typed addresses, and suggests your
   bookmarks. Voice (right in the box, with a voice line), Google Lens (a box on the

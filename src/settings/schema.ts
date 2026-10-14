@@ -42,6 +42,13 @@ export type ClockStyle =
   | 'gotisch'
   | 'analog'
   | 'none';
+/**
+ * The clock's color: 'auto' follows the wallpaper (light digits on dark
+ * scenes, dark ones on light scenes); 'light' and 'dark' fix it.
+ */
+export type ClockColor = 'auto' | 'light' | 'dark';
+export const CLOCK_COLORS: readonly ClockColor[] = ['auto', 'light', 'dark'];
+
 /** In the order settings shows them. */
 export const CLOCK_STYLES: readonly ClockStyle[] = [
   'center',
@@ -199,6 +206,7 @@ export interface Settings {
   readonly scene: string;
   readonly tabIcon: TabIcon;
   readonly clock: ClockStyle;
+  readonly clockColor: ClockColor;
   /** In the user's order. Empty by default: a calm page is the default. */
   readonly widgets: readonly WidgetEntry[];
   readonly weather: WeatherSettings;
@@ -225,6 +233,7 @@ export const DEFAULT_SETTINGS: Settings = {
   scene: DEFAULT_SCENE_ID,
   tabIcon: 'chrome',
   clock: 'center',
+  clockColor: 'auto',
   widgets: START_WIDGETS,
   weather: {provider: 'open-meteo', units: 'auto'},
   search: {show: true, style: 'auto', voice: true, lens: true, ai: 'off'},
@@ -273,11 +282,15 @@ export function normalizeSettings(raw: unknown): Settings {
   const clock = CLOCK_STYLES.includes(value.clock as ClockStyle)
     ? (value.clock as ClockStyle)
     : DEFAULT_SETTINGS.clock;
+  const clockColor = CLOCK_COLORS.includes(value.clockColor as ClockColor)
+    ? (value.clockColor as ClockColor)
+    : DEFAULT_SETTINGS.clockColor;
   return {
     enabled,
     scene,
     tabIcon,
     clock,
+    clockColor,
     // No widget list stored (a new install, until the widgets are first
     // changed): the start setup. An empty list is the user's own "none".
     widgets:
