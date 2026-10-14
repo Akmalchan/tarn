@@ -150,10 +150,14 @@ frame of the new page before the live scene exists. That frame is a ghost.
   `beforeunload` (`saveMoment`). `pagehide` and going hidden save the
   clock only. A ghost is skipped when the scene and moment equal the last
   one (a stopped photo or reduced-motion scene saves once).
-- **Capture** (`Renderer.ghost`): draws, then copies the canvas with
-  `createImageBitmap` and `drawImage` (which clamps at the edges) to 320 px
-  wide (`GHOST_WIDTH`), strips alpha, base64-encodes raw RGB in the worker
-  and adds the mean color. Raw, so the next page needs no image decode.
+- **Capture** (`Renderer.ghost`, `readSmall`): draws, then shrinks the
+  frame on the GPU with halving `blitFramebuffer` steps (each averages 2x2
+  pixels) to 320 px wide (`GHOST_WIDTH`), and reads only that back through
+  a pixel buffer and a fence, so the worker never waits on the GPU. It
+  strips alpha, flips the rows to top-down, base64-encodes raw RGB and
+  adds the mean color. Raw, so the next page needs no image decode. (Until
+  2026-10-14 it read the whole frame back and scaled it on the CPU: about
+  80% of the worker's time.)
 - **Storage** (`rememberGhost`): sessionStorage `tarn.ghost`
   `{scene, width, height, data, clock, color}`, per tab. The renderer
   comment puts a ghost at about 190 KB.
@@ -291,7 +295,9 @@ gets:
 - `main()`: `uv = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y`,
   so `uv` is centered and aspect-corrected (y spans -0.5..0.5, x about
   ±0.8 on 16:10). It calls `scene(uv, uTime)` and adds ±0.5/255 dither
-  against banding.
+  against banding: interleaved gradient noise in float math (it was an
+  integer hash per pixel, about a third of a big frame's cost; changed
+  2026-10-14).
 - `hash(uvec2)` and `hash01(vec2)`: integer hash per cell.
 - Gradient noise, roughly in [-0.7, 0.7], two ways:
   - `noise` / `fbm` (4 octaves): computed per pixel, exact.
@@ -304,12 +310,13 @@ gets:
 Which to use:
 
 - Gentle noise (soft color fields, grain, haze): the fast pair.
-- Heavily domain-warped scenes (Tarn) must use exact `fbm`: chained warps
-  amplify the texture's ~0.001 differences into a visibly flatter pattern
-  (measured 2026-10-11: plain noise error 0.2/255, warped Tarn
-  6-16/255).
-- Thin lines (Contour) must use exact `noise`: the texture has kinks its
-  bilinear filter can't hide, and lines show every one.
+- Heavily domain-warped scenes: test both. Tarn needed exact `fbm` at 0.5
+  (chained warps amplified the texture's ~0.001 differences into a flatter
+  pattern, measured 2026-10-11), but at 0.35 with fewer warp octaves the
+  fast pair looks the same (2026-10-14), and it avoids per-pixel integer
+  hashing, which weak GPUs (Raspberry Pi) do slowly.
+- Thin lines (Contour) can't use the bilinear texture: its kinks show in
+  every line. Contour carries its own smooth float-hash gradient noise.
 - The fast texture repeats every 32 noise cells. Keep frequencies low
   enough that a repeat never fits on screen.
 
@@ -500,20 +507,20 @@ settings. The default is Tarn (`DEFAULT_SCENE_ID`). There are no keyboard
 shortcuts: number keys switched scenes until 2026-10-14, when the owner
 removed them (people typed numbers and the wallpaper changed).
 
-| #   | id        | Name    | What it draws                                                                                                                                                                                                                                                                                                                                                                                  | Tone  | Speed | Resolution             | Noise                                                |
-| --- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | ---------------------- | ---------------------------------------------------- |
-| 1   | `tarn`    | Tarn    | Light moving through still water: triple domain-warped noise in navy, teal and pale blue. The default and the brand's signature.                                                                                                                                                                                                                                                               | dark  | 0.22  | 0.5                    | exact `fbm` (must)                                   |
-| 2   | `ember`   | Ember   | Folding purple-pink-orange color waves under animated film grain.                                                                                                                                                                                                                                                                                                                              | dark  | 0.6   | 0.75                   | `noiseFast`, `hash01` grain                          |
-| 3   | `bloom`   | Bloom   | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                                                                                                                                                                                                                                                                | light | 0.18  | 0.35                   | `fbmFast`                                            |
-| 4   | `wave`    | Wave    | Nine luminous sine ribbons and a glowing sheet over deep blue, after the classic console wave.                                                                                                                                                                                                                                                                                                 | dark  | 0.35  | 1                      | none                                                 |
-| 5   | `aurora`  | Aurora  | Northern lights: two tilted curtains with sharp, bright lower edges and streaky rays, teal fading to violet, over a night sky with soft stars.                                                                                                                                                                                                                                                 | dark  | 0.25  | 0.5                    | `fbmFast`, `noiseFast`, `hash01`                     |
-| 6   | `silk`    | Silk    | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights.                                                                                                                                                                                                                                                                      | light | 0.2   | 0.4                    | `noiseFast`                                          |
-| 7   | `sakura`  | Sakura  | Cherry blossoms: a canopy out of focus overhead, a branch in focus from the top right with five-petal blossoms (notched tips, pink hearts, stamens) and buds, swaying; soft sun rays; petals falling in three depths.                                                                                                                                                                          | light | 0.5   | 1                      | `fbmFast`, `hash01`                                  |
-| 8   | `comet`   | Comet   | Twilight over a mountain lake: indigo to a warm afterglow, the Milky Way and twinkling stars, a comet with an ion and a dust tail, shooting stars, a plane's blinking light, drifting pink-lit clouds; a rugged range lit warm along its crests, a dark forested shore with a few villages' lights, all mirrored in still water with slow ripples and the lights' long shimmering reflections. | dark  | 0.2   | 1                      | `noise` (ridged), `fbmFast`, `noiseFast`, `hash01`   |
-| 9   | `koi`     | Koi     | A koi pond from above: stones in the silt, caustics, six koi (kohaku, sanke, ogon, showa) at different depths with wet sheen, eyes and rayed translucent fins, shadows below, ripples that bend everything under the surface, glossy mottled lily pads and a lotus.                                                                                                                            | dark  | 0.5   | 1                      | `noiseFast`, `noise`, `fbmFast`, `hash01`            |
-| 10  | `window`  | Window  | Rain on a window at night: a city as layered bokeh (warm and cool, brighter rims, drifting slowly), beads of three sizes and running drops that wipe trails; every drop a lens showing the lights sharper, flipped and shrunk.                                                                                                                                                                 | dark  | 0.6   | 1                      | `fbmFast`, `hash01`                                  |
-| 11  | `lumen`   | Lumen   | Light through haze: shafts from an opening above that sway, widen and dim on their own, haze rolling through, pulses running down the beams, dust in three depths glinting only in the light.                                                                                                                                                                                                  | dark  | 0.4   | 0.5                    | `fbmFast`, `noiseFast`, `hash01`                     |
-| 12  | `contour` | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper.                                                                                                                                                                                                             | light | 0.12  | screen density (≤ 1.5) | exact `noise` for the land (must); `noiseFast` grain |
+| #   | id        | Name    | What it draws                                                                                                                                                                                                                                                                                                                                                                                  | Tone  | Speed | Resolution             | Noise                                                                                          |
+| --- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| 1   | `tarn`    | Tarn    | Light moving through still water: triple domain-warped noise in navy, teal and pale blue, slow and tempered (highlights capped). The default and the brand's signature.                                                                                                                                                                                                                        | dark  | 0.18  | 0.35                   | `fbmFast` (3 octaves on the warps, 4 on the surface)                                           |
+| 2   | `ember`   | Ember   | Folding purple-pink-orange color waves under animated film grain.                                                                                                                                                                                                                                                                                                                              | dark  | 0.6   | 0.75                   | `noiseFast`, `hash01` grain                                                                    |
+| 3   | `bloom`   | Bloom   | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                                                                                                                                                                                                                                                                | light | 0.18  | 0.2                    | texture noise, 3 octaves                                                                       |
+| 4   | `wave`    | Wave    | Three twisting ribbons of light at three depths (far dim, middle sharp, near out of focus), each a translucent sheet with bright rims and fine strands with light running along them, over a lit swell in deep blue; sparkles and soft motes; the top and middle stay calm.                                                                                                                    | dark  | 0.35  | 0.75                   | `noiseFast`                                                                                    |
+| 5   | `aurora`  | Aurora  | Northern lights: two parallel arcs that take turns being lit, folding ribbons whose edge-on folds glow brighter, thin streaky rays bunching there, teal rising to violet; a night sky with slowly twinkling stars.                                                                                                                                                                             | dark  | 0.25  | 0.4                    | `noiseFast` (5 fetches per pixel)                                                              |
+| 6   | `silk`    | Silk    | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights. Slope computed analytically (one evaluation).                                                                                                                                                                                                                        | light | 0.2   | 0.33                   | `noiseFast`                                                                                    |
+| 7   | `sakura`  | Sakura  | Cherry blossoms: a canopy out of focus overhead, a branch in focus from the top right with five-petal blossoms (notched tips, pink hearts, stamens) and buds, swaying; soft sun rays; petals falling in three depths.                                                                                                                                                                          | light | 0.5   | 1                      | `fbmFast`, `hash01`                                                                            |
+| 8   | `comet`   | Comet   | Twilight over a mountain lake: indigo to a warm afterglow, the Milky Way and twinkling stars, a comet with an ion and a dust tail, shooting stars, a plane's blinking light, drifting pink-lit clouds; a rugged range lit warm along its crests, a dark forested shore with a few villages' lights, all mirrored in still water with slow ripples and the lights' long shimmering reflections. | dark  | 0.2   | 1                      | `noise` (ridged), `fbmFast`, `noiseFast`, `hash01`                                             |
+| 9   | `koi`     | Koi     | A koi pond from above: stones in the silt, caustics, six koi (kohaku, sanke, ogon, showa) at different depths with wet sheen, eyes and rayed translucent fins, shadows below, ripples that bend everything under the surface, glossy mottled lily pads and a lotus.                                                                                                                            | dark  | 0.5   | 1                      | `noiseFast`, `noise`, `fbmFast`, `hash01`                                                      |
+| 10  | `window`  | Window  | Rain on a window at night: a city as layered bokeh (warm and cool, brighter rims, drifting slowly), beads of three sizes and running drops that wipe trails; every drop a lens showing the lights sharper, flipped and shrunk.                                                                                                                                                                 | dark  | 0.6   | 1                      | `fbmFast`, `hash01`                                                                            |
+| 11  | `lumen`   | Lumen   | Light through haze: shafts from an opening above that sway, widen and dim on their own, haze rolling through, pulses running down the beams, dust in three depths glinting only in the light.                                                                                                                                                                                                  | dark  | 0.4   | 0.5                    | `fbmFast`, `noiseFast`, `hash01`                                                               |
+| 12  | `contour` | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper.                                                                                                                                                                                                             | light | 0.12  | screen density (≤ 1.5) | its own float-hash gradient noise (C2, no integer math); finest octave a B-spline texture read |
 
 ### Data
 
@@ -577,6 +584,20 @@ Notes:
   the process (8 tabs: 190 MB / 291 MB). The one-tab process figure has
   grown from about 78 to 102 MB across versions (measured on built
   history, 2026-10-14).
+- **Where the cost really is (2026-10-14).** A blank shader in the same
+  engine costs the same CPU as Tarn (page about 5%, GPU process about 11%
+  on the M4): the cost is the pipeline of 30 frames a second (worker,
+  OffscreenCanvas commit, compositing), not the scene. Profiled: the
+  page's main thread is about 0.07% busy; the worker was 2% busy, 80% of
+  it the ghost readback (now 0.4%). Scene shader cost matters on weak
+  GPUs: ms per frame at 1920x1200 CSS x resolution (`opt/bench.mjs` in
+  the session scratchpad; a Raspberry Pi 5 GPU is roughly 30-60x slower):
+  Tarn 0.081 → ~0.027, Bloom 0.018 → ~0.005, Wave 0.084 → ~0.045,
+  Aurora 0.049 → ~0.027, Silk 0.039 → ~0.011, Contour 0.211 → 0.162 (its
+  floor at 1.5x is pixel count); Sakura 0.46, Koi 0.32, Window 0.30,
+  Comet 0.27, Ember 0.05, Lumen 0.05 unchanged. On the M4 the bench
+  bottoms out near 0.03 ms (tile rendering skips covered work), so small
+  numbers are noisy.
 - `load.test.ts` pins Comet as light, Koi as medium and Ember as heavy;
   changing their numbers may need the test updated.
 
@@ -764,8 +785,14 @@ Not built yet:
 - **Free hidden tabs' GPU memory.** After about 30 s hidden, release the
   tab's GL resources and restore through the ghost when it shows again
   (today a hidden tab keeps its context, programs and textures).
-- **A lighter Contour.** Render at 1.5x instead of full density, and use
-  a half-size copy for the glass.
+- **A lighter glass copy for Contour.** It renders at 1.5x since #51; a
+  half-size copy for the glass would save more GPU memory.
+- **A low-resolution height field** (engine): scenes like Contour could
+  draw their land at 1/8 size into a texture and read it with a smooth
+  B-spline at full size; the frame would still sit at the pixel-count
+  floor.
+- **Sakura, Koi, Window and Comet on weak GPUs**: the heaviest shaders
+  now (0.27-0.46 ms on the M4 bench).
 - **A battery saver.**
 - **Light/dark twins** that follow the system theme (BRAND.md: light
   first). Bloom, Silk, Sakura and Contour are the light scenes so far.

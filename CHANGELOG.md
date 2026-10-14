@@ -8,6 +8,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Lighter wallpapers for slower computers: Tarn (calmer, less shiny,
+  slower), Bloom, Silk, Aurora (more natural rays) and Contour draw with a
+  fraction of the work; Wave is remade with layered, twisting ribbons of
+  light; every frame's anti-banding dither is cheaper; reload snapshots no
+  longer stall the graphics chip.
 - Keyboard shortcuts on the new tab: / to search, 1-9 to open a bookmark,
   T for the timer, N for notes, comma for settings, ? to see them all.
   They can be turned off in Settings > Advanced > Keyboard.
