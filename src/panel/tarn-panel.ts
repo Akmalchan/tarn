@@ -68,7 +68,12 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
-import {clockText, clockTime} from '../widgets/clock-faces';
+import {
+  clockText,
+  clockTime,
+  faceFilters,
+  faceStyles,
+} from '../widgets/clock-faces';
 import {EXAMPLES, buildExample, type Example} from '../widgets/samples';
 import {
   addWallpaper,
@@ -118,6 +123,8 @@ export class TarnPanel extends LitElement {
   };
 
   static override styles = css`
+    ${faceStyles}
+
     /* Light first, with a dark twin. Black and white; system greys. */
     :host {
       --bg: #f2f2f7;
@@ -872,36 +879,6 @@ export class TarnPanel extends LitElement {
       font-size: 17cqi;
     }
 
-    .thumb .t.bold {
-      font-weight: 650;
-      letter-spacing: -0.05em;
-    }
-
-    .thumb .t.serif {
-      font-family: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
-      font-weight: 400;
-      letter-spacing: -0.02em;
-    }
-
-    .thumb .t.stacked {
-      display: grid;
-      font-weight: 700;
-      line-height: 0.84;
-      letter-spacing: -0.05em;
-    }
-
-    .thumb .t.outline {
-      font-weight: 500;
-      -webkit-text-fill-color: transparent;
-      -webkit-text-stroke: max(0.6px, 0.012em) currentColor;
-    }
-
-    .thumb .t .pixel {
-      display: block;
-      height: 0.6em;
-      margin: 0.08em 0 0.1em;
-    }
-
     .thumb .d {
       font-size: 7.5cqi;
       white-space: nowrap;
@@ -1160,6 +1137,7 @@ export class TarnPanel extends LitElement {
             advanced: () => this.renderAdvanced(),
           }[this.page]();
     return html`
+      ${faceFilters}
       ${keyed(
         this.page,
         html`<div class="page ${this.direction}">
@@ -2631,6 +2609,11 @@ const FACE_NAMES: Record<ClockStyle, MessageKey> = {
   stacked: 'panel.face.stacked',
   outline: 'panel.face.outline',
   pixel: 'panel.face.pixel',
+  glass: 'panel.face.glass',
+  rounded: 'panel.face.rounded',
+  duo: 'panel.face.duo',
+  tall: 'panel.face.tall',
+  analog: 'panel.face.analog',
   none: 'panel.face.none',
 };
 
@@ -2721,7 +2704,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic bold minimal serif stacked outline pixel 8-bit retro hide',
+      'time date face classic glass bold rounded duo tall minimal serif stacked outline pixel 8-bit retro analog dial hide',
   },
   {
     label: 'panel.page.widgets',

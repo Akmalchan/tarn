@@ -33,15 +33,26 @@ export type ClockStyle =
   | 'stacked'
   | 'outline'
   | 'pixel'
+  | 'glass'
+  | 'rounded'
+  | 'duo'
+  | 'tall'
+  | 'analog'
   | 'none';
+/** In the order settings shows them. */
 export const CLOCK_STYLES: readonly ClockStyle[] = [
   'center',
+  'glass',
   'bold',
+  'rounded',
+  'duo',
+  'tall',
   'minimal',
   'serif',
   'stacked',
   'outline',
   'pixel',
+  'analog',
   'none',
 ];
 

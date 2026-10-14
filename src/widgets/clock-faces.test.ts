@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it} from 'vitest';
-import {clockText, splitTime} from './clock-faces';
+import {clockText, handAngles, splitTime} from './clock-faces';
 
 describe('clockText', () => {
   const evening = new Date(2026, 9, 13, 21, 40);
@@ -22,5 +22,16 @@ describe('clockText', () => {
 
   it('gives the stacked face two numbers in every language', () => {
     expect(splitTime(clockText(evening, 'ko'))).toEqual(['09', '40']);
+  });
+});
+
+describe('handAngles', () => {
+  it.each([
+    [0, 0, 0, 0],
+    [3, 0, 90, 0],
+    [21, 40, 290, 240],
+    [12, 30, 15, 180],
+  ])('puts the hands for %i:%i at %i° and %i°', (h, m, hour, minute) => {
+    expect(handAngles(h, m)).toEqual([hour, minute]);
   });
 });
