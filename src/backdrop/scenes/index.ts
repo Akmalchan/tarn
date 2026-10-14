@@ -915,18 +915,26 @@ const contour: Scene = {
   colors: ['#f4f1ea', '#dfe7ec', '#3d5468', '#e9b99c'],
   base: '#f1eee7',
   speed: 0.12,
-  resolution: 0.75,
+  // Hairlines need every pixel the screen has (like a photo).
+  resolution: Math.min(globalThis.devicePixelRatio || 1, 2),
   fragment: /* glsl */ `
 // A topographic map whose land slowly reshapes: contour lines flow, merge
-// and part; every fifth line is drawn bolder, as on a real map.
+// and part; every fifth line is drawn bolder, as on a real map. Drawn at
+// the screen's full pixel density, so the lines are true hairlines.
 
 float terrain(vec2 p, float t) {
   vec2 a = p * 1.1 + vec2(0.05 * t, -0.03 * t);
   vec2 b = p * 1.4 + vec2(-0.04 * t, 0.025 * t) + 7.0;
-  // Smooth land: three octaves, the finest gentle, and a slow warp.
   // Exact noise: thin lines show every kink of the faster texture.
   a += 0.4 * vec2(noise(b), noise(b + 3.0));
   return 0.7 * noise(a) + 0.32 * noise(a * 2.1 + 1.7) + 0.1 * noise(a * 4.3 + 5.1);
+}
+
+// A line of the given width in pixels along the integer values of f.
+float isoline(float f, float px) {
+  float w = fwidth(f);
+  float d = abs(fract(f + 0.5) - 0.5) / max(w, 1e-5);
+  return 1.0 - smoothstep(px * 0.5 - 0.5, px * 0.5 + 0.5, d);
 }
 
 vec3 scene(vec2 uv, float t) {
@@ -935,18 +943,21 @@ vec3 scene(vec2 uv, float t) {
   vec3 col = uColors[0];
   col = mix(col, uColors[1], 0.55 * smoothstep(0.0, -0.4, h));
   col = mix(col, uColors[3], 0.35 * smoothstep(0.05, 0.45, h));
+  // Relief: slopes facing the light from the upper left a touch lighter,
+  // the far side a touch darker, as on a well-made survey map.
+  vec2 slope = vec2(dFdx(h), dFdy(h)) * uResolution.y;
+  float relief = clamp(dot(slope, vec2(0.6, -0.8)) * 0.06, -0.06, 0.06);
+  col *= 1.0 - relief;
 
+  // Pixel widths scale with density, so lines look the same on any screen.
+  float px = max(uResolution.y / 900.0, 1.0);
   float f = h * 15.0;
-  float w = fwidth(f);
-  float line = 1.0 - smoothstep(0.0, w * 1.2, abs(fract(f + 0.5) - 0.5) - w * 0.25);
-  // Index lines: every fifth, bolder.
-  float g = f / 5.0;
-  float gw = fwidth(g);
-  float index = 1.0 - smoothstep(0.0, gw * 1.2, abs(fract(g + 0.5) - 0.5) - gw * 0.9);
-  float ink = max(line * 0.32, index * 0.7);
+  float minor = isoline(f, 1.0 * px);
+  float index = isoline(f / 5.0, 2.2 * px);
+  float ink = max(minor * 0.42, index * 0.78);
   col = mix(col, uColors[2], ink);
   // A little paper grain.
-  col *= 0.985 + 0.03 * noiseFast(uv * 180.0);
+  col *= 0.985 + 0.03 * noiseFast(uv * 260.0);
   return col;
 }
 `,
