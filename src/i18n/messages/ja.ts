@@ -236,6 +236,8 @@ export const ja: Catalog = {
   'panel.weather.keyRemoved': 'API キーを削除しました',
   'panel.keys': 'キーボード',
   'panel.keys.shortcuts': 'キーボードショートカット',
+  'panel.keys.note':
+    '新しいタブではカーソルがアドレスバーにあるので、先にページを一度クリックしてください。',
   'panel.backup': 'バックアップ',
   'panel.backup.export': 'バックアップを書き出す',
   'panel.backup.import': 'バックアップを読み込む',
@@ -350,4 +352,12 @@ export const ja: Catalog = {
   'search.micDenied': 'Tarn がマイクを使えません。',
   'search.micDeniedHint':
     'ブラウザのサイト設定で Tarn に許可してから、もう一度お試しください。',
+  'keys.title': 'キーボードショートカット',
+  'keys.search': '検索',
+  'keys.sites': 'ブックマークを開く',
+  'keys.timer': 'タイマーを開始・一時停止',
+  'keys.notes': 'メモを書く',
+  'keys.settings': '設定を開く',
+  'keys.help': 'ショートカットを表示',
+  'keys.leave': '入力欄から出る',
 };

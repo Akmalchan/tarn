@@ -871,6 +871,11 @@ export class TarnSearch extends LitElement {
     }
   };
 
+  /** Puts the cursor in the box (the / shortcut). */
+  focusBox(): void {
+    this.renderRoot.querySelector<HTMLInputElement>('.field input')?.focus();
+  }
+
   private choose(index: number): void {
     const s = this.suggestions[index];
     if (!s) return;

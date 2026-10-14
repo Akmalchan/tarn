@@ -240,6 +240,8 @@ export const de: Catalog = {
   'panel.weather.keyRemoved': 'API-Schlüssel entfernt',
   'panel.keys': 'Tastatur',
   'panel.keys.shortcuts': 'Tastenkürzel',
+  'panel.keys.note':
+    'Ein neuer Tab beginnt mit dem Cursor in der Adressleiste; klicke zuerst einmal auf die Seite.',
   'panel.backup': 'Backup',
   'panel.backup.export': 'Backup exportieren',
   'panel.backup.import': 'Backup importieren',
@@ -356,4 +358,12 @@ export const de: Catalog = {
   'search.micDenied': 'Tarn kann das Mikrofon nicht nutzen.',
   'search.micDeniedHint':
     'Erlaube es Tarn in den Website-Einstellungen deines Browsers und versuch es noch einmal.',
+  'keys.title': 'Tastenkürzel',
+  'keys.search': 'Suchen',
+  'keys.sites': 'Lesezeichen öffnen',
+  'keys.timer': 'Timer starten oder pausieren',
+  'keys.notes': 'Notiz schreiben',
+  'keys.settings': 'Einstellungen öffnen',
+  'keys.help': 'Tastenkürzel zeigen',
+  'keys.leave': 'Textfeld verlassen',
 };

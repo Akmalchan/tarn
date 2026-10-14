@@ -33,6 +33,7 @@ describe('normalizeSettings', () => {
         tabIcon: 'none',
         clock: 'none',
         clockColor: 'light',
+        shortcuts: false,
         widgets,
         weather: {provider: 'google', units: 'fahrenheit'},
         search: {
@@ -50,6 +51,7 @@ describe('normalizeSettings', () => {
       tabIcon: 'none',
       clock: 'none',
       clockColor: 'light',
+      shortcuts: false,
       widgets,
       weather: {provider: 'google', units: 'fahrenheit'},
       search: {

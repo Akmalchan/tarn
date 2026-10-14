@@ -239,6 +239,8 @@ export const ptBR: Catalog = {
   'panel.weather.keyRemoved': 'Chave de API removida',
   'panel.keys': 'Teclado',
   'panel.keys.shortcuts': 'Atalhos de teclado',
+  'panel.keys.note':
+    'Uma nova guia começa com o cursor na barra de endereço; clique na página primeiro.',
   'panel.backup': 'Backup',
   'panel.backup.export': 'Exportar backup',
   'panel.backup.import': 'Importar backup',
@@ -353,4 +355,12 @@ export const ptBR: Catalog = {
   'search.micDenied': 'O Tarn não pode usar o microfone.',
   'search.micDeniedHint':
     'Permita para o Tarn nas configurações de sites do navegador e tente de novo.',
+  'keys.title': 'Atalhos de teclado',
+  'keys.search': 'Pesquisar',
+  'keys.sites': 'Abrir um favorito',
+  'keys.timer': 'Iniciar ou pausar o timer',
+  'keys.notes': 'Escrever uma nota',
+  'keys.settings': 'Abrir ajustes',
+  'keys.help': 'Ver atalhos',
+  'keys.leave': 'Sair de um campo de texto',
 };

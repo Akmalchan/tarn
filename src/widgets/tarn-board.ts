@@ -560,6 +560,13 @@ export class TarnBoard extends LitElement {
     }
   }
 
+  /** The first widget of a kind on the board, by its element name. */
+  widget<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+  ): HTMLElementTagNameMap[K] | null {
+    return this.renderRoot.querySelector(tag);
+  }
+
   override render() {
     const list = this.preview ?? this.widgets;
     const {tiles, width, height} = placeTiles(list, this.columns);

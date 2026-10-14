@@ -40,6 +40,9 @@ import {rememberTiles} from './tile-memory';
 import {useLanguage} from '../i18n';
 import {draggedKind} from '../widgets/drag-new';
 import {darkInk, lightInk} from '../ui/ink';
+import {SHORTCUT_LIST, isTyping, shortcutFor} from './shortcuts';
+import {openSidePanel} from './side-panel';
+import {t} from '../i18n';
 
 /** Root of the new tab page. */
 export class TarnApp extends LitElement {
@@ -50,6 +53,7 @@ export class TarnApp extends LitElement {
     handingOff: {state: true},
     editing: {state: true},
     incoming: {state: true},
+    showKeys: {state: true},
   };
 
   static override styles = css`
@@ -153,6 +157,74 @@ export class TarnApp extends LitElement {
         opacity: 0;
       }
     }
+
+    /* The ? sheet: a solid card over a faint veil, in the page's ink. */
+    .keys-veil {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgb(0 0 0 / 0.32);
+      /* Only while the sheet is open, so it costs nothing otherwise. */
+      backdrop-filter: blur(14px);
+      animation: controls-in 160ms ease-out both;
+    }
+
+    .keys {
+      min-width: min(320px, 100%);
+      padding: 18px 22px 20px;
+      color: var(--ink);
+      background: var(--tile-held);
+      border: 1px solid var(--tile-line);
+      border-radius: 18px;
+      box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.5);
+      animation: keys-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    @keyframes keys-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+      }
+    }
+
+    .keys h2 {
+      margin: 0 0 14px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .keys dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px 16px;
+      align-items: center;
+      margin: 0;
+    }
+
+    .keys dt {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: flex-end;
+      color: var(--ink-dim);
+    }
+
+    .keys dd {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .keys kbd {
+      min-width: 24px;
+      padding: 3px 7px;
+      font: 600 12px / 16px var(--font-sans);
+      text-align: center;
+      color: var(--ink);
+      background: var(--chip);
+      border-radius: 6px;
+    }
   `;
 
   declare settings: Settings;
@@ -169,6 +241,8 @@ export class TarnApp extends LitElement {
   declare editing: boolean;
   /** A widget being dragged in from the settings panel, until it drops. */
   declare incoming: WidgetKind | null;
+  /** The ? sheet of shortcuts is open. */
+  declare showKeys: boolean;
   private incomingTimer = 0;
 
   private schemeQuery = matchMedia('(prefers-color-scheme: dark)');
@@ -189,6 +263,7 @@ export class TarnApp extends LitElement {
     this.handingOff = canHandOff && isRememberedOff();
     this.editing = false;
     this.incoming = null;
+    this.showKeys = false;
   }
 
   override connectedCallback(): void {
@@ -211,6 +286,7 @@ export class TarnApp extends LitElement {
     window.addEventListener('storage', this.onStorage);
     window.addEventListener('dragleave', this.onDragLeave);
     window.addEventListener('drop', this.onDrop);
+    window.addEventListener('keydown', this.onKey);
     this.schemeQuery.addEventListener('change', this.onSchemeChange);
   }
 
@@ -222,6 +298,7 @@ export class TarnApp extends LitElement {
     window.removeEventListener('storage', this.onStorage);
     window.removeEventListener('dragleave', this.onDragLeave);
     window.removeEventListener('drop', this.onDrop);
+    window.removeEventListener('keydown', this.onKey);
     this.schemeQuery.removeEventListener('change', this.onSchemeChange);
   }
 
@@ -244,7 +321,34 @@ export class TarnApp extends LitElement {
             </div>`
           : nothing
       }
+      ${this.showKeys ? this.renderKeys() : nothing}
     `;
+  }
+
+  /** The ? sheet: every shortcut, over the page. */
+  private renderKeys() {
+    return html`<div
+      class="keys-veil"
+      @click=${(event: MouseEvent) => {
+        if (event.target === event.currentTarget) this.showKeys = false;
+      }}
+    >
+      <div class="keys" role="dialog" aria-label=${t('keys.title')}>
+        <h2>${t('keys.title')}</h2>
+        <dl>
+          ${SHORTCUT_LIST.map(
+            ({keys, label}) => html`
+              <dt>
+                ${keys.map(key =>
+                  key === '–' ? html`<span>–</span>` : html`<kbd>${key}</kbd>`,
+                )}
+              </dt>
+              <dd>${t(label)}</dd>
+            `,
+          )}
+        </dl>
+      </div>
+    </div>`;
   }
 
   private renderPage() {
@@ -354,6 +458,57 @@ export class TarnApp extends LitElement {
   private get board(): TarnBoard | null {
     return this.renderRoot.querySelector<TarnBoard>('tarn-board');
   }
+
+  /** Single-key shortcuts (app/shortcuts.ts), unless typing or off. */
+  private onKey = (event: KeyboardEvent) => {
+    if (event.defaultPrevented) return;
+    if (event.key === 'Escape') {
+      if (this.showKeys) this.showKeys = false;
+      else if (isTyping(event)) {
+        (event.composedPath()[0] as HTMLElement).blur();
+      }
+      return;
+    }
+    if (!this.settings.shortcuts || isTyping(event)) return;
+    const shortcut = shortcutFor(event);
+    if (!shortcut) return;
+    const board = this.renderRoot.querySelector('tarn-board');
+    // While arranging, widget contents are inert.
+    const widget = <K extends keyof HTMLElementTagNameMap>(tag: K) =>
+      this.editing ? null : (board?.widget(tag) ?? null);
+    let done = true;
+    switch (shortcut.kind) {
+      case 'search': {
+        const search = this.renderRoot.querySelector('tarn-search');
+        if (search) search.focusBox();
+        else done = false;
+        break;
+      }
+      case 'site':
+        done = widget('tarn-favorites')?.openNumber(shortcut.number) ?? false;
+        break;
+      case 'timer': {
+        const timer = widget('tarn-focus');
+        if (timer) timer.toggleTimer();
+        else done = false;
+        break;
+      }
+      case 'notes': {
+        const notes = widget('tarn-notes');
+        if (notes) notes.write();
+        else done = false;
+        break;
+      }
+      case 'settings':
+        openSidePanel();
+        break;
+      case 'help':
+        this.showKeys = !this.showKeys;
+        break;
+    }
+    // Only a key that did something is kept from the page.
+    if (done) event.preventDefault();
+  };
 
   private onDragOver = (event: DragEvent) => {
     const kind = draggedKind(event.dataTransfer);

@@ -8,6 +8,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Keyboard shortcuts on the new tab: / to search, 1-9 to open a bookmark,
+  T for the timer, N for notes, comma for settings, ? to see them all.
+  They can be turned off in Settings > Advanced > Keyboard.
 - Reset Settings at the end of the settings panel: it asks first, then puts
   the wallpaper, clock, search box, weather and tab icon back to how Tarn
   starts, with Undo. Widgets, bookmarks, notes and the language stay.

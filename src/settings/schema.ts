@@ -207,6 +207,8 @@ export interface Settings {
   readonly tabIcon: TabIcon;
   readonly clock: ClockStyle;
   readonly clockColor: ClockColor;
+  /** Single-key shortcuts on the new tab (app/shortcuts.ts). */
+  readonly shortcuts: boolean;
   /** In the user's order. Empty by default: a calm page is the default. */
   readonly widgets: readonly WidgetEntry[];
   readonly weather: WeatherSettings;
@@ -234,6 +236,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tabIcon: 'chrome',
   clock: 'center',
   clockColor: 'auto',
+  shortcuts: true,
   widgets: START_WIDGETS,
   weather: {provider: 'open-meteo', units: 'auto'},
   search: {show: true, style: 'auto', voice: true, lens: true, ai: 'off'},
@@ -291,6 +294,10 @@ export function normalizeSettings(raw: unknown): Settings {
     tabIcon,
     clock,
     clockColor,
+    shortcuts:
+      typeof value.shortcuts === 'boolean'
+        ? value.shortcuts
+        : DEFAULT_SETTINGS.shortcuts,
     // No widget list stored (a new install, until the widgets are first
     // changed): the start setup. An empty list is the user's own "none".
     widgets:

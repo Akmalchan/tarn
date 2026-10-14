@@ -112,6 +112,14 @@ export class TarnNotes extends LitElement {
     `;
   }
 
+  /** Puts the cursor at the end of the note (the N shortcut). */
+  write(): void {
+    const area = this.renderRoot.querySelector('textarea');
+    if (!area) return;
+    area.focus();
+    area.setSelectionRange(area.value.length, area.value.length);
+  }
+
   private onInput = (event: Event) => {
     this.text = (event.target as HTMLTextAreaElement).value;
     this.save(this.text);

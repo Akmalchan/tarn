@@ -1288,6 +1288,21 @@ export class TarnFavorites extends LitElement {
 
   // ---- Folders ------------------------------------------------------------
 
+  /**
+   * The 1-9 shortcuts: opens the site in that place, or the folder. With a
+   * folder open, the number counts the sites inside it. Returns whether
+   * there was one.
+   */
+  openNumber(number: number): boolean {
+    if (this.editing) return false;
+    const folder = this.openFolder();
+    const item = folder ? folder.sites[number - 1] : this.items[number - 1];
+    if (!item) return false;
+    if (isFolder(item)) this.openFolderAt(number - 1);
+    else location.href = item.url;
+    return true;
+  }
+
   private openFolder(): Folder | null {
     const item = this.folder === null ? undefined : this.items[this.folder];
     return item && isFolder(item) ? item : null;
