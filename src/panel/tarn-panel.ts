@@ -7,6 +7,7 @@ import {LitElement, css, html, nothing} from 'lit';
 import {keyed} from 'lit/directives/keyed.js';
 import {browser} from 'wxt/browser';
 import {mirrorSettings} from '../app/mirror';
+import {newWidgetType} from '../widgets/drag-new';
 import {answerPanelPresence} from '../app/side-panel';
 import {
   DEFAULT_SCENE_ID,
@@ -1284,7 +1285,9 @@ export class TarnPanel extends LitElement {
               <button
                 class="row"
                 ?disabled=${full}
+                draggable=${full ? 'false' : 'true'}
                 @click=${() => this.addWidget(kind)}
+                @dragstart=${(event: DragEvent) => this.dragWidget(kind, event)}
               >
                 ${icon(KIND_GLYPHS[kind])}
                 <span class="txt"
@@ -1816,6 +1819,13 @@ export class TarnPanel extends LitElement {
     };
     this.applyPatch({widgets: [...this.settings.widgets, widget]});
     this.showToast(t('panel.widgets.added', {name: t(KIND_NAMES[kind])}));
+  }
+
+  /** Dragged onto the page instead of clicked: the page adds it where it lands. */
+  private dragWidget(kind: WidgetKind, event: DragEvent): void {
+    if (!event.dataTransfer) return;
+    event.dataTransfer.setData(newWidgetType(kind), kind);
+    event.dataTransfer.effectAllowed = 'copy';
   }
 
   private removeWidget(index: number): void {

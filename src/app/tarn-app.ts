@@ -18,8 +18,10 @@ import type {
 import {SCENES, sceneById, sceneTone} from '../backdrop/scenes';
 import {
   DEFAULT_SETTINGS,
+  MAX_WIDGETS,
   normalizeSettings,
   type Settings,
+  type WidgetKind,
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
 import {
@@ -33,6 +35,7 @@ import {watchSidePanel} from './side-panel';
 import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
 import {useLanguage} from '../i18n';
+import {draggedKind} from '../widgets/drag-new';
 
 /** Root of the new tab page. */
 export class TarnApp extends LitElement {
@@ -42,6 +45,7 @@ export class TarnApp extends LitElement {
     settled: {state: true},
     handingOff: {state: true},
     editing: {state: true},
+    incoming: {state: true},
   };
 
   static override styles = css`
@@ -154,6 +158,9 @@ export class TarnApp extends LitElement {
   declare handingOff: boolean;
   /** The settings panel is open: widgets can be rearranged by dragging. */
   declare editing: boolean;
+  /** A widget being dragged in from the settings panel, until it drops. */
+  declare incoming: WidgetKind | null;
+  private incomingTimer = 0;
 
   private schemeQuery = matchMedia('(prefers-color-scheme: dark)');
   private unwatch: () => void = () => {};
@@ -172,6 +179,7 @@ export class TarnApp extends LitElement {
     this.settled = null;
     this.handingOff = canHandOff && isRememberedOff();
     this.editing = false;
+    this.incoming = null;
   }
 
   override connectedCallback(): void {
@@ -191,6 +199,9 @@ export class TarnApp extends LitElement {
     this.unwatch = watchSettings(this.applySettings);
     this.unwatchPanel = watchSidePanel(open => (this.editing = open));
     window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('dragover', this.onDragOver);
+    window.addEventListener('dragleave', this.onDragLeave);
+    window.addEventListener('drop', this.onDrop);
     this.schemeQuery.addEventListener('change', this.onSchemeChange);
   }
 
@@ -199,6 +210,9 @@ export class TarnApp extends LitElement {
     this.unwatch();
     this.unwatchPanel();
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('dragover', this.onDragOver);
+    window.removeEventListener('dragleave', this.onDragLeave);
+    window.removeEventListener('drop', this.onDrop);
     this.schemeQuery.removeEventListener('change', this.onSchemeChange);
   }
 
@@ -235,7 +249,7 @@ export class TarnApp extends LitElement {
               : html`<tarn-clock face=${clock}></tarn-clock>`
           }
           ${
-            widgets.length
+            widgets.length || this.incoming
               ? html`<tarn-board
                   .widgets=${widgets}
                   ?instant=${this.resumed}
@@ -282,6 +296,52 @@ export class TarnApp extends LitElement {
     const live = this.liveScene;
     backdrop?.setTiles(live ? rects : [], strength, radius);
     if (live && (strength === 1 || !rects.length)) rememberTiles(rects, radius);
+  };
+
+  // A widget dragged from the settings panel's "Add" list: the board shows
+  // where it would land, and the drop adds it there.
+
+  private get board(): TarnBoard | null {
+    return this.renderRoot.querySelector<TarnBoard>('tarn-board');
+  }
+
+  private onDragOver = (event: DragEvent) => {
+    const kind = draggedKind(event.dataTransfer);
+    if (!kind || !this.editing) return;
+    if (this.settings.widgets.length >= MAX_WIDGETS) return;
+    // Accepting it: the browser shows a copy cursor and allows the drop.
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'copy';
+    this.incoming = kind;
+    this.board?.hoverNew(kind, event.clientX, event.clientY);
+    // A safety net: a drag over the page keeps firing dragover, so a long
+    // silence means it ended somewhere we didn't hear about.
+    clearTimeout(this.incomingTimer);
+    this.incomingTimer = window.setTimeout(this.endIncoming, 1500);
+  };
+
+  /**
+   * Leaving one element for another is followed at once by a dragover
+   * there; leaving the page (or Escape) is not, so the drag ends shortly.
+   */
+  private onDragLeave = (event: DragEvent) => {
+    if (!this.incoming || event.relatedTarget !== null) return;
+    clearTimeout(this.incomingTimer);
+    this.incomingTimer = window.setTimeout(this.endIncoming, 120);
+  };
+
+  private onDrop = (event: DragEvent) => {
+    if (!draggedKind(event.dataTransfer) || !this.incoming) return;
+    event.preventDefault();
+    clearTimeout(this.incomingTimer);
+    this.board?.dropNew();
+    this.incoming = null;
+  };
+
+  private endIncoming = () => {
+    clearTimeout(this.incomingTimer);
+    this.board?.leaveNew();
+    this.incoming = null;
   };
 
   private scrollFrame = 0;
