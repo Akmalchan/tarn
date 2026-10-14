@@ -57,8 +57,13 @@ export default defineConfig({
     // `offscreen` keeps the first-paint mirror in sync (see background.ts).
     // `favicon` shows Chrome's own new-tab icon in the tab, and later lets
     // site icons appear without any network request.
+    // `bookmarks` shows the browser's bookmarks bar in a Bookmarks widget
+    // from the first new tab, until the user edits it (read only; install
+    // warning "Read and change your bookmarks", owner's choice 2026-10-14).
     permissions:
-      browser === 'firefox' ? ['storage'] : ['storage', 'offscreen', 'favicon'],
+      browser === 'firefox'
+        ? ['storage', 'bookmarks']
+        : ['storage', 'offscreen', 'favicon', 'bookmarks'],
     // Asked for only when needed, so neither shows an install warning:
     // `management` when the user switches off another new-tab extension
     // (Firefox only lets extensions toggle themes, so not there), and

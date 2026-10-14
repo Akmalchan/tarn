@@ -13,7 +13,7 @@ choose: the Weather widget (below).
 - **Your photos**, if you add your own wallpaper, are saved on this
   computer only, in the browser's storage for Tarn. They're never synced
   or uploaded.
-- **Widget content** (your favorite sites and folders, the images you pick
+- **Widget content** (your bookmarks and folders, the images you pick
   as their icons, notes, timer) is saved on this computer only.
 - **Site icons** for your favorites are read from your browser's own icon
   cache, without contacting the sites.
@@ -54,6 +54,11 @@ request. Removing the Weather widget stops all of it.
   in the tab and your favorites' icons. The browser describes this as "Read
   the icons of the websites you visit"; Tarn only reads icons for the tab and
   for sites you add.
+- **Bookmarks:** so a Bookmarks widget can show your browser's bookmarks
+  bar from your first new tab, with its folders, until you change the
+  widget (then it keeps your own copy). Tarn only reads your bookmarks; it
+  never changes or sends them. The browser describes this as "Read and
+  change your bookmarks", because it has no read-only version.
 - **Management** (optional, Chromium browsers): asked for only if you ask
   Tarn to switch off another new-tab extension, and used only for that.
 - **Geolocation** (optional): asked for only if you press "Use my location"
