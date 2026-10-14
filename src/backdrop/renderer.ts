@@ -141,6 +141,11 @@ interface FrameTarget {
 const FRAME_UNIT = 1;
 /** Texture unit for a photo scene's image. */
 const PHOTO_UNIT = 2;
+/**
+ * Where the ghost's shrink textures are bound while being set up: never
+ * unit 0, which holds the noise texture every scene reads.
+ */
+const SHRINK_UNIT = 3;
 
 const requestFrame: (cb: FrameRequestCallback) => number =
   typeof requestAnimationFrame === 'function'
@@ -447,9 +452,11 @@ export class Renderer {
     height: number,
   ): ShrinkStep {
     const texture = gl.createTexture()!;
+    gl.activeTexture(gl.TEXTURE0 + SHRINK_UNIT);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, width, height);
     gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.activeTexture(gl.TEXTURE0);
     const framebuffer = gl.createFramebuffer()!;
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(
