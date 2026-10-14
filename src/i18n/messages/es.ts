@@ -37,8 +37,6 @@ export const es: Catalog = {
   'tasks.done': 'Hecha',
   'tasks.notDone': 'Sin hacer',
   'start.note': 'Te damos la bienvenida a Tarn.\nEscribe aquí lo que quieras.',
-  'start.taskWallpaper': 'Elige un fondo en los ajustes',
-  'start.taskDone': 'Marca esta como hecha',
   'focus.title': 'Concentración',
   'focus.start': 'Empezar',
   'focus.pause': 'Pausar',

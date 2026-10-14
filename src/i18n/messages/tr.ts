@@ -37,8 +37,6 @@ export const tr: Catalog = {
   'tasks.done': 'Tamamlandı',
   'tasks.notDone': 'Tamamlanmadı',
   'start.note': "Tarn'a hoş geldiniz.\nBuraya istediğinizi yazın.",
-  'start.taskWallpaper': 'Ayarlardan duvar kâğıdı seçin',
-  'start.taskDone': 'Bunu işaretleyin',
   'focus.title': 'Odak',
   'focus.start': 'Başlat',
   'focus.pause': 'Duraklat',

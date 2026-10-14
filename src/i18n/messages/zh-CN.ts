@@ -36,8 +36,6 @@ export const zhCN: Catalog = {
   'tasks.done': '已完成',
   'tasks.notDone': '未完成',
   'start.note': '欢迎使用 Tarn。\n在这里随便写点什么。',
-  'start.taskWallpaper': '在设置中选择一张壁纸',
-  'start.taskDone': '勾选这一项',
   'focus.title': '专注',
   'focus.start': '开始',
   'focus.pause': '暂停',

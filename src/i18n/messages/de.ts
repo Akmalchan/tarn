@@ -37,8 +37,6 @@ export const de: Catalog = {
   'tasks.done': 'Erledigt',
   'tasks.notDone': 'Nicht erledigt',
   'start.note': 'Willkommen bei Tarn.\nSchreib hier, was du willst.',
-  'start.taskWallpaper': 'Hintergrund in Einstellungen wählen',
-  'start.taskDone': 'Hake diese Aufgabe ab',
   'focus.title': 'Fokus',
   'focus.start': 'Start',
   'focus.pause': 'Pause',
