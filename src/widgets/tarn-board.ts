@@ -528,6 +528,12 @@ export class TarnBoard extends LitElement {
 
   private lastReport = '';
 
+  /** Reports again even if no tile moved (something else frosted changed). */
+  refresh = () => {
+    this.lastReport = '';
+    this.report();
+  };
+
   override willUpdate(changed: PropertyValues<this>): void {
     // A saved order arrived: the preview has done its job.
     if (changed.has('widgets')) this.preview = null;

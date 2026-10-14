@@ -20,6 +20,25 @@ choose: the Weather widget (below).
 
 Removing Tarn removes all of it.
 
+## Search box
+
+- **Searching:** when you press Enter, what you typed goes to your
+  browser's own search engine, the same as typing it in the address bar.
+  Tarn never picks or changes the engine.
+- **Suggestions** while you type come from your own bookmarks, on this
+  computer. Nothing you type is sent anywhere before you search.
+- **Voice** (the microphone): your browser turns your speech into text.
+  Chrome does that by sending the recording to Google. It only listens
+  after you press the button, and your browser asks for the microphone
+  the first time.
+- **Google Lens** (the camera) opens a box on the page. An image goes to
+  Google Lens only when you drop, pick or paste one there, or paste an
+  image's link; the results open in the tab.
+- **AI Mode** opens your question in Google's AI Mode, like following a
+  link. Google's privacy policy applies to these.
+- You can turn any of these off, or hide the search box, in Settings >
+  Search.
+
 ## Weather
 
 Only if you add a Weather widget and choose a place:
@@ -54,6 +73,7 @@ request. Removing the Weather widget stops all of it.
   in the tab and your favorites' icons. The browser describes this as "Read
   the icons of the websites you visit"; Tarn only reads icons for the tab and
   for sites you add.
+- **Search:** to send your searches to your browser's own search engine.
 - **Bookmarks:** so a Bookmarks widget can show your browser's bookmarks
   bar from your first new tab, with its folders, until you change the
   widget (then it keeps your own copy). Tarn only reads your bookmarks; it

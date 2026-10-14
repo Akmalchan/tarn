@@ -10,6 +10,7 @@ import type {TarnBackdrop} from '../backdrop/tarn-backdrop';
 import './tarn-settings-button';
 import '../widgets/tarn-board';
 import '../widgets/tarn-clock';
+import '../search/tarn-search';
 import type {
   ReorderDetail,
   TarnBoard,
@@ -122,12 +123,19 @@ export class TarnApp extends LitElement {
       gap: 56px;
     }
 
-    tarn-clock {
+    tarn-clock,
+    tarn-search {
       animation: controls-in 200ms ease-out both;
     }
 
-    .group[data-in-place] tarn-clock {
+    .group[data-in-place] tarn-clock,
+    .group[data-in-place] tarn-search {
       animation: none;
+    }
+
+    /* The search box sits closer to the clock than the widgets do. */
+    tarn-clock + tarn-search {
+      margin-top: -24px;
     }
 
     /* Controls arrive after the scene, never before it: nothing but the
@@ -240,7 +248,7 @@ export class TarnApp extends LitElement {
   }
 
   private renderPage() {
-    const {clock, widgets} = this.settings;
+    const {clock, widgets, search} = this.settings;
     return html`
       <div class="page" @scroll=${this.onScroll}>
         <div class="group" ?data-in-place=${this.resumed}>
@@ -248,6 +256,14 @@ export class TarnApp extends LitElement {
             clock === 'none'
               ? nothing
               : html`<tarn-clock face=${clock}></tarn-clock>`
+          }
+          ${
+            search.show
+              ? html`<tarn-search
+                  .settings=${search}
+                  glass=${this.liveScene && widgets.length ? 'shader' : 'css'}
+                ></tarn-search>`
+              : nothing
           }
           ${
             widgets.length || this.incoming
@@ -268,6 +284,18 @@ export class TarnApp extends LitElement {
 
   override willUpdate(): void {
     this.setAttribute('tone', sceneTone(sceneById(this.settings.scene)));
+  }
+
+  private lastSearchLook = '';
+
+  override updated(): void {
+    // The search box became glass, or stopped being it: redraw the frost.
+    const {show, style} = this.settings.search;
+    const look = `${show}:${style}`;
+    if (look !== this.lastSearchLook) {
+      this.lastSearchLook = look;
+      this.board?.refresh();
+    }
   }
 
   /**
@@ -291,13 +319,28 @@ export class TarnApp extends LitElement {
   };
 
   private onTiles = (event: CustomEvent<TilesDetail>) => {
-    const {rects, strength, radius} = event.detail;
+    const {strength, radius} = event.detail;
+    // A frosted search box is one more frosted shape, measured with the
+    // tiles so it follows the same settle and scroll.
+    const rects = [...event.detail.rects, ...this.searchGlassRect()];
     const backdrop =
       this.renderRoot.querySelector<TarnBackdrop>('tarn-backdrop');
     const live = this.liveScene;
     backdrop?.setTiles(live ? rects : [], strength, radius);
     if (live && (strength === 1 || !rects.length)) rememberTiles(rects, radius);
   };
+
+  /** The search box's frame, when it's frosted glass: x, y, w, h or none. */
+  private searchGlassRect(): number[] {
+    if (!this.settings.search.show || this.settings.search.style !== 'glass') {
+      return [];
+    }
+    const box = this.renderRoot.querySelector('tarn-search');
+    if (!box) return [];
+    const r = box.getBoundingClientRect();
+    // The box itself is 46px tall; the dropdown hangs below it.
+    return [r.x, r.y, r.width, 46];
+  }
 
   // A widget dragged from the settings panel's "Add" list: the board shows
   // where it would land, and the drop adds it there.

@@ -38,7 +38,21 @@ owner's taste. The essentials:
   cached for first paint. All requests omit credentials and referrer, and
   need no host permission (both APIs allow CORS). "Use my location" asks
   for the optional `geolocation` permission at that moment.
-- **Permissions:** `storage`, `offscreen` (see Arrival), `sidePanel`, and
+  The **search box** (`src/search/`, owner-approved 2026-10-14) sends a
+  query only when the user presses Enter, to the browser's own default
+  engine (`search` permission: chrome.search / browser.search; Tarn never
+  picks or changes the engine). Its suggestions are offline (a typed
+  address, the browser's bookmarks). The mic uses the browser's speech
+  recognition, which in Chrome sends the audio to Google, only on its own
+  voice screen. Lens opens a box on the page; an image goes to Google Lens
+  (a form post to lens.google.com, or `uploadbyurl` for a link) only when
+  the user drops, picks or pastes one. AI Mode opens Google's AI Mode with
+  the question (one service on purpose, owner 2026-10-14). No web
+  suggestions: they would send every keystroke. Looks: auto (follows the
+  computer, like the browser's box; default), light, dark, glass (the
+  scene's frost, via the board's tile report).
+- **Permissions:** `storage`, `offscreen` (see Arrival), `sidePanel`,
+  `search` (the search box, above), and
   `favicon` (Chrome's own new-tab icon in the tab; later, site icons without
   network requests). Its install warning is "Read the icons of the websites
   you visit", a deliberate trade-off. The manifest's 16/32px icons are
