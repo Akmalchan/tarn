@@ -15,7 +15,13 @@ import {keyed} from 'lit/directives/keyed.js';
 import {live} from 'lit/directives/live.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {MAX_COLUMNS, SPAN, columnsFor, type WidgetSize} from '../layout/bands';
-import {WIDGET_SIZE_OPTIONS, type WidgetEntry} from '../settings/schema';
+import {
+  DEFAULT_WIDGET_SIZE,
+  WIDGET_SIZE_OPTIONS,
+  newWidgetId,
+  type WidgetEntry,
+  type WidgetKind,
+} from '../settings/schema';
 import {CELL, GAP, PITCH, moveTo, nearestOrder, placeTiles} from './geometry';
 import {WIDGETS, renderWidget} from './registry';
 import {LocaleController, t} from '../i18n';
@@ -35,6 +41,8 @@ const DRAG_SLOP = 4;
  * px), so the layout never flips back and forth between two slots.
  */
 const STICKINESS = PITCH * 0.3;
+/** A widget dragged in from the settings panel, before it exists. */
+const INCOMING = 'incoming';
 
 /**
  * Where the widgets' rounded rectangles are, for the background to frost
@@ -306,6 +314,24 @@ export class TarnBoard extends LitElement {
       animation: slot-in 220ms ${unsafeEase()} both;
     }
 
+    /* A widget on its way in from the settings panel: an empty tile with
+       its name, where it will land. */
+    .tile.incoming {
+      display: grid;
+      place-items: center;
+      border: 1.5px solid var(--tile-line-strong);
+      background: rgb(255 255 255 / 0.05);
+      pointer-events: none;
+    }
+
+    .incoming span {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+
     @keyframes slot-in {
       from {
         opacity: 0.4;
@@ -545,6 +571,16 @@ export class TarnBoard extends LitElement {
         tile => tile.id,
         (tile, index) => {
           const widget = byId.get(tile.id)!;
+          if (tile.id === INCOMING) {
+            return html`<div
+              class="tile incoming"
+              data-id=${INCOMING}
+              aria-hidden="true"
+              style="width:${tile.width}px;height:${tile.height}px;transform:translate(${tile.x}px, ${tile.y}px)"
+            >
+              <span>${defaultName(widget)}</span>
+            </div>`;
+          }
           const held = this.drag?.moved && this.drag.id === tile.id;
           const dragged = held ? this.drag! : null;
           const x = dragged ? dragged.x : tile.x;
@@ -841,6 +877,67 @@ export class TarnBoard extends LitElement {
     this.preview = next;
     this.commit(next, id);
   };
+
+  // ---- Adding from the settings panel --------------------------------------
+  // A widget dragged from the panel's "Add" list shows as an empty tile
+  // where it would land, and the others make room, as in a move.
+
+  private incomingAt = {x: Infinity, y: Infinity};
+
+  /** A new widget of `kind` hovers at the pointer (viewport px). */
+  hoverNew(kind: WidgetKind, clientX: number, clientY: number): void {
+    if (this.drag || this.resizing) return;
+    const current = this.preview?.some(w => w.id === INCOMING)
+      ? this.preview
+      : null;
+    // Barely moved since the last search: the answer can't have changed.
+    if (
+      current &&
+      Math.hypot(clientX - this.incomingAt.x, clientY - this.incomingAt.y) < 6
+    ) {
+      return;
+    }
+    this.incomingAt = {x: clientX, y: clientY};
+    const list = current ?? [
+      ...this.widgets,
+      {id: INCOMING, kind, size: DEFAULT_WIDGET_SIZE[kind]},
+    ];
+    const board = this.getBoundingClientRect();
+    const next = nearestOrder(
+      list,
+      INCOMING,
+      this.columns,
+      clientX - board.left,
+      clientY - board.top,
+      STICKINESS,
+    );
+    if (!current || next.some((w, k) => w.id !== current[k]!.id)) {
+      this.preview = next;
+    }
+  }
+
+  /** The drag left the page or was cancelled: everything moves back. */
+  leaveNew(): void {
+    if (this.preview?.some(w => w.id === INCOMING)) this.preview = null;
+    this.incomingAt = {x: Infinity, y: Infinity};
+  }
+
+  /** Dropped: the empty tile becomes a real widget, saved in its place. */
+  dropNew(): void {
+    const list = this.preview;
+    const incoming = list?.find(w => w.id === INCOMING);
+    this.incomingAt = {x: Infinity, y: Infinity};
+    if (!list || !incoming) return;
+    const added = {...incoming, id: newWidgetId(incoming.kind)};
+    const next = list.map(w => (w.id === INCOMING ? added : w));
+    this.preview = next;
+    this.announcement = t('board.moved', {
+      name: widgetName(added),
+      position: next.indexOf(added) + 1,
+      count: next.length,
+    });
+    this.save(next);
+  }
 
   // ---- Resizing -----------------------------------------------------------
   // Sizes are whole cells (1x1, 2x1, 2x2, 4x2) and each widget offers a few,
