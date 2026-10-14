@@ -37,8 +37,6 @@ export const ptBR: Catalog = {
   'tasks.done': 'Concluída',
   'tasks.notDone': 'Não concluída',
   'start.note': 'Boas-vindas ao Tarn.\nEscreva aqui o que quiser.',
-  'start.taskWallpaper': 'Escolha um fundo nos ajustes',
-  'start.taskDone': 'Marque esta como concluída',
   'focus.title': 'Foco',
   'focus.start': 'Iniciar',
   'focus.pause': 'Pausar',

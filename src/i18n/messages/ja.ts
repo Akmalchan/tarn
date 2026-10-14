@@ -36,8 +36,6 @@ export const ja: Catalog = {
   'tasks.done': '完了',
   'tasks.notDone': '未完了',
   'start.note': 'Tarn へようこそ。\nここに何でも書けます。',
-  'start.taskWallpaper': '設定で壁紙を選ぶ',
-  'start.taskDone': 'これにチェックを入れる',
   'focus.title': '集中',
   'focus.start': '開始',
   'focus.pause': '一時停止',

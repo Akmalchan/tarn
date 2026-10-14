@@ -37,8 +37,6 @@ export const ru: Catalog = {
   'tasks.done': 'Готово',
   'tasks.notDone': 'Не готово',
   'start.note': 'Добро пожаловать в Tarn.\nПишите здесь что угодно.',
-  'start.taskWallpaper': 'Выберите обои в настройках',
-  'start.taskDone': 'Отметьте эту задачу',
   'focus.title': 'Фокус',
   'focus.start': 'Старт',
   'focus.pause': 'Пауза',

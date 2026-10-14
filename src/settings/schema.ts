@@ -157,7 +157,8 @@ export interface Settings {
 export const START_WIDGETS: readonly WidgetEntry[] = [
   {id: 'favorites-start', kind: 'favorites', size: 'l'},
   {id: 'notes-start', kind: 'notes', size: 'm'},
-  {id: 'tasks-start', kind: 'tasks', size: 'm'},
+  {id: 'weather-start', kind: 'weather', size: 's'},
+  {id: 'focus-start', kind: 'focus', size: 's'},
 ];
 
 export const DEFAULT_SETTINGS: Settings = {

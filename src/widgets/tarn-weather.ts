@@ -366,6 +366,19 @@ export class TarnWeather extends LitElement {
         .cond {
           align-self: end;
         }
+        /* No place yet: the sentence doesn't fit, so the button fills
+           the tile instead. */
+        .empty span {
+          display: none;
+        }
+        .empty {
+          align-items: stretch;
+        }
+        .empty button {
+          flex: 1;
+          border-radius: 14px;
+          line-height: 1.3;
+        }
       }
 
       /* Small and stretched to two rows (beside a large tile): now on

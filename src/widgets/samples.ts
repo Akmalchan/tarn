@@ -41,12 +41,19 @@ type Preset = ReadonlyArray<readonly [WidgetKind, WidgetSize]>;
 
 export const TEST_LAYOUTS: Readonly<Record<string, Preset>> = {
   '1': [['favorites', 'l']],
-  // The start setup (START_WIDGETS): a large tile beside two stacked
-  // mediums, one clean 4-column band.
+  // A large tile beside two stacked mediums: one clean 4-column band.
   '3': [
     ['favorites', 'l'],
     ['notes', 'm'],
     ['tasks', 'm'],
+  ],
+  // The start setup (START_WIDGETS): a large tile beside a medium over two
+  // smalls.
+  '4': [
+    ['favorites', 'l'],
+    ['notes', 'm'],
+    ['weather', 's'],
+    ['focus', 's'],
   ],
   // Two large tiles, then a medium over two smalls: one 6-column band.
   '5': [

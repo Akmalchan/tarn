@@ -26,11 +26,6 @@ export function startContent(id: string): unknown {
       ];
     case 'notes-start':
       return t('start.note');
-    case 'tasks-start':
-      return [
-        {id: 'start-1', text: t('start.taskWallpaper')},
-        {id: 'start-2', text: t('start.taskDone')},
-      ];
     default:
       return undefined;
   }

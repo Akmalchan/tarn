@@ -37,8 +37,6 @@ export const fr: Catalog = {
   'tasks.done': 'Terminée',
   'tasks.notDone': 'À faire',
   'start.note': 'Bienvenue dans Tarn.\nÉcrivez ce que vous voulez ici.',
-  'start.taskWallpaper': 'Choisissez un fond dans les réglages',
-  'start.taskDone': 'Cochez celle-ci',
   'focus.title': 'Concentration',
   'focus.start': 'Démarrer',
   'focus.pause': 'Pause',

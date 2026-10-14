@@ -51,8 +51,6 @@ export const en = {
 
   // First content of the start widgets (widgets/start.ts)
   'start.note': 'Welcome to Tarn.\nWrite anything here.',
-  'start.taskWallpaper': 'Pick a wallpaper in settings',
-  'start.taskDone': 'Check this one off',
 
   // Focus timer
   'focus.title': 'Focus',
