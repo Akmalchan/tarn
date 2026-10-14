@@ -174,7 +174,6 @@ export const ptBR: Catalog = {
   'panel.face.rounded': 'Arredondado',
   'panel.face.analog': 'Analógico',
   'panel.face.flip': 'Flip',
-  'panel.face.nixie': 'Nixie',
   'panel.face.lcd': 'LCD',
   'panel.face.neon': 'Neon',
   'panel.face.fraktur': 'Fraktur',

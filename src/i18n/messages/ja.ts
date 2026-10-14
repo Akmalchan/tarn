@@ -171,7 +171,6 @@ export const ja: Catalog = {
   'panel.face.rounded': 'ラウンド',
   'panel.face.analog': 'アナログ',
   'panel.face.flip': 'フリップ',
-  'panel.face.nixie': 'ニキシー',
   'panel.face.lcd': '液晶',
   'panel.face.neon': 'ネオン',
   'panel.face.fraktur': 'フラクトゥール',

@@ -168,7 +168,6 @@ export const zhCN: Catalog = {
   'panel.face.rounded': '圆润',
   'panel.face.analog': '指针',
   'panel.face.flip': '翻页',
-  'panel.face.nixie': '辉光管',
   'panel.face.lcd': '液晶',
   'panel.face.neon': '霓虹',
   'panel.face.fraktur': '尖角体',

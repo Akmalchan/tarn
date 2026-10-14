@@ -172,7 +172,6 @@ export const tr: Catalog = {
   'panel.face.rounded': 'Yuvarlak',
   'panel.face.analog': 'Analog',
   'panel.face.flip': 'Çevirmeli',
-  'panel.face.nixie': 'Nixie',
   'panel.face.lcd': 'LCD',
   'panel.face.neon': 'Neon',
   'panel.face.fraktur': 'Fraktur',

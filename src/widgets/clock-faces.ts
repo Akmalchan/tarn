@@ -22,7 +22,6 @@ export function clockTime(
   if (face === 'pixel') return pixelTime(time);
   if (face === 'analog') return analogTime(time, now);
   if (face === 'flip') return flipTime(time, previous);
-  if (face === 'nixie') return nixieTime(time);
   if (face === 'lcd') return lcdTime(time);
   if (face === 'stacked') {
     const [hours, minutes] = splitTime(time);
@@ -63,28 +62,6 @@ function flipCard(value: string, old: string) {
     >`,
   );
 }
-
-/**
- * The nixie face: each digit a glowing wire inside its own glass tube, the
- * nine unlit cathodes faintly behind it, a honeycomb anode mesh in front,
- * a socket below; two glowing dots between hours and minutes.
- */
-export function nixieTime(time: string) {
-  const [hours, minutes] = splitTime(time);
-  const tube = (digit: string) =>
-    html`<span class="tube"
-      ><span class="glass"
-        >${CATHODES.filter(c => c !== digit).map(
-          c => html`<span class="wire">${c}</span>`,
-        )}<span class="lit">${digit}</span><span class="mesh"></span></span
-      ><span class="base"></span
-    ></span>`;
-  return html`${[...hours].map(tube)}<span class="colon"><i></i><i></i></span
-    >${[...minutes].map(tube)}`;
-}
-
-/** A nixie tube's cathodes, back to front. */
-const CATHODES = ['1', '7', '4', '0', '3', '5', '6', '9', '2', '8'];
 
 /** Which segments each digit lights, a-g clockwise from the top, g middle. */
 const SEGMENTS: Record<string, string> = {
@@ -428,127 +405,6 @@ export const faceStyles = css`
       transform: rotateX(90deg);
       filter: brightness(0.6);
     }
-  }
-
-  /* Nixie: glowing wires in glass tubes. */
-  .t.nixie {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    gap: 0.1em;
-    text-shadow: none;
-  }
-
-  .t.nixie .tube {
-    position: relative;
-    width: 0.66em;
-    height: 1.32em;
-  }
-
-  .t.nixie .glass {
-    position: absolute;
-    inset: 0 0 0.14em;
-    overflow: hidden;
-    border-radius: 0.33em 0.33em 0.06em 0.06em / 0.3em 0.3em 0.04em 0.04em;
-    background: radial-gradient(
-      ellipse 70% 55% at 50% 55%,
-      rgb(255 110 30 / 0.16),
-      rgb(255 90 20 / 0.04) 60%,
-      rgb(10 6 4 / 0.35) 100%
-    );
-    box-shadow:
-      inset 0 0 0 0.012em rgb(255 235 215 / 0.28),
-      inset 0.06em 0 0.08em -0.03em rgb(255 255 255 / 0.12),
-      inset -0.04em 0 0.08em -0.03em rgb(255 255 255 / 0.08),
-      0 0.06em 0.2em rgb(0 0 0 / 0.35);
-  }
-
-  /* Reflections on the glass. */
-  .t.nixie .glass::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background:
-      linear-gradient(
-        90deg,
-        transparent 12%,
-        rgb(255 255 255 / 0.16) 17%,
-        transparent 24%,
-        transparent 76%,
-        rgb(255 255 255 / 0.07) 81%,
-        transparent 86%
-      ),
-      radial-gradient(
-        ellipse 30% 12% at 38% 7%,
-        rgb(255 255 255 / 0.25),
-        transparent
-      );
-  }
-
-  .t.nixie .wire,
-  .t.nixie .lit {
-    position: absolute;
-    inset: 0.16em 0 auto;
-    font-size: 0.78em;
-    line-height: 1;
-    text-align: center;
-  }
-
-  .t.nixie .wire {
-    font-weight: 150;
-    color: rgb(170 150 135 / 0.22);
-  }
-
-  .t.nixie .lit {
-    font-weight: 170;
-    color: #ffd2a6;
-    text-shadow:
-      0 0 0.015em #fff2e0,
-      0 0 0.05em #ff9a3c,
-      0 0 0.12em #ff6a14,
-      0 0 0.26em rgb(255 80 10 / 0.75),
-      0 0 0.5em rgb(255 70 10 / 0.4);
-  }
-
-  /* The honeycomb anode, in front of the digits. */
-  .t.nixie .mesh {
-    position: absolute;
-    inset: 0.08em 0.06em 0.2em;
-    border-radius: 0.27em 0.27em 0.04em 0.04em / 0.25em 0.25em 0.03em 0.03em;
-    opacity: 0.55;
-    mix-blend-mode: screen;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='17.32' viewBox='0 0 10 17.32'%3E%3Cpath d='M5 0l5 2.887v5.773L5 11.547 0 8.66V2.887zM5 11.547V17.32M0 2.887L-5 0M10 2.887L15 0' fill='none' stroke='%23c9a27e' stroke-width='0.5' stroke-opacity='0.5'/%3E%3C/svg%3E");
-    background-size: 0.07em 0.121em;
-  }
-
-  .t.nixie .base {
-    position: absolute;
-    inset: auto 0.03em 0;
-    height: 0.17em;
-    border-radius: 0.03em 0.03em 0.05em 0.05em;
-    background: linear-gradient(#3b3836, #1a1817 40%, #0e0d0c);
-    box-shadow:
-      inset 0 0.01em 0 rgb(255 255 255 / 0.12),
-      0 0.04em 0.1em rgb(0 0 0 / 0.4);
-  }
-
-  .t.nixie .colon {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2em;
-    margin: 0 0.02em 0.42em;
-  }
-
-  .t.nixie .colon i {
-    width: 0.07em;
-    height: 0.07em;
-    border-radius: 50%;
-    background: #ffd2a6;
-    box-shadow:
-      0 0 0.04em #ff9a3c,
-      0 0 0.12em #ff6a14,
-      0 0 0.24em rgb(255 80 10 / 0.6);
   }
 
   /* LCD: seven-segment digits. */

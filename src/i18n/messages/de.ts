@@ -175,7 +175,6 @@ export const de: Catalog = {
   'panel.face.rounded': 'Abgerundet',
   'panel.face.analog': 'Analog',
   'panel.face.flip': 'Flip',
-  'panel.face.nixie': 'Nixie',
   'panel.face.lcd': 'LCD',
   'panel.face.neon': 'Neon',
   'panel.face.fraktur': 'Fraktur',

@@ -36,7 +36,6 @@ export type ClockStyle =
   | 'glass'
   | 'rounded'
   | 'flip'
-  | 'nixie'
   | 'lcd'
   | 'neon'
   | 'fraktur'
@@ -55,7 +54,6 @@ export const CLOCK_STYLES: readonly ClockStyle[] = [
   'outline',
   'pixel',
   'flip',
-  'nixie',
   'lcd',
   'neon',
   'fraktur',

@@ -204,7 +204,6 @@ export const en = {
   'panel.face.rounded': 'Rounded',
   'panel.face.analog': 'Analog',
   'panel.face.flip': 'Flip',
-  'panel.face.nixie': 'Nixie',
   'panel.face.lcd': 'LCD',
   'panel.face.neon': 'Neon',
   'panel.face.fraktur': 'Fraktur',
