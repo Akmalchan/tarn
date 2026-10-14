@@ -123,8 +123,6 @@ export class TarnPanel extends LitElement {
   };
 
   static override styles = css`
-    ${faceStyles}
-
     /* Light first, with a dark twin. Black and white; system greys. */
     :host {
       --bg: #f2f2f7;
@@ -1030,6 +1028,9 @@ export class TarnPanel extends LitElement {
         transition: none;
       }
     }
+
+    /* The faces last, so they win over the thumbnails' base text. */
+    ${faceStyles}
   `;
 
   declare settings: Settings;
@@ -2612,6 +2613,12 @@ const FACE_NAMES: Record<ClockStyle, MessageKey> = {
   glass: 'panel.face.glass',
   rounded: 'panel.face.rounded',
   analog: 'panel.face.analog',
+  flip: 'panel.face.flip',
+  nixie: 'panel.face.nixie',
+  lcd: 'panel.face.lcd',
+  neon: 'panel.face.neon',
+  fraktur: 'panel.face.fraktur',
+  gotisch: 'panel.face.gotisch',
   none: 'panel.face.none',
 };
 
@@ -2702,7 +2709,7 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face classic glass bold rounded minimal serif stacked outline pixel 8-bit retro analog dial hide',
+      'time date face classic glass bold rounded minimal serif stacked outline pixel 8-bit retro flip nixie lcd digital neon gothic fraktur gotisch analog dial hide',
   },
   {
     label: 'panel.page.widgets',

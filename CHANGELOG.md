@@ -10,6 +10,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 - Three new clock faces: Glass (translucent digits with a lit bevel, like
   Apple's), Rounded and Analog.
+- More clock faces: Flip (split-flap cards that flip each minute), Nixie
+  (digits glowing in glass tubes), LCD (seven segments), Neon, and two
+  gothic ones, Fraktur and Gotisch, with blackletter dates (Google Fonts,
+  bundled, OFL).
 - Settings, polished: search on Widgets and Language filters that page
   ("german" finds Deutsch); wallpaper cards show a gauge of how much each
   asks of your computer, and play the real animation while you hover;

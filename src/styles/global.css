@@ -19,6 +19,27 @@
     U+2215, U+FEFF, U+FFFD;
 }
 
+/* Two blackletter faces for the gothic clocks, bundled (Google Fonts,
+   OFL: public/fonts/OFL-*.txt), Latin subsets. They load only when a
+   gothic clock is shown. Tarn Fraktur is a subset of UnifrakturMaguntia,
+   renamed as its license asks of modified versions (a Reserved Font
+   Name). */
+@font-face {
+  font-family: 'Tarn Fraktur';
+  src: url('/fonts/tarn-fraktur-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Grenze Gotisch';
+  src: url('/fonts/grenze-gotisch-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
 /* Design tokens. Components read these; nothing hardcodes a color. */
 :root {
   --text: rgb(244 247 251);

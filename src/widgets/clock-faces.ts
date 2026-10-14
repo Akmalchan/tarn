@@ -4,6 +4,7 @@
  */
 
 import {css, html, svg} from 'lit';
+import {keyed} from 'lit/directives/keyed.js';
 import {locale} from '../i18n';
 import type {ClockStyle} from '../settings/schema';
 
@@ -15,12 +16,116 @@ import type {ClockStyle} from '../settings/schema';
 export function clockTime(face: ClockStyle, time: string, now?: Date) {
   if (face === 'pixel') return pixelTime(time);
   if (face === 'analog') return analogTime(time, now);
+  if (face === 'flip') return flipTime(time);
+  if (face === 'nixie') return nixieTime(time);
+  if (face === 'lcd') return lcdTime(time);
   if (face === 'stacked') {
     const [hours, minutes] = splitTime(time);
     return html`<span class="hh">${hours}</span
       ><span class="mm">${minutes}</span>`;
   }
   return time;
+}
+
+/**
+ * The flip face: hours and minutes on two split-flap cards. A card whose
+ * number changed flips down into place (keyed, so it is a new element).
+ */
+export function flipTime(time: string) {
+  const [hours, minutes] = splitTime(time);
+  return html`${keyed(hours, html`<span class="card">${hours}</span>`)}${keyed(
+    minutes,
+    html`<span class="card">${minutes}</span>`,
+  )}`;
+}
+
+/**
+ * The nixie face: each digit glowing in its own glass tube, the other
+ * cathodes faintly visible behind it; a dot between hours and minutes.
+ */
+export function nixieTime(time: string) {
+  const [hours, minutes] = splitTime(time);
+  const tube = (digit: string) =>
+    html`<span class="tube"
+      ><span class="ghost">8</span><span class="ghost">0</span
+      ><span class="lit">${digit}</span></span
+    >`;
+  return html`${[...hours].map(tube)}<span class="dot"></span>${[
+      ...minutes,
+    ].map(tube)}`;
+}
+
+/** Which segments each digit lights, a-g clockwise from the top, g middle. */
+const SEGMENTS: Record<string, string> = {
+  '0': 'abcdef',
+  '1': 'bc',
+  '2': 'abged',
+  '3': 'abgcd',
+  '4': 'fgbc',
+  '5': 'afgcd',
+  '6': 'afgedc',
+  '7': 'abc',
+  '8': 'abcdefg',
+  '9': 'abcfgd',
+};
+
+const LCD = (() => {
+  const W = 40;
+  const H = 74;
+  const T = 7.5;
+  const G = 1.2;
+  const across = (x1: number, x2: number, y: number) =>
+    `M${x1} ${y}L${x1 + T / 2} ${y - T / 2}H${x2 - T / 2}L${x2} ${y}L${x2 - T / 2} ${y + T / 2}H${x1 + T / 2}Z`;
+  const down = (x: number, y1: number, y2: number) =>
+    `M${x} ${y1}L${x + T / 2} ${y1 + T / 2}V${y2 - T / 2}L${x} ${y2}L${x - T / 2} ${y2 - T / 2}V${y1 + T / 2}Z`;
+  return {
+    W,
+    H,
+    paths: {
+      a: across(T / 2 + G, W - T / 2 - G, T / 2),
+      b: down(W - T / 2, T / 2 + G, H / 2 - G),
+      c: down(W - T / 2, H / 2 + G, H - T / 2 - G),
+      d: across(T / 2 + G, W - T / 2 - G, H - T / 2),
+      e: down(T / 2, H / 2 + G, H - T / 2 - G),
+      f: down(T / 2, T / 2 + G, H / 2 - G),
+      g: across(T / 2 + G, W - T / 2 - G, H / 2),
+    } as Record<string, string>,
+  };
+})();
+
+/**
+ * The LCD face: seven-segment digits, slightly italic, the unlit segments
+ * faintly there as on a real display. A one-digit hour leaves the first
+ * place dark.
+ */
+export function lcdTime(time: string) {
+  const [h = '', m = ''] = time.split(/\D+/);
+  const places = [
+    h.length < 2 ? '' : h[0]!,
+    h.at(-1) ?? '',
+    m[0] ?? '',
+    m[1] ?? '',
+  ];
+  const step = LCD.W + 10;
+  const digit = (char: string, x: number) =>
+    svg`<g transform="translate(${x} 0) skewX(-7)">${'abcdefg'
+      .split('')
+      .map(
+        k =>
+          svg`<path d=${LCD.paths[k]!} opacity=${(SEGMENTS[char] ?? '').includes(k) ? 1 : 0.09} />`,
+      )}</g>`;
+  const colonX = 2 * step;
+  const width = 4 * step + 20;
+  return html`<svg
+    class="lcd"
+    viewBox="-6 -2 ${width} ${LCD.H + 4}"
+    role="img"
+    aria-label=${time}
+  >
+    ${digit(places[0]!, 0)}${digit(places[1]!, step)}
+    ${svg`<g transform="skewX(-7)"><rect x=${colonX + 1} y=${LCD.H * 0.3 - 4} width="8" height="8" rx="1.5" /><rect x=${colonX + 1} y=${LCD.H * 0.7 - 4} width="8" height="8" rx="1.5" /></g>`}
+    ${digit(places[2]!, colonX + 20)}${digit(places[3]!, colonX + 20 + step)}
+  </svg>`;
 }
 
 /**
@@ -188,6 +293,176 @@ export const faceStyles = css`
   /* Too small to melt: a thumbnail just shows the heavy weight. */
   .thumb .t.rounded {
     filter: none;
+  }
+
+  /* Gothic: blackletter digits, and the date in the same hand (the
+     letters carry the style more than the numbers). */
+  .t.fraktur {
+    font-family: 'Tarn Fraktur', ui-serif, serif;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .t.gotisch {
+    font-family: 'Grenze Gotisch', ui-serif, serif;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+
+  .t.fraktur + .date,
+  .t.fraktur + .d {
+    font-family: 'Tarn Fraktur', ui-serif, serif;
+    font-weight: 400;
+  }
+
+  .t.gotisch + .date,
+  .t.gotisch + .d {
+    font-family: 'Grenze Gotisch', ui-serif, serif;
+    font-weight: 650;
+  }
+
+  /* Flip: two split-flap cards, dark in any light, with a hinge line. */
+  .t.flip {
+    display: flex;
+    justify-content: center;
+    gap: 0.12em;
+    font-weight: 640;
+    letter-spacing: -0.02em;
+    text-shadow: none;
+  }
+
+  .t.flip .card {
+    position: relative;
+    padding: 0.04em 0.14em;
+    border-radius: 0.14em;
+    color: #f2f2f2;
+    background: linear-gradient(#2a2c31, #1d1f23 50%, #16171a 50%, #1d1f23);
+    box-shadow:
+      0 0.09em 0.27em rgb(0 0 0 / 0.35),
+      inset 0 1px 0 rgb(255 255 255 / 0.08);
+    transform-origin: 50% 0;
+    animation: card-flip 520ms cubic-bezier(0.3, 1.3, 0.5, 1) both;
+  }
+
+  .t.flip .card::after {
+    content: '';
+    position: absolute;
+    inset: 50% 0 auto;
+    height: 0.018em;
+    background: rgb(0 0 0 / 0.55);
+  }
+
+  @keyframes card-flip {
+    from {
+      transform: perspective(4em) rotateX(-75deg);
+      opacity: 0.35;
+    }
+  }
+
+  /* Nixie: digits glowing orange in glass tubes. */
+  .t.nixie {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0.09em;
+    text-shadow: none;
+  }
+
+  .t.nixie .tube {
+    position: relative;
+    width: 0.66em;
+    height: 1.14em;
+    overflow: hidden;
+    border-radius: 0.33em 0.33em 0.09em 0.09em;
+    background: radial-gradient(
+      ellipse at 50% 60%,
+      rgb(255 120 40 / 0.12),
+      rgb(20 12 8 / 0.35) 70%
+    );
+    box-shadow:
+      inset 0 0 0 0.013em rgb(255 220 190 / 0.2),
+      inset 0.05em 0 0.12em rgb(255 255 255 / 0.05),
+      0 0.05em 0.18em rgb(0 0 0 / 0.3);
+  }
+
+  .t.nixie .tube::before {
+    content: '';
+    position: absolute;
+    inset: 0.07em;
+    border-radius: 0.27em 0.27em 0.05em 0.05em;
+    background-image:
+      linear-gradient(rgb(255 200 150 / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 200 150 / 0.08) 1px, transparent 1px);
+    background-size: 0.054em 0.054em;
+  }
+
+  .t.nixie .ghost,
+  .t.nixie .lit {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 0.82em;
+    font-weight: 250;
+    line-height: 1;
+  }
+
+  .t.nixie .ghost {
+    color: rgb(255 210 170 / 0.09);
+  }
+
+  .t.nixie .lit {
+    color: #ffb070;
+    text-shadow:
+      0 0 0.04em #ff8a3d,
+      0 0 0.12em #ff6a1a,
+      0 0 0.28em rgb(255 90 20 / 0.7),
+      0 0 0.48em rgb(255 70 10 / 0.45);
+  }
+
+  .t.nixie .dot {
+    width: 0.09em;
+    height: 0.09em;
+    margin: 0 0.04em 0.3em;
+    border-radius: 50%;
+    background: #ffb070;
+    box-shadow:
+      0 0 0.09em #ff6a1a,
+      0 0 0.2em rgb(255 90 20 / 0.6);
+  }
+
+  /* LCD: seven-segment digits. */
+  .t.lcd {
+    text-shadow: none;
+  }
+
+  .t .lcd {
+    display: block;
+    height: 1.04em;
+    margin: 0 auto;
+    overflow: visible;
+    fill: currentColor;
+  }
+
+  /* Neon: thin tubes glowing pink. */
+  .t.neon {
+    font-weight: 260;
+    letter-spacing: -0.01em;
+    color: #fff3f8;
+    text-shadow:
+      0 0 0.02em #fff,
+      0 0 0.07em #ff6fb4,
+      0 0 0.16em #ff3d9a,
+      0 0 0.32em rgb(255 61 154 / 0.6),
+      0 0 0.62em rgb(255 61 154 / 0.35);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t.flip .card {
+      animation: none;
+    }
   }
 
   .t .pixel {
