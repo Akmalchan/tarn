@@ -53,11 +53,11 @@ owner's taste. The essentials:
   via the favicon API) and "None" (a transparent icon once the page exists).
   `management` is
   _optional_, requested only when the user asks Tarn to switch off another
-  new-tab extension (Chromium only). `bookmarks` is _optional_ too
-  (owner-approved 2026-10-13): "Use my bookmarks" in Favorites asks for it,
-  copies the bookmarks bar once (`widgets/bookmarks.ts`) and removes it
-  again, so there is no install warning and no standing access. Adding any
-  permission needs a stated reason.
+  new-tab extension (Chromium only). Adding any permission needs a stated
+  reason. Planned (owner-approved 2026-10-13, place in the UI not decided
+  yet): an optional `bookmarks` permission for "Use my bookmarks", asked
+  at that moment, the bar copied once (`widgets/bookmarks.ts`,
+  `fromBookmarks`/`mergeImported`) and the permission given back.
 - **Performance:** never block first paint; animate only transform/opacity;
   backgrounds pause when hidden and honor `prefers-reduced-motion`.
 - **Words:** every visible word goes through `t()` (`src/i18n/`); never

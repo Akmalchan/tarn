@@ -71,8 +71,10 @@ const cache = new Map<string, Promise<FoundIcon | null>>();
 
 /**
  * Resolves to the site's real icon, or null when Chrome only has the globe
- * (never visited, or Firefox). Tries the exact page, then the site's home
- * page, since Chrome stores icons per visited page.
+ * (never visited in this browser, or Firefox). Chrome keeps icons per
+ * visited page, so this tries the exact page, then the site's home page
+ * with and without www, then the language subdomain (en.wikipedia.org for
+ * www.wikipedia.org). No network: a site never visited shows its letter.
  */
 export function siteIcon(pageUrl: string): Promise<FoundIcon | null> {
   if (import.meta.env.FIREFOX) return Promise.resolve(null);
@@ -93,12 +95,15 @@ async function findIcon(pageUrl: string): Promise<FoundIcon | null> {
   );
   const known = await globe;
   const url = new URL(pageUrl);
+  const bare = url.hostname.replace(/^www\./, '');
+  const language = navigator.language.split('-')[0]?.toLowerCase();
   const candidates = [
     pageUrl,
     `${url.origin}/`,
-    url.hostname.startsWith('www.')
-      ? null
-      : `${url.protocol}//www.${url.hostname}/`,
+    `${url.protocol}//${bare}/`,
+    `${url.protocol}//www.${bare}/`,
+    // Sites like Wikipedia live on a subdomain per language.
+    language ? `${url.protocol}//${language}.${bare}/` : null,
   ];
   for (const candidate of new Set(candidates)) {
     if (!candidate) continue;

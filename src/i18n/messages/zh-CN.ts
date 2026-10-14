@@ -60,6 +60,7 @@ export const zhCN: Catalog = {
   'favorites.noBookmarks': '书签栏是空的',
   'favorites.imported': '已添加书签栏。',
   'favorites.more': '更多',
+  'favorites.icon': '图标',
   'favorites.chooseIcon': '选择图片',
   'favorites.siteIcon': '使用网站图标',
   'favorites.badIcon': '无法使用这张图片。',

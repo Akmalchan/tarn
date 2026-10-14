@@ -61,6 +61,7 @@ export const ru: Catalog = {
   'favorites.noBookmarks': 'Панель закладок пуста',
   'favorites.imported': 'Панель закладок добавлена.',
   'favorites.more': 'Ещё',
+  'favorites.icon': 'Значок',
   'favorites.chooseIcon': 'Выбрать изображение',
   'favorites.siteIcon': 'Значок сайта',
   'favorites.badIcon': 'Это изображение не подходит.',

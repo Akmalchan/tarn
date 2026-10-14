@@ -62,6 +62,7 @@ export const de: Catalog = {
   'favorites.noBookmarks': 'Deine Lesezeichenleiste ist leer',
   'favorites.imported': 'Deine Lesezeichenleiste wurde hinzugefügt.',
   'favorites.more': 'Mehr',
+  'favorites.icon': 'Symbol',
   'favorites.chooseIcon': 'Bild auswählen',
   'favorites.siteIcon': 'Symbol der Website verwenden',
   'favorites.badIcon': 'Dieses Bild kann nicht verwendet werden.',

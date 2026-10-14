@@ -60,6 +60,7 @@ export const ko: Catalog = {
   'favorites.noBookmarks': '북마크바가 비어 있어요',
   'favorites.imported': '북마크바를 추가했어요.',
   'favorites.more': '더보기',
+  'favorites.icon': '아이콘',
   'favorites.chooseIcon': '이미지 선택',
   'favorites.siteIcon': '사이트 아이콘 사용',
   'favorites.badIcon': '이 이미지는 사용할 수 없어요.',

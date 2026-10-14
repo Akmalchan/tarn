@@ -61,6 +61,7 @@ export const tr: Catalog = {
   'favorites.noBookmarks': 'Yer imleri çubuğun boş',
   'favorites.imported': 'Yer imleri çubuğun eklendi.',
   'favorites.more': 'Diğer',
+  'favorites.icon': 'Simge',
   'favorites.chooseIcon': 'Görsel seç',
   'favorites.siteIcon': 'Sitenin simgesini kullan',
   'favorites.badIcon': 'Bu görsel kullanılamıyor.',

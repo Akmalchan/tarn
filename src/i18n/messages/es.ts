@@ -61,6 +61,7 @@ export const es: Catalog = {
   'favorites.noBookmarks': 'Tu barra de marcadores está vacía',
   'favorites.imported': 'Se añadió tu barra de marcadores.',
   'favorites.more': 'Más',
+  'favorites.icon': 'Icono',
   'favorites.chooseIcon': 'Elegir una imagen',
   'favorites.siteIcon': 'Usar el icono del sitio',
   'favorites.badIcon': 'No se puede usar esa imagen.',

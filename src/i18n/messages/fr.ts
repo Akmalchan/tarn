@@ -61,6 +61,7 @@ export const fr: Catalog = {
   'favorites.noBookmarks': 'Votre barre de favoris est vide',
   'favorites.imported': 'Votre barre de favoris a été ajoutée.',
   'favorites.more': 'Plus',
+  'favorites.icon': 'Icône',
   'favorites.chooseIcon': 'Choisir une image',
   'favorites.siteIcon': 'Utiliser l’icône du site',
   'favorites.badIcon': 'Impossible d’utiliser cette image.',

@@ -60,6 +60,7 @@ export const ja: Catalog = {
   'favorites.noBookmarks': 'ブックマークバーは空です',
   'favorites.imported': 'ブックマークバーを追加しました。',
   'favorites.more': 'その他',
+  'favorites.icon': 'アイコン',
   'favorites.chooseIcon': '画像を選ぶ',
   'favorites.siteIcon': 'サイトのアイコンを使う',
   'favorites.badIcon': 'この画像は使えません。',

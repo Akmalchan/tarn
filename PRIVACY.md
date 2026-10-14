@@ -58,10 +58,6 @@ request. Removing the Weather widget stops all of it.
   Tarn to switch off another new-tab extension, and used only for that.
 - **Geolocation** (optional): asked for only if you press "Use my location"
   in a Weather widget, and used only for that.
-- **Bookmarks** (optional): asked for only if you press "Use my bookmarks"
-  in a Favorites widget. Tarn copies your bookmarks bar into the widget
-  once, then gives the permission back at once; it never reads or changes
-  your bookmarks after that, and nothing leaves the browser.
 
 ## Links
 

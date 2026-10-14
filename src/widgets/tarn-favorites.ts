@@ -13,14 +13,11 @@ import {
 } from 'lit';
 import {live} from 'lit/directives/live.js';
 import {repeat} from 'lit/directives/repeat.js';
-import {canReadBookmarks, readBookmarksBar} from './bookmarks';
 import {
   loadWidgetData,
   peekWidgetData,
-  peekWidgetDataStored,
   saveWidgetData,
   watchWidgetData,
-  widgetDataStored,
 } from './data';
 import {SiteDrag, type DragResult, type DragState} from './favorites-drag';
 import {
@@ -28,9 +25,7 @@ import {
   MAX_ITEMS,
   allSites,
   dropInto,
-  fromBookmarks,
   isFolder,
-  mergeImported,
   moveEntry,
   moveInFolder,
   nameOf,
@@ -76,6 +71,28 @@ function keyOf(item: object): string {
   return key;
 }
 
+// Drawn, not typed: a font's × and + sit a pixel off center.
+const CROSS = html`<svg viewBox="0 0 10 10" aria-hidden="true">
+  <path d="M2.75 2.75l4.5 4.5m0-4.5l-4.5 4.5" />
+</svg>`;
+const PLUS = html`<svg viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M8 3.5v9M3.5 8h9" />
+</svg>`;
+const CHEVRON = html`<svg
+  class="chevron"
+  viewBox="0 0 10 10"
+  aria-hidden="true"
+>
+  <path d="M3 4l2 2 2-2" />
+</svg>`;
+
+/** An open folder's columns: rows as even as they can be, at most six. */
+function columnsFor(count: number): number {
+  if (count <= 6) return Math.max(3, count);
+  if (count <= 8) return 4;
+  return count <= 10 ? 5 : 6;
+}
+
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 /**
@@ -94,16 +111,15 @@ export class TarnFavorites extends LitElement {
     heading: {attribute: false},
     items: {state: true},
     icons: {state: true},
-    stored: {state: true},
     folder: {state: true},
     editor: {state: true},
     more: {state: true},
     draftIcon: {state: true},
+    draftUrl: {state: true},
+    draftTitle: {state: true},
     error: {state: true},
     drag: {state: true},
     confirming: {state: true},
-    importing: {state: true},
-    notice: {state: true},
     announcement: {state: true},
   };
 
@@ -116,49 +132,15 @@ export class TarnFavorites extends LitElement {
         --icon-size: 32px;
         --chip-radius: 12px;
         --dark-chip: ${unsafeCSS(DARK_CHIP)};
+        /* Opaque, so the icon under its corner never shows through. */
+        --badge: rgb(74 78 88);
       }
 
-      .head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        min-height: 16px;
-      }
-
-      .head h3 {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-
-      .import {
-        flex: none;
-        margin: -4px 0;
-        padding: 4px 10px;
-        font-size: 11.5px;
-        font-weight: 600;
-        color: var(--ink);
-        background: var(--chip);
-        border: 0;
-        border-radius: 999px;
-        cursor: pointer;
-        transition: background-color 150ms ease;
-      }
-
-      .import:hover {
-        background: var(--chip-hover);
-      }
-
-      .import[disabled] {
-        cursor: default;
-        opacity: 0.7;
-      }
-
-      .notice {
-        flex: none;
-        font-size: 11.5px;
-        color: var(--ink-dim);
+      svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
       }
 
       .sites {
@@ -223,8 +205,9 @@ export class TarnFavorites extends LitElement {
         overflow: hidden;
         border-radius: var(--chip-radius);
         background: var(--chip);
-        font-size: 17px;
+        font-size: calc(var(--chip-size) * 0.4);
         font-weight: 600;
+        line-height: 1;
         transition:
           background-color 150ms ease,
           transform 150ms ease,
@@ -242,7 +225,7 @@ export class TarnFavorites extends LitElement {
 
       /* A real site icon sits on a light tile, like an app icon. */
       .chip.icon {
-        background: rgb(255 255 255 / 0.92);
+        background: rgb(255 255 255 / 0.94);
       }
 
       .site:hover .chip.icon {
@@ -253,6 +236,8 @@ export class TarnFavorites extends LitElement {
       .chip.icon.dark,
       .site:hover .chip.icon.dark {
         background: var(--dark-chip);
+        /* An edge, so it doesn't melt into a dark tile. */
+        box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.2);
       }
 
       /* The icon fills most of its tile, like Safari's favorites. */
@@ -268,43 +253,50 @@ export class TarnFavorites extends LitElement {
         object-fit: cover;
       }
 
-      /* No icon in Chrome's cache: the site's first letter on a calm color. */
-      .chip.letter {
-        color: rgb(255 255 255 / 0.95);
+      /* No icon in the browser's cache: the site's first letter, on a
+         quiet tint of its own (no rainbow). */
+      .chip.letter,
+      .mini.letter {
+        color: rgb(255 255 255 / 0.94);
         text-shadow: none;
-        background: hsl(var(--hue) 42% 46%);
+        background: hsl(var(--hue) 22% 38%);
+        background-image: linear-gradient(
+          rgb(255 255 255 / 0.1),
+          rgb(255 255 255 / 0)
+        );
       }
 
       .site:hover .chip.letter {
-        background: hsl(var(--hue) 46% 52%);
+        background-color: hsl(var(--hue) 24% 44%);
       }
 
-      /* A folder: a glass tile holding its first four icons. */
+      /* A folder: a glass tile holding its first four icons, with corners
+         that follow the tile's own. */
       .chip.folder {
+        --inset: calc(var(--chip-size) * 0.14);
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
         gap: calc(var(--chip-size) * 0.07);
-        padding: calc(var(--chip-size) * 0.15);
+        padding: var(--inset);
         place-items: stretch;
-        background: rgb(255 255 255 / 0.2);
-        box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+        background: rgb(255 255 255 / 0.16);
+        box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.22);
       }
 
       .site:hover .chip.folder {
-        background: rgb(255 255 255 / 0.28);
+        background: rgb(255 255 255 / 0.24);
       }
 
       .mini {
         display: grid;
         place-items: center;
         overflow: hidden;
-        border-radius: calc(var(--chip-radius) * 0.36);
-        background: rgb(255 255 255 / 0.92);
+        border-radius: max(3px, calc(var(--chip-radius) - var(--inset)));
+        background: rgb(255 255 255 / 0.94);
         font-size: calc(var(--chip-size) * 0.17);
         font-style: normal;
-        font-weight: 700;
+        font-weight: 600;
         line-height: 1;
-        color: rgb(255 255 255 / 0.95);
         text-shadow: none;
       }
 
@@ -312,13 +304,14 @@ export class TarnFavorites extends LitElement {
         background: var(--dark-chip);
       }
 
-      .mini.letter {
-        background: hsl(var(--hue) 42% 46%);
+      /* Still loading, or an empty corner. */
+      .mini.blank {
+        background: rgb(255 255 255 / 0.1);
       }
 
       .mini img {
-        width: 76%;
-        height: 76%;
+        width: 74%;
+        height: 74%;
       }
 
       .mini.custom img {
@@ -340,29 +333,30 @@ export class TarnFavorites extends LitElement {
       .remove {
         position: absolute;
         z-index: 1;
-        top: -7px;
-        left: calc(50% - var(--chip-size) / 2 - 7px);
+        top: -6px;
+        left: calc(50% - var(--chip-size) / 2 - 6px);
         display: grid;
         place-items: center;
-        min-width: 20px;
-        height: 20px;
+        min-width: 18px;
+        height: 18px;
         padding: 0;
-        font-size: 13px;
-        line-height: 1;
-        color: var(--ink);
-        text-shadow: none;
-        background: var(--chip-strong);
+        color: rgb(255 255 255 / 0.95);
+        background: var(--badge);
         border: 0;
         border-radius: 999px;
-        box-shadow:
-          0 0 0 1px rgb(255 255 255 / 0.16),
-          0 1px 3px rgb(0 0 0 / 0.3);
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
         cursor: pointer;
         transition: transform 150ms ease;
       }
 
+      .remove svg {
+        width: 10px;
+        height: 10px;
+        stroke-width: 1.6;
+      }
+
       .remove:hover {
-        transform: scale(1.12);
+        transform: scale(1.1);
       }
 
       /* A folder asks once before it goes, with all its sites. */
@@ -371,6 +365,7 @@ export class TarnFavorites extends LitElement {
         font-size: 11px;
         font-weight: 600;
         white-space: nowrap;
+        text-shadow: none;
       }
 
       .add {
@@ -388,9 +383,19 @@ export class TarnFavorites extends LitElement {
       }
 
       .add .chip {
-        font-size: 22px;
-        font-weight: 300;
         color: var(--ink-dim);
+        box-shadow: inset 0 0 0 1px var(--tile-line);
+        background: transparent;
+      }
+
+      .add:hover .chip {
+        color: var(--ink);
+      }
+
+      .add svg {
+        width: 40%;
+        height: 40%;
+        stroke-width: 1.5;
       }
 
       .empty {
@@ -417,8 +422,8 @@ export class TarnFavorites extends LitElement {
 
       /* The held site will drop into this one. */
       .site.target .chip {
-        transform: scale(1.14);
-        box-shadow: 0 0 0 3px rgb(255 255 255 / 0.55);
+        transform: scale(1.12);
+        box-shadow: 0 0 0 2px rgb(255 255 255 / 0.6);
       }
 
       /* Large tiles: bigger icons, four across in a 2x2 tile. */
@@ -432,15 +437,12 @@ export class TarnFavorites extends LitElement {
           grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
           margin-top: -4px;
         }
-        .chip {
-          font-size: 20px;
-        }
       }
 
       /* Short tiles: icons only, no names or heading. */
       @container (max-height: 140px) {
         .name,
-        .head {
+        h3 {
           display: none;
         }
       }
@@ -463,14 +465,16 @@ export class TarnFavorites extends LitElement {
         }
       }
 
-      /* ---- An open folder ---- */
+      /* ---- An open folder: as wide as its icons, glass over the page ---- */
 
       dialog.folder {
-        width: min(600px, calc(100vw - 32px));
+        width: fit-content;
+        max-width: calc(100vw - 32px);
         padding: 0;
-        border-radius: 28px;
-        border-color: rgb(255 255 255 / 0.18);
-        backdrop-filter: blur(36px) saturate(1.3);
+        border-radius: 30px;
+        border-color: rgb(255 255 255 / 0.16);
+        background: color-mix(in srgb, var(--tile-held) 76%, transparent);
+        backdrop-filter: blur(40px) saturate(1.5);
         transition: opacity 150ms ease;
       }
 
@@ -479,14 +483,14 @@ export class TarnFavorites extends LitElement {
       }
 
       .sheet {
-        --chip-size: 52px;
-        --icon-size: 38px;
-        --chip-radius: 14px;
+        --chip-size: 56px;
+        --icon-size: 40px;
+        --chip-radius: 15px;
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 16px;
         max-height: min(78vh, 640px);
-        padding: 22px 24px 26px;
+        padding: 20px 22px 24px;
       }
 
       .sheet .title {
@@ -494,17 +498,19 @@ export class TarnFavorites extends LitElement {
         margin: 0;
         padding: 4px 8px;
         font: inherit;
-        font-size: 21px;
+        font-size: 20px;
         font-weight: 600;
+        letter-spacing: -0.01em;
         text-align: center;
         color: var(--ink);
         background: transparent;
         border: 1px solid transparent;
         border-radius: 10px;
+        outline: none;
       }
 
       .sheet input.title:hover {
-        border-color: var(--tile-line);
+        background: var(--chip);
       }
 
       .sheet input.title:focus {
@@ -514,8 +520,9 @@ export class TarnFavorites extends LitElement {
 
       .sheet .sites {
         flex: initial;
-        grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-        gap: 18px 8px;
+        grid-template-columns: repeat(var(--columns, 4), 80px);
+        justify-content: center;
+        gap: 16px 6px;
         overflow-y: auto;
         scrollbar-width: none;
         mask-image: none;
@@ -525,11 +532,148 @@ export class TarnFavorites extends LitElement {
         font-size: 12px;
       }
 
-      /* ---- The editor's extras, behind More ---- */
+      /* ---- Adding or editing a site: like Safari's sheet ---- */
+
+      dialog.editor {
+        width: min(360px, calc(100vw - 32px));
+        padding: 18px 18px 16px;
+        border-radius: 24px;
+      }
+
+      dialog.editor form {
+        gap: 14px;
+      }
+
+      dialog.editor h4 {
+        margin: 0;
+        font-size: 15px;
+        text-align: center;
+      }
+
+      .preview {
+        display: grid;
+        place-items: center;
+        --chip-size: 64px;
+        --icon-size: 46px;
+        --chip-radius: 17px;
+      }
+
+      .preview .chip {
+        box-shadow: 0 6px 18px rgb(0 0 0 / 0.22);
+      }
+
+      /* Fields as one rounded group with hairlines between rows. */
+      .group {
+        overflow: hidden;
+        border-radius: 12px;
+        background: var(--chip);
+      }
+
+      dialog.editor .row {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        min-height: 44px;
+        padding: 0 14px;
+        font-size: 13px;
+        color: var(--ink);
+      }
+
+      dialog.editor .row + .row::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 14px;
+        border-top: 1px solid var(--tile-line);
+      }
+
+      .row > span {
+        flex: none;
+        width: 76px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink-dim);
+      }
+
+      dialog.editor input::selection {
+        color: inherit;
+        background: color-mix(in srgb, var(--ink) 28%, transparent);
+      }
+
+      dialog.editor .row input,
+      dialog.editor .row select {
+        flex: 1;
+        min-width: 0;
+        height: 44px;
+        padding: 0;
+        font: inherit;
+        font-size: 14px;
+        color: var(--ink);
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        outline: none;
+      }
+
+      dialog.editor .row:focus-within {
+        background: rgb(255 255 255 / 0.04);
+      }
+
+      dialog.editor .row select {
+        appearance: none;
+        padding-right: 18px;
+        text-align: right;
+        text-align-last: right;
+        cursor: pointer;
+        background: no-repeat right center / 10px
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 4l2 2 2-2' fill='none' stroke='%23999' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      }
+
+      option {
+        color: initial;
+      }
+
+      .row-end {
+        display: flex;
+        flex: 1;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .text-button {
+        padding: 0;
+        font: inherit;
+        font-size: 13px;
+        white-space: nowrap;
+        color: var(--ink);
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+      }
+
+      .text-button.dim {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--ink-dim);
+      }
+
+      .text-button:hover {
+        text-decoration: underline;
+      }
 
       .more-toggle {
-        align-self: flex-start;
-        padding: 2px 0;
+        display: inline-flex;
+        align-items: center;
+        align-self: center;
+        gap: 2px;
+        margin: -4px 0;
+        padding: 2px 6px;
         font: inherit;
         font-size: 12px;
         color: var(--ink-dim);
@@ -542,69 +686,26 @@ export class TarnFavorites extends LitElement {
         color: var(--ink);
       }
 
-      .more {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        padding-top: 12px;
-        border-top: 1px solid var(--tile-line);
+      .chevron {
+        width: 12px;
+        height: 12px;
+        stroke-width: 1.4;
       }
 
-      .icon-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+      dialog.editor .error {
+        margin: -6px 2px 0;
       }
 
-      .icon-row .chip {
-        --chip-size: 44px;
+      /* Two equal buttons across the bottom. */
+      dialog.editor .buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        margin-top: 2px;
       }
 
-      .icon-row .actions {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-        min-width: 0;
-      }
-
-      .text-button {
-        padding: 0;
-        font: inherit;
-        font-size: 13px;
-        color: var(--ink);
-        background: transparent;
-        border: 0;
-        cursor: pointer;
-      }
-
-      .text-button.dim {
-        font-size: 12px;
-        color: var(--ink-dim);
-      }
-
-      .text-button:hover {
-        text-decoration: underline;
-      }
-
-      select {
-        width: 100%;
-        padding: 8px 10px;
-        font: inherit;
-        font-size: 14px;
-        color: var(--ink);
-        background: var(--chip);
-        border: 1px solid var(--tile-line);
-        border-radius: 10px;
-        outline: none;
-      }
-
-      select:focus {
-        border-color: var(--focus-ring);
-      }
-
-      option {
-        color: initial;
+      dialog.editor .buttons button {
+        padding: 9px 16px;
+        font-size: 13.5px;
       }
 
       .sr {
@@ -634,8 +735,6 @@ export class TarnFavorites extends LitElement {
   declare items: Item[];
   /** Resolved icon per site URL, or null for a letter tile. */
   declare icons: ReadonlyMap<string, FoundIcon | null>;
-  /** The widget holds content of its own (not the start setup's). */
-  declare stored: boolean;
   /** The open folder's index, or null. */
   declare folder: number | null;
   declare editor: Editor | null;
@@ -643,12 +742,13 @@ export class TarnFavorites extends LitElement {
   declare more: boolean;
   /** The editor's icon: unchanged (undefined), a new image, or removed. */
   declare draftIcon: string | null | undefined;
+  /** What the editor's fields hold, for its preview. */
+  declare draftUrl: string;
+  declare draftTitle: string;
   declare error: string;
   declare drag: (DragState & {scope: Scope; from: number}) | null;
   /** The folder whose remove badge asks for a second press. */
   declare confirming: number | null;
-  declare importing: boolean;
-  declare notice: string;
   declare announcement: string;
 
   private unwatch: () => void = () => {};
@@ -656,7 +756,6 @@ export class TarnFavorites extends LitElement {
   private checked = new Set<string>();
   private dragger: SiteDrag | null = null;
   private confirmTimer = 0;
-  private noticeTimer = 0;
 
   constructor() {
     super();
@@ -667,29 +766,23 @@ export class TarnFavorites extends LitElement {
     this.heading = t('widget.favorites');
     this.items = [];
     this.icons = new Map();
-    this.stored = true;
     this.folder = null;
     this.editor = null;
     this.more = false;
     this.draftIcon = undefined;
+    this.draftUrl = '';
+    this.draftTitle = '';
     this.error = '';
     this.drag = null;
     this.confirming = null;
-    this.importing = false;
-    this.notice = '';
     this.announcement = '';
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.stored = peekWidgetDataStored(this.widgetId);
     this.show(peekWidgetData(this.widgetId, normalizeItems));
     void loadWidgetData(this.widgetId, normalizeItems).then(this.show);
-    void widgetDataStored(this.widgetId).then(stored => (this.stored = stored));
-    this.unwatch = watchWidgetData(this.widgetId, normalizeItems, items => {
-      this.stored = true;
-      this.show(items);
-    });
+    this.unwatch = watchWidgetData(this.widgetId, normalizeItems, this.show);
   }
 
   override disconnectedCallback(): void {
@@ -752,10 +845,7 @@ export class TarnFavorites extends LitElement {
   override render() {
     const empty = !this.items.length && !this.editing;
     return html`
-      <div class="head">
-        <h3>${this.heading}</h3>
-        ${this.renderImport()}
-      </div>
+      <h3>${this.heading}</h3>
       ${
         empty
           ? html`<p class="empty">${t('favorites.empty')}</p>`
@@ -778,24 +868,6 @@ export class TarnFavorites extends LitElement {
       ${this.renderFolder()} ${this.editing ? this.renderEditor() : nothing}
       <div class="sr" aria-live="polite">${this.announcement}</div>
     `;
-  }
-
-  /**
-   * "Use my bookmarks": offered while the widget still shows the start
-   * setup, and always while arranging.
-   */
-  private renderImport() {
-    if (this.notice) return html`<span class="notice">${this.notice}</span>`;
-    if (!canReadBookmarks() || (this.stored && !this.editing)) return nothing;
-    return html`<button
-      class="import"
-      data-edit
-      title=${t('favorites.useBookmarksHint')}
-      ?disabled=${this.importing}
-      @click=${this.importBookmarks}
-    >
-      ${t('favorites.useBookmarks')}
-    </button>`;
   }
 
   /** The items in the order shown: the drag's preview while dragging. */
@@ -848,7 +920,7 @@ export class TarnFavorites extends LitElement {
         title=${t('common.remove')}
         @click=${() => this.save(removeAt(this.items, place))}
       >
-        ×
+        ${CROSS}
       </button>
     </div>`;
   }
@@ -892,7 +964,7 @@ export class TarnFavorites extends LitElement {
               title=${t('common.remove')}
               @click=${() => this.askRemoveFolder(index)}
             >
-              ${confirming ? t('common.remove') : '×'}
+              ${confirming ? t('common.remove') : CROSS}
             </button>`
           : nothing
       }
@@ -906,7 +978,7 @@ export class TarnFavorites extends LitElement {
       title=${t('favorites.addSite')}
       @click=${() => this.openEditor(null, folder)}
     >
-      <span class="chip" aria-hidden="true">+</span>
+      <span class="chip" aria-hidden="true">${PLUS}</span>
       <span class="name">${t('common.add')}</span>
     </button>`;
   }
@@ -951,7 +1023,13 @@ export class TarnFavorites extends LitElement {
                     />`
                   : html`<h4 class="title">${title}</h4>`
               }
-              <div class="sites" data-scope="folder">
+              <div
+                class="sites"
+                data-scope="folder"
+                style="--columns: ${columnsFor(
+                  folder.sites.length + (this.editing ? 1 : 0),
+                )}"
+              >
                 ${repeat(
                   this.ordered('folder', folder.sites),
                   ({item}) => keyOf(item),
@@ -981,45 +1059,42 @@ export class TarnFavorites extends LitElement {
       );
     return html`
       <dialog class="editor" data-edit @close=${this.onEditorClosed}>
-        <form method="dialog" @submit=${this.onSubmit}>
+        <form method="dialog" @submit=${this.onSubmit} @input=${this.onDraft}>
           <h4>${site ? t('favorites.editTitle') : t('favorites.addTitle')}</h4>
-          <label>
-            ${t('favorites.name')}
-            <input
-              name="title"
-              autocomplete="off"
-              maxlength="60"
-              placeholder=${t('favorites.namePlaceholder')}
-              .value=${live(site?.title ?? '')}
-            />
-          </label>
-          <label>
-            ${t('favorites.address')}
-            <input
-              name="url"
-              type="text"
-              inputmode="url"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="example.com"
-              .value=${live(site?.url ?? '')}
-              @input=${() => (this.error = '')}
-            />
-          </label>
+          <div class="preview" aria-hidden="true">
+            ${this.previewChip(icon)}
+          </div>
+          <div class="group">
+            <label class="row">
+              <span>${t('favorites.name')}</span>
+              <input
+                name="title"
+                autocomplete="off"
+                maxlength="60"
+                placeholder=${t('favorites.namePlaceholder')}
+                .value=${live(this.draftTitle)}
+              />
+            </label>
+            <label class="row">
+              <span>${t('favorites.address')}</span>
+              <input
+                name="url"
+                type="text"
+                inputmode="url"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="example.com"
+                .value=${live(this.draftUrl)}
+              />
+            </label>
+          </div>
           ${this.error ? html`<p class="error">${this.error}</p>` : nothing}
           ${
             this.more
-              ? html`<div class="more">
-                  <div class="icon-row">
-                    ${this.chip({url: site?.url ?? 'https://example.com/', title: site?.title || '?', ...(icon ? {icon} : {})}, true)}
-                    <div class="actions">
-                      <button
-                        type="button"
-                        class="text-button"
-                        @click=${this.chooseIcon}
-                      >
-                        ${t('favorites.chooseIcon')}
-                      </button>
+              ? html`<div class="group">
+                  <div class="row">
+                    <span>${t('favorites.icon')}</span>
+                    <div class="row-end">
                       ${
                         icon
                           ? html`<button
@@ -1031,6 +1106,13 @@ export class TarnFavorites extends LitElement {
                             </button>`
                           : nothing
                       }
+                      <button
+                        type="button"
+                        class="text-button"
+                        @click=${this.chooseIcon}
+                      >
+                        ${t('favorites.chooseIcon')}
+                      </button>
                     </div>
                     <input
                       type="file"
@@ -1039,8 +1121,8 @@ export class TarnFavorites extends LitElement {
                       @change=${this.onIconFile}
                     />
                   </div>
-                  <label>
-                    ${t('favorites.folderLabel')}
+                  <label class="row">
+                    <span>${t('favorites.folderLabel')}</span>
                     <select name="folder">
                       <option value="" ?selected=${editor?.dest === null}>
                         ${t('favorites.noFolder')}
@@ -1064,7 +1146,7 @@ export class TarnFavorites extends LitElement {
                   aria-expanded="false"
                   @click=${() => (this.more = true)}
                 >
-                  ${t('favorites.more')} ›
+                  ${t('favorites.more')}${CHEVRON}
                 </button>`
           }
           <div class="buttons">
@@ -1079,6 +1161,32 @@ export class TarnFavorites extends LitElement {
       </dialog>
     `;
   }
+
+  /** The editor's icon, following what is typed. */
+  private previewChip(icon: string | null | undefined) {
+    const url = toUrl(this.draftUrl);
+    const title = this.draftTitle.trim() || (url ? nameOf(url) : '');
+    if (!url && !icon) return html`<span class="chip"></span>`;
+    return this.chip(
+      {url: url ?? 'https://example.com/', title, ...(icon ? {icon} : {})},
+      true,
+    );
+  }
+
+  /** Follows the editor's fields, so the preview can show the icon. */
+  private onDraft = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    if (input.name === 'title') this.draftTitle = input.value;
+    if (input.name !== 'url') return;
+    this.error = '';
+    this.draftUrl = input.value;
+    const url = toUrl(input.value);
+    if (url && !this.icons.has(url)) {
+      void siteIcon(url).then(found => {
+        this.icons = new Map(this.icons).set(url, found);
+      });
+    }
+  };
 
   private chip(site: Site, preview = false) {
     if (site.icon) {
@@ -1112,7 +1220,7 @@ export class TarnFavorites extends LitElement {
         ><img src=${found.src} alt=""
       /></i>`;
     }
-    if (found === undefined) return html`<i class="mini"></i>`;
+    if (found === undefined) return html`<i class="mini blank"></i>`;
     const hue = siteHue(new URL(site.url).hostname);
     return html`<i class="mini letter" style="--hue:${hue}"
       >${site.title.charAt(0)}</i
@@ -1167,6 +1275,8 @@ export class TarnFavorites extends LitElement {
     const site = place ? siteAt(this.items, place) : null;
     this.error = '';
     this.draftIcon = undefined;
+    this.draftUrl = site?.url ?? '';
+    this.draftTitle = site?.title ?? '';
     // Basic by default; the extras stay open for a site that uses one.
     this.more = !!site?.icon;
     this.editor = {place, dest: place ? place.folder : folder};
@@ -1389,37 +1499,6 @@ export class TarnFavorites extends LitElement {
     }
   }
 
-  // ---- Bookmarks ----------------------------------------------------------
-
-  /** Copies the bookmarks bar in, once (see bookmarks.ts). */
-  private importBookmarks = async () => {
-    if (this.importing) return;
-    this.importing = true;
-    try {
-      // First, straight from the click: the browser asks the user.
-      const nodes = await readBookmarksBar();
-      if (nodes === null) return;
-      const imported = fromBookmarks(nodes);
-      if (!imported.length) {
-        this.showNotice(t('favorites.noBookmarks'));
-        return;
-      }
-      // The start setup's examples make way; the user's own sites stay.
-      this.save(mergeImported(this.stored ? this.items : [], imported));
-      this.announcement = t('favorites.imported');
-    } catch (error) {
-      console.warn('[tarn] bookmarks not read:', error);
-    } finally {
-      this.importing = false;
-    }
-  };
-
-  private showNotice(text: string): void {
-    clearTimeout(this.noticeTimer);
-    this.notice = text;
-    this.noticeTimer = window.setTimeout(() => (this.notice = ''), 4000);
-  }
-
   // ---- Content ------------------------------------------------------------
 
   /** Shows items now and fills in their icons as Chrome provides them. */
@@ -1447,7 +1526,6 @@ export class TarnFavorites extends LitElement {
   };
 
   private save(items: Item[]): void {
-    this.stored = true;
     // Indices may shift: a pending "Remove?" no longer points anywhere.
     this.confirming = null;
     this.show(items);

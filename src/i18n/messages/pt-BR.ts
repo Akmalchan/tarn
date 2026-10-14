@@ -61,6 +61,7 @@ export const ptBR: Catalog = {
   'favorites.noBookmarks': 'Sua barra de favoritos está vazia',
   'favorites.imported': 'Sua barra de favoritos foi adicionada.',
   'favorites.more': 'Mais',
+  'favorites.icon': 'Ícone',
   'favorites.chooseIcon': 'Escolher uma imagem',
   'favorites.siteIcon': 'Usar o ícone do site',
   'favorites.badIcon': 'Não é possível usar essa imagem.',

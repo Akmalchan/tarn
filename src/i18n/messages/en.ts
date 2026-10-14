@@ -79,6 +79,7 @@ export const en = {
   'favorites.noBookmarks': 'Your bookmarks bar is empty',
   'favorites.imported': 'Your bookmarks bar was added.',
   'favorites.more': 'More',
+  'favorites.icon': 'Icon',
   'favorites.chooseIcon': 'Choose an image',
   'favorites.siteIcon': 'Use the site’s icon',
   'favorites.badIcon': 'That image can’t be used.',
