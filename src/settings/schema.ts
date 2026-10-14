@@ -149,12 +149,23 @@ export interface Settings {
   readonly language: LanguageSetting;
 }
 
+/**
+ * What a brand-new install shows under the clock: the three widgets people
+ * use most (quick links, notes, to-do; docs/research), in one clean row.
+ * Their first content comes from widgets/start.ts until the user edits it.
+ */
+export const START_WIDGETS: readonly WidgetEntry[] = [
+  {id: 'favorites-start', kind: 'favorites', size: 'l'},
+  {id: 'notes-start', kind: 'notes', size: 'm'},
+  {id: 'tasks-start', kind: 'tasks', size: 'm'},
+];
+
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   scene: DEFAULT_SCENE_ID,
   tabIcon: 'chrome',
   clock: 'center',
-  widgets: [],
+  widgets: START_WIDGETS,
   weather: {provider: 'open-meteo', units: 'auto'},
   language: 'auto',
 };
@@ -187,7 +198,10 @@ export function normalizeSettings(raw: unknown): Settings {
     scene,
     tabIcon,
     clock,
-    widgets: normalizeWidgets(value.widgets),
+    // No widget list stored (a new install, until the widgets are first
+    // changed): the start setup. An empty list is the user's own "none".
+    widgets:
+      'widgets' in value ? normalizeWidgets(value.widgets) : [...START_WIDGETS],
     weather: normalizeWeather(value.weather),
     language: LANGUAGE_SETTINGS.includes(value.language as LanguageSetting)
       ? (value.language as LanguageSetting)

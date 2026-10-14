@@ -329,7 +329,9 @@ export class TarnApp extends LitElement {
       isTyping(event.target)
     )
       return;
-    const scene = SCENES[Number(event.key) - 1];
+    // 1-9 pick the first nine wallpapers, 0 the tenth.
+    const digit = /^[0-9]$/.test(event.key) ? Number(event.key) : NaN;
+    const scene = SCENES[digit === 0 ? 9 : digit - 1];
     if (scene) {
       this.selectScene(scene.id);
     }

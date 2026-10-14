@@ -13,7 +13,7 @@ import {
   saveAutoBackup,
 } from './backup';
 import {SETTINGS_VERSION} from './migrate';
-import {DEFAULT_SETTINGS} from './schema';
+import {DEFAULT_SETTINGS, START_WIDGETS} from './schema';
 import {
   SETTINGS_KEY,
   loadSettings,
@@ -28,7 +28,7 @@ import {
 const FROM_NEWER = {
   version: SETTINGS_VERSION + 1,
   enabled: true,
-  scene: 'nebula',
+  scene: 'lagoon',
   clock: 'neon',
   tabIcon: 'chrome',
   accent: {hue: 210},
@@ -51,7 +51,7 @@ describe('saving keeps what this version does not understand', () => {
     const stored = await storedSettings();
     expect(stored).toMatchObject({
       version: SETTINGS_VERSION + 1,
-      scene: 'nebula',
+      scene: 'lagoon',
       clock: 'neon',
       accent: {hue: 210},
       tabIcon: 'none',
@@ -132,8 +132,9 @@ describe('every past shape still loads', () => {
     expect(settings.scene).toBe(raw.scene);
     if ('enabled' in raw) expect(settings.enabled).toBe(raw.enabled);
     if ('clock' in raw) expect(settings.clock).toBe(raw.clock);
+    // Shapes from before widgets get the start setup.
     expect(settings.widgets.map(w => w.id)).toEqual(
-      (raw.widgets ?? []).map(w => w.id),
+      (raw.widgets ?? START_WIDGETS).map(w => w.id),
     );
   });
 });
@@ -146,15 +147,15 @@ describe('replacing the whole setup', () => {
     const previous = await replaceSettings(FROM_NEWER);
     expect(previous).toMatchObject({enabled: false, scene: 'ember'});
     const stored = await storedSettings();
-    expect(stored).toMatchObject({enabled: false, scene: 'nebula'});
+    expect(stored).toMatchObject({enabled: false, scene: 'lagoon'});
     expect(stored.widgets).toEqual(FROM_NEWER.widgets);
   });
 
-  it('resets fully, newer widgets included', async () => {
+  it('resets fully to the start setup, newer widgets included', async () => {
     await store(FROM_NEWER);
     await replaceSettings(DEFAULT_SETTINGS);
-    expect((await loadSettings()).widgets).toEqual([]);
-    expect((await storedSettings()).widgets).toEqual([]);
+    expect((await loadSettings()).widgets).toEqual(START_WIDGETS);
+    expect((await storedSettings()).widgets).toEqual(START_WIDGETS);
   });
 });
 
@@ -171,7 +172,7 @@ describe('backups', () => {
 
     const replaced = await restoreBackup(backup);
     expect(replaced.widgets).toEqual({'notes-a': 'changed'});
-    expect((await storedSettings()).scene).toBe('nebula');
+    expect((await storedSettings()).scene).toBe('lagoon');
     const local = await fakeBrowser.storage.local.get('widget.notes-a');
     expect(local['widget.notes-a']).toBe('Buy milk');
   });

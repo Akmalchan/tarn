@@ -5,7 +5,12 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {fakeBrowser} from 'wxt/testing/fake-browser';
-import {CLOCK_STYLES, DEFAULT_SETTINGS, normalizeSettings} from './schema';
+import {
+  CLOCK_STYLES,
+  DEFAULT_SETTINGS,
+  START_WIDGETS,
+  normalizeSettings,
+} from './schema';
 import {loadSettings, saveSettings, watchSettings} from './store';
 
 describe('normalizeSettings', () => {
@@ -51,7 +56,13 @@ describe('normalizeSettings', () => {
         clock: 'left',
         widgets: 'many',
       }),
-    ).toEqual({...DEFAULT_SETTINGS, scene: 'wave'});
+    ).toEqual({...DEFAULT_SETTINGS, scene: 'wave', widgets: []});
+  });
+
+  it('starts a new install with the start setup', () => {
+    expect(normalizeSettings({}).widgets).toEqual(START_WIDGETS);
+    expect(normalizeSettings({scene: 'wave'}).widgets).toEqual(START_WIDGETS);
+    expect(normalizeSettings({widgets: []}).widgets).toEqual([]);
   });
 
   it('keeps a photo wallpaper and drops a malformed one', () => {

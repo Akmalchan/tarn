@@ -17,7 +17,18 @@ import {build} from 'vite';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 /** The moment (seconds of animation clock) each thumbnail shows. */
-const MOMENTS = {tarn: 5, ember: 3, bloom: 30, wave: 12, aurora: 100, silk: 40};
+const MOMENTS = {
+  tarn: 5,
+  ember: 3,
+  bloom: 30,
+  wave: 12,
+  aurora: 100,
+  silk: 40,
+  mist: 60,
+  dunes: 10,
+  rain: 33,
+  nebula: 60,
+};
 /** Twice a ~160x100 tile, for sharp thumbnails on 2x screens. */
 const WIDTH = 320;
 const HEIGHT = 200;
