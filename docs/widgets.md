@@ -629,7 +629,11 @@ examples' names).
   "not cool"): Equalizer (M), Aurora (L), Synthwave (M), Galaxy (S), Clock
   (S, the real time), Liquid (L, a drop follows the mouse). Each is live on
   a plain dark gray (owner: the wallpaper behind them made them hard to
-  see), in the wallpaper's colors. Each card has a + (adds it at the end; so does a
+  see), each in one color of its own, spread over the six: Equalizer and
+  Liquid blue, Aurora green, Synthwave red, Galaxy gold, Clock white with a
+  red second hand (owner, 2026-10-14: the wallpaper's colors made them
+  green and orange; all four colors in every widget was too much).
+  `uColors` stays for people's own widgets. Each card has a + (adds it at the end; so does a
   click) and lifts with a grip on hover: drag puts it where it lands on the
   tab (owner: the first cards weren't clearly draggable). Added at its size,
   named after the example, with its code open (the drag carries the code and size: `newWidgetSizeType`,

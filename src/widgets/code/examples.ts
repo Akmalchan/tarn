@@ -8,6 +8,10 @@ import type {WidgetSize} from '../../layout/bands';
 
 /**
  * Custom widgets to start from, on the panel's Custom widgets page.
+ * Each has one color of its own from blue, red, yellow and green, spread
+ * over the six (owner, 2026-10-14: the wallpaper's colors turned them green
+ * and orange, and all four in every widget was "wayyyy colorful"), so
+ * they look the same on every wallpaper; `uColors` stays for people's own.
  * Original code (AGENTS.md, "Ownership"), short and commented: each one
  * shows off one idea and reads in a minute. Six, the owner's number
  * (2026-10-14); "Start from scratch" is `BLANK_CODE`, not an example.
@@ -27,6 +31,8 @@ export const CODE_EXAMPLES: readonly CodeExample[] = [
     size: 'm',
     code: `// A spectrum dancing to music only it can hear,
 // mirrored on a glassy floor.
+const vec3 BLUE = vec3(0.26, 0.52, 0.96);
+
 vec4 widget(vec2 uv, float t) {
   float wide = uResolution.x / uResolution.y;
   float bars = 24.0;
@@ -47,7 +53,8 @@ vec4 widget(vec2 uv, float t) {
   float glow = 0.004 / max(d, 0.004) * 0.35;
   float mirror = y < 0.0 ? 0.28 * smoothstep(0.22, 0.0, -y) : 1.0;
   float a = clamp((bar + glow) * mirror * inside, 0.0, 1.0);
-  vec3 color = mix(uColors[1], uColors[2], clamp(p.y / 0.45, 0.0, 1.0));
+  // Deeper at the floor, lighter at the top.
+  vec3 color = mix(BLUE * 0.8, mix(BLUE, vec3(1.0), 0.4), clamp(p.y / 0.45, 0.0, 1.0));
   return vec4(color * a, a);
 }
 `,
@@ -56,7 +63,9 @@ vec4 widget(vec2 uv, float t) {
     id: 'aurora',
     name: 'code.example.aurora',
     size: 'l',
-    code: `// Northern lights: three curtains swaying over a few stars.
+    code: `// Northern lights: three green curtains swaying over a few stars.
+const vec3 GREEN = vec3(0.2, 0.66, 0.33);
+
 vec4 widget(vec2 uv, float t) {
   vec3 color = vec3(0.0);
   float a = 0.0;
@@ -71,9 +80,10 @@ vec4 widget(vec2 uv, float t) {
     // Bright at the lower edge, fading upward in vertical rays.
     float rays = 0.35 + 0.65 * pow(noise(vec2(x * 18.0, t * 0.2 + k * 7.0)), 1.5);
     float c = (d > 0.0 ? exp(-d * (7.0 + 2.0 * k)) : exp(d * 45.0)) * rays;
-    c *= 0.7 - 0.12 * k;
-    vec3 tint = mix(uColors[2], uColors[1], k * 0.5);
-    color += mix(tint, uInk, exp(-abs(d) * 50.0) * 0.35) * c;
+    c *= 0.75 - 0.12 * k;
+    // The higher curtains are paler.
+    vec3 tint = mix(GREEN, vec3(1.0), 0.15 * k);
+    color += mix(tint, vec3(1.0), exp(-abs(d) * 50.0) * 0.3) * c;
     a += c;
   }
   // Stars that twinkle.
@@ -91,7 +101,9 @@ vec4 widget(vec2 uv, float t) {
     id: 'synthwave',
     name: 'code.example.synthwave',
     size: 'm',
-    code: `// A retro sun setting behind a grid that rolls toward you.
+    code: `// A retro sun setting behind a grid that rolls toward you, all in red.
+const vec3 RED = vec3(0.92, 0.26, 0.21);
+
 vec4 widget(vec2 uv, float t) {
   float horizon = -0.1;
   vec4 c = vec4(0.0);
@@ -100,9 +112,9 @@ vec4 widget(vec2 uv, float t) {
   vec2 s = uv - vec2(0.0, horizon + 0.06);
   float sun = smoothstep(0.26, 0.255, length(s)) * step(horizon, uv.y);
   float band = fract(s.y * 24.0 + t * 0.5);
-  float gap = clamp(0.08 + (0.14 - s.y) * 2.6, 0.0, 0.85);
+  float gap = clamp(0.08 + (0.14 - s.y) * 2.6, 0.0, 0.8);
   sun *= s.y > 0.14 ? 1.0 : step(gap, band);
-  vec3 sunColor = mix(uColors[3], uColors[1], clamp(s.y * 2.5 + 0.5, 0.0, 1.0));
+  vec3 sunColor = mix(RED, mix(RED, vec3(1.0), 0.2), clamp(s.y * 2.5 + 0.5, 0.0, 1.0));
   c += vec4(sunColor, 1.0) * sun;
 
   // The grid: lines in perspective, fading into the haze at the horizon.
@@ -113,11 +125,11 @@ vec4 widget(vec2 uv, float t) {
     vec2 w = fwidth(g) * 1.5;
     vec2 line = 1.0 - smoothstep(vec2(0.0), w, abs(fract(g + 0.5) - 0.5));
     float grid = max(line.x, line.y) * smoothstep(0.0, 0.18, below);
-    c = mix(c, vec4(uColors[2], 1.0), grid * 0.85);
+    c = mix(c, vec4(RED * 0.85, 1.0), grid * 0.8);
   }
   // A glow along the horizon.
   float glow = exp(-abs(uv.y - horizon) * 45.0) * 0.45;
-  c = mix(c, vec4(uColors[3], 1.0), glow * (1.0 - c.a));
+  c = mix(c, vec4(RED, 1.0), glow * (1.0 - c.a));
   return vec4(c.rgb * c.a, c.a);
 }
 `,
@@ -126,7 +138,9 @@ vec4 widget(vec2 uv, float t) {
     id: 'galaxy',
     name: 'code.example.galaxy',
     size: 's',
-    code: `// A spiral galaxy, slowly turning.
+    code: `// A golden spiral galaxy, slowly turning.
+const vec3 YELLOW = vec3(0.98, 0.74, 0.02);
+
 vec4 widget(vec2 uv, float t) {
   float r = length(uv);
   float angle = atan(uv.y, uv.x);
@@ -145,8 +159,9 @@ vec4 widget(vec2 uv, float t) {
     * smoothstep(0.3, 0.0, length(fract(q * 64.0) - 0.5))
     * (0.4 + arms) * exp(-r * 2.5);
 
-  vec3 color = mix(uColors[1], uColors[2], smoothstep(0.0, 0.35, r)) * body
-    + uInk * (core + star);
+  // Warm gold in the arms, nearly white at the heart.
+  vec3 gold = mix(mix(YELLOW, vec3(1.0), 0.35), YELLOW * 0.85, smoothstep(0.0, 0.35, r));
+  vec3 color = gold * body + mix(YELLOW, vec3(1.0), 0.7) * core + uInk * star;
   float a = clamp(body + core + star, 0.0, 1.0);
   return vec4(min(color, vec3(a)), a);
 }
@@ -156,8 +171,10 @@ vec4 widget(vec2 uv, float t) {
     id: 'clock',
     name: 'code.example.clock',
     size: 's',
-    code: `// A quiet analog clock with a sweeping second hand.
+    code: `// A quiet analog clock with a sweeping red second hand.
 // uDate.w is the time of day in seconds.
+const vec3 RED = vec3(0.92, 0.26, 0.21);
+
 float segment(vec2 p, vec2 a, vec2 b) {
   vec2 pa = p - a;
   vec2 ba = b - a;
@@ -185,13 +202,13 @@ vec4 widget(vec2 uv, float t) {
   float inner = mix(0.36, 0.32, quarter);
   float tick = smoothstep(px, 0.0, along - 0.005)
     * smoothstep(inner - px, inner, r) * smoothstep(0.4, 0.4 - px, r);
-  c = vec4(uInk, 1.0) * tick * 0.7;
+  c = vec4(uInk, 1.0) * tick * mix(0.55, 0.9, quarter);
 
   c = hand(c, uv, s / 43200.0, 0.2, 0.011, uInk);
   c = hand(c, uv, s / 3600.0, 0.31, 0.007, uInk);
-  c = hand(c, uv, s / 60.0, 0.34, 0.0025, uColors[1]);
+  c = hand(c, uv, s / 60.0, 0.34, 0.0025, RED);
   float pin = smoothstep(0.016, 0.016 - px, r);
-  c = vec4(uColors[1], 1.0) * pin + c * (1.0 - pin);
+  c = vec4(RED, 1.0) * pin + c * (1.0 - pin);
   return vec4(c.rgb * c.a, c.a);
 }
 `,
@@ -200,8 +217,10 @@ vec4 widget(vec2 uv, float t) {
     id: 'liquid',
     name: 'code.example.liquid',
     size: 'l',
-    code: `// Glossy drops that melt into each other.
+    code: `// Glossy blue drops that melt into each other.
 // Move the mouse over the tile: one more drop follows it.
+const vec3 BLUE = vec3(0.26, 0.52, 0.96);
+
 vec4 widget(vec2 uv, float t) {
   float wide = uResolution.x / uResolution.y;
   float field = 0.0;
@@ -228,8 +247,8 @@ vec4 widget(vec2 uv, float t) {
   vec3 light = normalize(vec3(-0.5, 0.6, 0.65));
   float diffuse = max(dot(n, light), 0.0);
   float shine = pow(max(dot(reflect(-light, n), vec3(0.0, 0.0, 1.0)), 0.0), 30.0);
-  vec3 color = mix(uColors[1], uColors[2], uv.y + 0.5) * (0.35 + 0.8 * diffuse);
-  color = min(color + uInk * shine * 0.9, vec3(1.0));
+  vec3 color = mix(BLUE * 0.75, mix(BLUE, vec3(1.0), 0.2), uv.y + 0.5);
+  color = min(color * (0.35 + 0.8 * diffuse) + shine * 0.9, vec3(1.0));
   return vec4(color * a, a);
 }
 `,
