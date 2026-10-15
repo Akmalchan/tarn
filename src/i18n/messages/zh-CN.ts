@@ -12,6 +12,10 @@ export const zhCN: Catalog = {
   'common.remove': '移除',
   'common.settings': '设置',
   'common.openSettings': '打开设置',
+  'tip.title': '打造你的专属页面',
+  'tip.body':
+    '壁纸、表盘和小组件都在这里。打开设置时，可以拖动小组件来移动它们。',
+  'tip.gotIt': '知道了',
   'widget.favorites': '书签',
   'widget.notes': '便签',
   'widget.tasks': '任务',

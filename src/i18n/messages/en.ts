@@ -18,6 +18,12 @@ export const en = {
   'common.settings': 'Settings',
   'common.openSettings': 'Open settings',
 
+  // First-run tip above the settings button
+  'tip.title': 'Make it yours',
+  'tip.body':
+    'Wallpapers, clock faces and widgets live here. While settings are open, drag widgets to move them.',
+  'tip.gotIt': 'Got it',
+
   // Widget names, also their default headings
   'widget.favorites': 'Bookmarks',
   'widget.notes': 'Notes',

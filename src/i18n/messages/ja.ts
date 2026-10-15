@@ -12,6 +12,10 @@ export const ja: Catalog = {
   'common.remove': '削除',
   'common.settings': '設定',
   'common.openSettings': '設定を開く',
+  'tip.title': '自分好みに',
+  'tip.body':
+    '壁紙、時計のデザイン、ウィジェットはここで変更できます。設定を開いている間は、ウィジェットをドラッグして移動できます。',
+  'tip.gotIt': 'OK',
   'widget.favorites': 'ブックマーク',
   'widget.notes': 'メモ',
   'widget.tasks': 'タスク',

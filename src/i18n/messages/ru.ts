@@ -12,6 +12,10 @@ export const ru: Catalog = {
   'common.remove': 'Удалить',
   'common.settings': 'Настройки',
   'common.openSettings': 'Открыть настройки',
+  'tip.title': 'Настройте под себя',
+  'tip.body':
+    'Здесь обои, циферблаты и виджеты. Пока настройки открыты, виджеты можно перетаскивать.',
+  'tip.gotIt': 'Понятно',
   'widget.favorites': 'Закладки',
   'widget.notes': 'Заметки',
   'widget.tasks': 'Задачи',
