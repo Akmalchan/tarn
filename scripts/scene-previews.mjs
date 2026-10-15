@@ -1,5 +1,5 @@
 // Copyright 2026 The Tarn Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: FSL-1.1-ALv2
 
 // Renders every scene's settings thumbnail into public/scenes/<id>.webp,
 // using the real shaders. Run after adding or changing a scene:

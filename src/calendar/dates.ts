@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 // Plain date math for the calendar, in the computer's local time. Pure, so

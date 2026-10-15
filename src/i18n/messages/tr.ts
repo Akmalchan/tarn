@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 import type {Catalog} from './en';
@@ -12,6 +12,10 @@ export const tr: Catalog = {
   'common.remove': 'Kaldır',
   'common.settings': 'Ayarlar',
   'common.openSettings': 'Ayarları aç',
+  'tip.title': 'Kendinize göre ayarlayın',
+  'tip.body':
+    'Duvar kâğıtları, saat yüzleri ve widget’lar burada. Ayarlar açıkken widget’ları sürükleyerek taşıyabilirsiniz.',
+  'tip.gotIt': 'Anladım',
   'widget.favorites': 'Yer imleri',
   'widget.notes': 'Notlar',
   'widget.tasks': 'Görevler',
@@ -271,12 +275,25 @@ export const tr: Catalog = {
   'panel.about': 'Hakkında',
   'panel.about.version': 'Sürüm',
   'panel.about.diagnostics': 'Tanılamayı kopyala',
-  'panel.about.diagnosticsNote':
-    'Hata bildirimleri için sürümü, tarayıcıyı ve ayarları kopyalar.',
   'panel.about.copied': 'Tanılama kopyalandı',
   'panel.about.cantCopy':
     "Kopyalanamadı. Bunun yerine settings.json'ı kullanın.",
-  'panel.about.search': 'Sürüm ve tanılama',
+  'panel.about.search': 'Tarn hakkında',
+  'panel.about.feedback': 'Geri bildirim gönder',
+  'panel.about.licenses': 'Lisanslar',
+  'panel.about.note':
+    '“Geri bildirim gönder”, sürümün ve tarayıcının doldurulduğu yeni bir GitHub konusu açar. Siz gönderene kadar hiçbir şey gönderilmez. “Tanılamayı kopyala”, hata bildirimleri için sürümü, tarayıcıyı ve ayarları kopyalar.',
+  'panel.whatsNew': 'Yenilikler',
+  'panel.whatsNew.unseen': 'Yeni',
+  'panel.rate': 'Tarn’ı değerlendir',
+  'whatsNew.v0_1_0.wallpapers':
+    'Grafik çipinizin çizdiği canlı duvar kâğıtları. Siz bakmadığınızda dinlenirler.',
+  'whatsNew.v0_1_0.widgets':
+    'Bir saat, tarayıcınızınki gibi bir arama kutusu ve widget’lar: yer imleri, notlar, görevler, takvim, zamanlayıcı ve hava durumu.',
+  'whatsNew.v0_1_0.keys':
+    'Klavye kısayolları: aramak için ⌘K veya Ctrl+K, bir yer imini açmak için Option veya Alt + 1–9, gerisi için ?.',
+  'whatsNew.v0_1_0.private':
+    'On dil, hesap yok, takip yok. Ayarlarınız bilgisayarınızda kalır.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'Widget ara',

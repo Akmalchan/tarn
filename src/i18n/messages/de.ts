@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 import type {Catalog} from './en';
@@ -12,6 +12,10 @@ export const de: Catalog = {
   'common.remove': 'Entfernen',
   'common.settings': 'Einstellungen',
   'common.openSettings': 'Einstellungen öffnen',
+  'tip.title': 'Ganz nach deinem Geschmack',
+  'tip.body':
+    'Hier findest du Hintergrundbilder, Zifferblätter und Widgets. Solange die Einstellungen offen sind, kannst du Widgets verschieben.',
+  'tip.gotIt': 'Verstanden',
   'widget.favorites': 'Lesezeichen',
   'widget.notes': 'Notizen',
   'widget.tasks': 'Aufgaben',
@@ -274,12 +278,25 @@ export const de: Catalog = {
   'panel.about': 'Über',
   'panel.about.version': 'Version',
   'panel.about.diagnostics': 'Diagnose kopieren',
-  'panel.about.diagnosticsNote':
-    'Kopiert Version, Browser und Einstellungen für Fehlerberichte.',
   'panel.about.copied': 'Diagnose kopiert',
   'panel.about.cantCopy':
     'Kopieren nicht möglich. Nutze stattdessen settings.json.',
-  'panel.about.search': 'Version und Diagnose',
+  'panel.about.search': 'Über Tarn',
+  'panel.about.feedback': 'Feedback senden',
+  'panel.about.licenses': 'Lizenzen',
+  'panel.about.note':
+    '„Feedback senden“ öffnet ein neues GitHub-Issue, in dem Version und Browser schon eingetragen sind. Gesendet wird erst, wenn du es dort abschickst. „Diagnose kopieren“ kopiert Version, Browser und Einstellungen für Fehlerberichte.',
+  'panel.whatsNew': 'Neuigkeiten',
+  'panel.whatsNew.unseen': 'Neu',
+  'panel.rate': 'Tarn bewerten',
+  'whatsNew.v0_1_0.wallpapers':
+    'Lebendige Hintergründe, gezeichnet von deinem Grafikchip. Sie ruhen, wenn du wegschaust.',
+  'whatsNew.v0_1_0.widgets':
+    'Eine Uhr, ein Suchfeld wie das deines Browsers und Widgets: Lesezeichen, Notizen, Aufgaben, Kalender, Timer und Wetter.',
+  'whatsNew.v0_1_0.keys':
+    'Tastenkürzel: ⌘K oder Strg+K zum Suchen, Option oder Alt + 1–9 für ein Lesezeichen, ? für den Rest.',
+  'whatsNew.v0_1_0.private':
+    'Zehn Sprachen, kein Konto, kein Tracking. Deine Einrichtung bleibt auf deinem Computer.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'Widgets suchen',

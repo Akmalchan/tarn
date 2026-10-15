@@ -49,13 +49,13 @@ this document should be fixed.
 From `docs/research/2026-10-new-tab-research.md` ("What this means for
 Tarn"). Every design decision should keep all five.
 
-| Promise                        | What it means for design                                                                                                                                   |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Calm by default, forever    | No feeds, ads, AI, greetings or tips by default. Never switch anything on for the user. Nothing says "Soon" (`docs/settings.md`, rule 8).                  |
-| 2. Never lose anything         | Destructive actions ask once or offer Undo (toast, widget remove, reset). Removing a widget keeps its content.                                             |
-| 3. Respect the browser         | Its search engine, its new-tab colors at first paint, its look for the search box, its side panel for settings. No close button where the browser has one. |
-| 4. Beautiful, measurably light | Animate only `transform` and `opacity`. Blur with the scene's shader glass, not CSS `backdrop-filter`, on the live page. Show measured cost (load gauge).  |
-| 5. Power kept out of sight     | Advanced last, "Show All" pages, "More" in editors, keyboard shortcuts that exist but aren't advertised on the page.                                       |
+| Promise                        | What it means for design                                                                                                                                                                 |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Calm by default, forever    | No feeds, ads, AI, greetings or tips by default (one exception: the first-run tip by the gear). Never switch anything on for the user. Nothing says "Soon" (`docs/settings.md`, rule 8). |
+| 2. Never lose anything         | Destructive actions ask once or offer Undo (toast, widget remove, reset). Removing a widget keeps its content.                                                                           |
+| 3. Respect the browser         | Its search engine, its new-tab colors at first paint, its look for the search box, its side panel for settings. No close button where the browser has one.                               |
+| 4. Beautiful, measurably light | Animate only `transform` and `opacity`. Blur with the scene's shader glass, not CSS `backdrop-filter`, on the live page. Show measured cost (load gauge).                                |
+| 5. Power kept out of sight     | Advanced last, "Show All" pages, "More" in editors, keyboard shortcuts that exist but aren't advertised on the page.                                                                     |
 
 Default page (research doc): the living background, a large clock and date,
 and a few widgets. A new install shows the start setup (`START_WIDGETS` in
@@ -71,6 +71,14 @@ example content until the user edits it.
   becomes a glass button only as the pointer approaches
   (`src/app/tarn-settings-button.ts`), and steps aside while the panel is
   open.
+- **The one tip** (owner, 2026-10-14): on a fresh install the gear is
+  awake with a soft ring and a small glass card above it ("Make it
+  yours", Got it / Open settings). It waits for the first mouse move or
+  key, shows on at most 3 new tabs, and ends for good on either button,
+  Escape or opening settings. Never after an update, never on a computer
+  whose settings came through sync (`src/app/first-run.ts`). Rejected:
+  a white welcome toast (loudest thing on the page), a dot on the gear
+  (says where, not what). Mockups: `docs/design/first-run-hints-plan.md`.
 - Edit affordances (name holders, resize grips, remove badges, the drag
   hint) exist only in edit mode, which is "the settings panel is open".
 
@@ -305,28 +313,29 @@ Animate only `transform` and `opacity` on the page. Motion is judged by eye:
 prototype and record before changing any timing, and don't touch arrival
 timing unless the owner asks for exactly that.
 
-| Moment                              | Timing                                                                             | Where                                                             |
-| ----------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| New tab: scene fade-in              | 700ms (`REVEAL_MS`), `cubic-bezier(0.22, 1, 0.36, 1)`                              | `src/backdrop/tarn-backdrop.ts`                                   |
-| New tab: scene settle               | 1100ms (`SETTLE_MS`) from scale 1.035                                              | `tarn-backdrop.ts`                                                |
-| New tab: browser gray to scene base | 250ms (`DARKEN_MS`)                                                                | `tarn-backdrop.ts`                                                |
-| Clock, search, widgets appear       | with the scene's first frame (`WIDGETS_AT_MS = 0`), 200ms fade                     | `tarn-backdrop.ts`, `tarn-app.ts`, `APPEAR_MS` in `tarn-board.ts` |
-| Settings gear appears               | 500ms fade after reveal                                                            | `.controls` in `tarn-app.ts`                                      |
-| Reload                              | no fade: ghost frame, then everything in place                                     | `src/app/first-paint.ts`                                          |
-| Scene to scene                      | 400ms crossfade (`FADE_MS`)                                                        | `tarn-backdrop.ts`                                                |
-| Widgets move or resize (FLIP)       | 460ms (`MOVE_MS`), same ease                                                       | `tarn-board.ts`                                                   |
-| Snap outline, held tile             | 180-220ms                                                                          | `tarn-board.ts`                                                   |
-| Sheet in                            | 180ms ease-out, from 8px below at 0.98                                             | `sheetStyles`                                                     |
-| Panel page push                     | 240ms, 24px slide from 0.3 opacity                                                 | `tarn-panel.ts`                                                   |
-| Panel switch knob                   | 250ms `cubic-bezier(0.3, 1.3, 0.6, 1)` (slight overshoot)                          | `tarn-panel.ts`                                                   |
-| Hover color changes                 | 150ms ease                                                                         | everywhere                                                        |
-| Toast                               | stays 4s                                                                           | `showToast` in `tarn-panel.ts`                                    |
-| Idle pace                           | active 30fps; calm after 1 min idle at 40% speed, 20fps; never stops while visible | `src/backdrop/pace.ts`, `wallpapers.md`                           |
+| Moment                              | Timing                                                                                          | Where                                                             |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| New tab: scene fade-in              | 700ms (`REVEAL_MS`), `cubic-bezier(0.22, 1, 0.36, 1)`                                           | `src/backdrop/tarn-backdrop.ts`                                   |
+| New tab: scene settle               | 1100ms (`SETTLE_MS`) from scale 1.035                                                           | `tarn-backdrop.ts`                                                |
+| New tab: browser gray to scene base | 250ms (`DARKEN_MS`)                                                                             | `tarn-backdrop.ts`                                                |
+| Clock, search, widgets appear       | with the scene's first frame (`WIDGETS_AT_MS = 0`), 200ms fade                                  | `tarn-backdrop.ts`, `tarn-app.ts`, `APPEAR_MS` in `tarn-board.ts` |
+| Settings gear appears               | 500ms fade after reveal                                                                         | `.controls` in `tarn-app.ts`                                      |
+| First-run tip                       | first mouse move or key, at least 1.8s after load; 320ms fade from 6px below; ring pulses twice | `tarn-settings-button.ts`                                         |
+| Reload                              | no fade: ghost frame, then everything in place                                                  | `src/app/first-paint.ts`                                          |
+| Scene to scene                      | 400ms crossfade (`FADE_MS`)                                                                     | `tarn-backdrop.ts`                                                |
+| Widgets move or resize (FLIP)       | 460ms (`MOVE_MS`), same ease                                                                    | `tarn-board.ts`                                                   |
+| Snap outline, held tile             | 180-220ms                                                                                       | `tarn-board.ts`                                                   |
+| Sheet in                            | 180ms ease-out, from 8px below at 0.98                                                          | `sheetStyles`                                                     |
+| Panel page push                     | 240ms, 24px slide from 0.3 opacity                                                              | `tarn-panel.ts`                                                   |
+| Panel switch knob                   | 250ms `cubic-bezier(0.3, 1.3, 0.6, 1)` (slight overshoot)                                       | `tarn-panel.ts`                                                   |
+| Hover color changes                 | 150ms ease                                                                                      | everywhere                                                        |
+| Toast                               | stays 4s                                                                                        | `showToast` in `tarn-panel.ts`                                    |
+| Idle pace                           | active 30fps; calm after 1 min idle at 40% speed, 20fps; never stops while visible              | `src/backdrop/pace.ts`, `wallpapers.md`                           |
 
 **Reduced motion** (`prefers-reduced-motion: reduce`): the scene draws one
 still frame and stops (`renderer.ts`); a new tab fades in over 400ms with no
 settle; FLIP, sheet, page-push, holder and switch animations are off; the
-gear doesn't rotate. Every new animation needs its reduced-motion branch.
+gear doesn't rotate; the first-run ring doesn't pulse. Every new animation needs its reduced-motion branch.
 
 ## 5. Components
 
@@ -623,6 +632,7 @@ decision log and are only summarized here.
 | Page     | A background switcher at the bottom of the page                                          | Removed; wallpapers live in settings                                                                    | #10                      |
 | Page     | Number keys switching wallpapers                                                         | People typed numbers and the wallpaper changed                                                          | backgrounds.md, #39      |
 | Page     | Weather beside the clock                                                                 | "Get rid of it, the widget is enough"                                                                   | #26                      |
+| Page     | A welcome toast, or a dot on the gear, for new users                                     | Toast too loud, dot says too little; the coach card by the gear won                                     | first-run-hints-plan.md  |
 | Page     | The edit hint above the widgets                                                          | Squeezed between the search box and the holders; it sits below                                          | #50                      |
 | Search   | A full-screen voice listening screen                                                     | Voice listens in the box with a level line                                                              | #44                      |
 | Clock    | Tall, Duo, Nixie faces                                                                   | The owner didn't like them; stored values fall back to Classic                                          | #43, #47                 |

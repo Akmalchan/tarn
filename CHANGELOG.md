@@ -8,8 +8,14 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Tarn's code is now under the Functional Source License (FSL-1.1-ALv2):
+  free to use, read, fork and contribute to, but not to ship as a
+  competing product. Each version becomes Apache 2.0 two years after it's
+  released; code published before 14 October 2026 stays Apache 2.0.
 - Tarn's full name is now "Tarn: Modern New Tab" (translated after the
   colon), as the Chrome Web Store and the extensions page show it.
+- The privacy policy is rewritten: a short summary, what Tarn keeps and
+  where, exactly what leaves your computer and when, and each permission.
 
 ### Added
 
@@ -20,6 +26,13 @@ follow [Semantic Versioning](https://semver.org/).
   type, or copy instructions for an AI chat and paste back what it writes.
   Shadertoy code works too. They use the wallpaper's colors, pause when
   the tab is hidden, and can't reach the internet.
+- What's new in settings: each release's notes, with a small dot after an
+  update until you open it. Settings > Advanced > About also gets Rate
+  Tarn (opens the store you installed from), Send feedback (a GitHub
+  issue with your version filled in) and Licenses.
+- A fresh install points out the settings gear once: a small card above
+  it on the first new tabs, gone for good after Got it or opening
+  settings. Never after an update or on a second computer.
 - Lighter wallpapers for slower computers: Tarn (calmer, less shiny,
   slower), Bloom, Silk, Aurora (more natural rays) and Contour draw with a
   fraction of the work; Wave is remade with layered, twisting ribbons of

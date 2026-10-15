@@ -13,7 +13,7 @@ deep for power users, private: nothing leaves the browser unless the user
 asks for a feature that needs it.
 
 Stack, decided (AGENTS.md): Lit + TypeScript (strict), WXT, raw WebGL2,
-plain CSS with tokens, Apache 2.0. Lit is the only runtime dependency.
+plain CSS with tokens, FSL-1.1-ALv2. Lit is the only runtime dependency.
 
 ## Entrypoints
 
@@ -24,7 +24,7 @@ plain CSS with tokens, Apache 2.0. Lit is the only runtime dependency.
 | `popup`      | The toolbar button: turn Tarn on or off, open settings.                                                                                                                 | `src/popup/`                                 |
 | `takeover`   | A full tab to switch off other new-tab extensions (needs the optional `management` permission; a popup would close during the prompt).                                  | `src/takeover/`                              |
 | `offscreen`  | Mirrors synced settings into localStorage for first paint, and keeps Tarn's extension process warm (Chromium).                                                          | `src/entrypoints/offscreen/`                 |
-| `background` | Service worker: re-creates the offscreen document, saves an automatic backup before each update, side panel wiring.                                                     | `src/entrypoints/background.ts`              |
+| `background` | Service worker: re-creates the offscreen document, saves an automatic backup before each update, marks a fresh install for the first-run tip, side panel wiring.        | `src/entrypoints/background.ts`              |
 
 ## Source folders
 

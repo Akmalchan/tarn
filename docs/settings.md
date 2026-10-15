@@ -16,6 +16,7 @@ in the panel.
 | Your own tab icon                                                                                                         | localStorage `tarn.tabIcon.custom` | No                                 | `src/panel/tarn-panel.ts`, `src/app/first-paint.ts`     |
 | Mirrors for first paint (scene, base color, home settings, widget content, icons, tile rects, ghost)                      | localStorage / sessionStorage      | No                                 | `src/app/mirror.ts`, `first-paint.ts`, `tile-memory.ts` |
 | Automatic backups (last 3)                                                                                                | `storage.local`, `backups.auto`    | No                                 | `src/settings/backup.ts`                                |
+| First-run tip still to show (fresh install only, removed once done)                                                       | `storage.local`, `tip.settings`    | No                                 | `src/app/first-run.ts`                                  |
 
 The schema is `src/settings/schema.ts`: the `Settings` type, its
 defaults (`DEFAULT_SETTINGS`), the start setup (`START_WIDGETS`) and
@@ -102,8 +103,10 @@ Settings (home)
 ├── Advanced ›
 ├── Reset Settings                 red, centered; asks first in a dialog
 │                                  (Cancel / Reset), then Undo
-└── Signature                      wordmark, "for <browser>", version,
-                                   Privacy · Source code
+└── Signature                      wordmark, "for <browser>",
+                                   Version · What's new (a dot after an
+                                   update), Privacy · Source code · Rate
+                                   Tarn (store installs only)
 
 Advanced
     ├── Tab icon                   the browser's own / None / Your own image
@@ -115,7 +118,12 @@ Advanced
     ├── settings.json              raw settings, development builds only
     ├── Example setups             five ready-made pages (up to 9 widgets),
     │                              with Undo
-    └── About                      version, copy diagnostics
+    └── About                      version, What's new ›, Rate Tarn,
+                                   Send feedback, Licenses, copy
+                                   diagnostics
+
+What's new
+    └── one section per release, newest first: 3 to 5 short notes
 ```
 
 ## Rules
@@ -192,8 +200,26 @@ Advanced
 - **The signature closes home, centered:** the wordmark faded, "for" and
   the browser's own name (only names a browser reports: "Google Chrome™"
   per BRAND.md, Edge, Opera, Brave, Vivaldi, Firefox; nothing otherwise),
-  the version, then Privacy (`PRIVACY.md`) and Source code links. A plain
-  line, never Google's logo or colors.
+  the version and What's new, then Privacy (`PRIVACY.md`), Source code and
+  Rate Tarn links. A plain line, never Google's logo or colors.
+- **About (Advanced, last) holds the rest** (`src/panel/about.ts`, owner
+  2026-10-14):
+  - **What's new** shows each release's notes. An update sets
+    `whatsNew.unseen` in storage.local (background `onInstalled`), which
+    puts a small ink dot on the signature link and the row until the page
+    is opened. A fresh install shows no dot. Never a popup or a badge on
+    the new tab.
+  - **Rate Tarn** opens the reviews page of the store this copy came from,
+    read from its update URL (Chrome Web Store or Edge Add-ons; the item
+    id is Tarn's own id there). Development builds and Firefox show no
+    row until Firefox is listed.
+  - **Send feedback** opens a new GitHub issue with the version and the
+    browser filled in. It sits only here, not in the signature, so it
+    isn't one click from home (owner: no spam); GitHub also needs a
+    sign-in.
+  - **Licenses** opens `public/licenses.txt`, bundled so it works offline:
+    Tarn's license and everything Tarn ships (Lit, the Material icon, the
+    fonts). Add an entry when a dependency, font or icon is added.
 - **One icon rule for every row.** The icon's box is exactly as tall as a
   title plus one description line, so it sits centered beside one or two
   lines and stays top-left once a description wraps further (or a row holds

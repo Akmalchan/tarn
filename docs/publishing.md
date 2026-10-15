@@ -26,7 +26,10 @@ Chrome Web Store developer dashboard > Settings. Decided with the owner on
 
 1. Bump `version` in `package.json` (Chrome refuses an upload whose version
    isn't higher than the published one). Move the `[Unreleased]` CHANGELOG
-   section under that version.
+   section under that version, and add the release's notes at the top of
+   `RELEASES` in `src/panel/about.ts` (Settings > Advanced > What's new):
+   the three to five changes people would notice, each a `whatsNew.v<x_y_z>.*`
+   key in all 10 catalogs. `about.test.ts` fails until they're there.
 2. `npm run check`, then `npm run zip` → `dist/tarn-<version>-chrome.zip`.
 3. Try the zip in a clean Chrome profile: load the unzipped folder,
    open a new tab, open settings, add a Weather widget, turn Tarn off and on.
@@ -100,14 +103,13 @@ YOURS
   can switch it off for you.
 
 PRIVATE BY DESIGN
-Tarn makes no network requests of its own. The one exception is the
-Weather widget, and only after you add it and choose a place: it asks
-Open-Meteo (free, no account) for that place's forecast, at most every 30
-minutes. Searches go to your browser's own search engine, only when you
-press Enter.
+Tarn has no server, no account and no tracking. It goes online only when
+you use something that needs it: searches go to your browser's own search
+engine when you press Enter; voice, Google Lens and AI Mode go to Google
+only when you press them; and a Weather widget asks Open-Meteo for its
+place's forecast, at most every 30 minutes.
 
-Open source under the Apache 2.0 license:
-https://github.com/Akmalchan/tarn
+The source code is public: https://github.com/Akmalchan/tarn
 
 Works with Google Chrome™, Microsoft Edge, Brave, Arc, Opera, Vivaldi and
 Firefox.

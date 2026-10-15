@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 import type {Catalog} from './en';
@@ -12,6 +12,10 @@ export const es: Catalog = {
   'common.remove': 'Quitar',
   'common.settings': 'Ajustes',
   'common.openSettings': 'Abrir ajustes',
+  'tip.title': 'Hazlo tuyo',
+  'tip.body':
+    'Aquí están los fondos, las esferas del reloj y los widgets. Con los ajustes abiertos, arrastra los widgets para moverlos.',
+  'tip.gotIt': 'Entendido',
   'widget.favorites': 'Marcadores',
   'widget.notes': 'Notas',
   'widget.tasks': 'Tareas',
@@ -271,11 +275,24 @@ export const es: Catalog = {
   'panel.about': 'Acerca de',
   'panel.about.version': 'Versión',
   'panel.about.diagnostics': 'Copiar diagnóstico',
-  'panel.about.diagnosticsNote':
-    'Copia la versión, el navegador y los ajustes, para informar de errores.',
   'panel.about.copied': 'Diagnóstico copiado',
   'panel.about.cantCopy': 'No se pudo copiar. Usa settings.json.',
-  'panel.about.search': 'Versión y diagnóstico',
+  'panel.about.search': 'Acerca de Tarn',
+  'panel.about.feedback': 'Enviar comentarios',
+  'panel.about.licenses': 'Licencias',
+  'panel.about.note':
+    'Enviar comentarios abre un issue nuevo en GitHub con tu versión y navegador ya escritos. No se envía nada hasta que lo publiques. Copiar diagnóstico copia la versión, el navegador y los ajustes, para informar de errores.',
+  'panel.whatsNew': 'Novedades',
+  'panel.whatsNew.unseen': 'Nuevo',
+  'panel.rate': 'Valorar Tarn',
+  'whatsNew.v0_1_0.wallpapers':
+    'Fondos vivos, dibujados por tu chip gráfico. Descansan cuando no los miras.',
+  'whatsNew.v0_1_0.widgets':
+    'Un reloj, un buscador como el de tu navegador y widgets: marcadores, notas, tareas, calendario, temporizador y tiempo.',
+  'whatsNew.v0_1_0.keys':
+    'Atajos de teclado: ⌘K o Ctrl+K para buscar, Opción o Alt + 1–9 para abrir un marcador, ? para el resto.',
+  'whatsNew.v0_1_0.private':
+    'Diez idiomas, sin cuenta y sin rastreo. Tu configuración se queda en tu ordenador.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'Buscar widgets',

@@ -1,10 +1,12 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 import {browser} from 'wxt/browser';
 import {defineBackground} from 'wxt/utils/define-background';
+import {markFirstRun} from '../app/first-run';
+import {markUpdateUnseen} from '../panel/about';
 import {saveAutoBackup} from '../settings/backup';
 
 /**
@@ -40,6 +42,14 @@ export default defineBackground(() => {
     if (reason === 'update') {
       void saveAutoBackup().catch(error =>
         console.warn('[tarn] backup before update failed:', error),
+      );
+      // What's new in settings shows a dot until it's opened.
+      void markUpdateUnseen();
+    }
+    // A fresh install: the first new tabs point out the settings gear.
+    if (reason === 'install') {
+      void markFirstRun().catch(error =>
+        console.warn('[tarn] first-run tip failed:', error),
       );
     }
     void ensureOffscreenDocument();

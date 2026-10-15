@@ -248,8 +248,9 @@ ask for.
 
 ## Legal
 
-- **Code:** Apache 2.0. Apache 2.0 grants **no trademark rights** (section
-  6), so the Tarn name, wordmark and mark aren't licensed for others' use by
+- **Code:** FSL-1.1-ALv2 (Apache 2.0 before 2026-10-14). Neither grants
+  **trademark rights** (the FSL's Trademarks clause, Apache's section 6),
+  so the Tarn name, wordmark and mark aren't licensed for others' use by
   the code license.
 - **Font:** the outlined SVGs are artwork made with an OFL font; the OFL
   doesn't apply to artwork. Shipping the font file itself requires shipping

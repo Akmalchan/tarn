@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 import {LitElement, css, html, nothing} from 'lit';
@@ -106,6 +106,16 @@ import {
   type WallpaperErrorCode,
   type WallpaperInfo,
 } from '../wallpapers/store';
+import {
+  LICENSES_PATH,
+  PRIVACY_URL,
+  RELEASES,
+  SOURCE_URL,
+  feedbackUrl,
+  hasUnseenUpdate,
+  markUpdateSeen,
+  storeReviewUrl,
+} from './about';
 
 /**
  * The pages of the panel. Home shows what most people change; each section
@@ -121,7 +131,8 @@ type Page =
   | 'language'
   | 'advanced'
   /** Custom widgets, opened from Widgets. */
-  | 'custom';
+  | 'custom'
+  | 'whatsNew';
 
 /**
  * Home shows three choices per picker, then a "Show All" tile that opens
@@ -150,6 +161,8 @@ export class TarnPanel extends LitElement {
     codeOpen: {state: true},
     codeDraft: {state: true},
     codeState: {state: true},
+    unseenUpdate: {state: true},
+    reviewUrl: {state: true},
   };
 
   static override styles = css`
@@ -315,8 +328,57 @@ export class TarnPanel extends LitElement {
       border-radius: 4px;
     }
 
-    .signature a:hover {
+    .signature a:hover,
+    .signature .link:hover {
       color: var(--ink);
+    }
+
+    .signature .version {
+      margin-top: 0;
+    }
+
+    .signature .link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      background: none;
+      border: 0;
+      border-radius: 4px;
+    }
+
+    /* After an update, until What's new is opened. Ink, like everything
+       else in the panel: no brand hue. */
+    .dot {
+      flex: none;
+      width: 6px;
+      height: 6px;
+      background: var(--ink);
+      border-radius: 50%;
+    }
+
+    a.row {
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    a.row:hover {
+      background: var(--press);
+    }
+
+    /* A release note: a sentence, so it wraps, and its hairline starts at
+       the row's edge (no icon). */
+    .row.news {
+      margin: 0;
+      padding-block: 12px;
+      text-wrap: pretty;
+    }
+
+    .group .row.news + .row.news::before {
+      left: var(--row-x);
     }
 
     h1 {
@@ -1257,6 +1319,10 @@ export class TarnPanel extends LitElement {
   private saveCode = debounce((id: string, code: string) => {
     void saveWidgetData(id, {lang: 'glsl', code});
   }, 400);
+  /** Tarn was updated and What's new hasn't been opened since (about.ts). */
+  declare unseenUpdate: boolean;
+  /** The store page to rate Tarn, or null when not installed from one. */
+  declare reviewUrl: string | null;
   /** Object URLs of the photos' thumbnails, by id. */
   private photoUrls = new Map<string, string>();
 
@@ -1282,6 +1348,8 @@ export class TarnPanel extends LitElement {
     this.codeOpen = null;
     this.codeDraft = '';
     this.codeState = {state: 'ok'};
+    this.unseenUpdate = false;
+    this.reviewUrl = null;
     // Re-renders in the new words when the language changes.
     new LocaleController(this);
   }
@@ -1297,6 +1365,8 @@ export class TarnPanel extends LitElement {
     void this.loadPhotos();
     void autoBackups().then(list => (this.backups = list));
     void getGoogleKey().then(key => (this.googleKey = key));
+    void hasUnseenUpdate().then(unseen => (this.unseenUpdate = unseen));
+    void storeReviewUrl().then(url => (this.reviewUrl = url));
   }
 
   private onSettings(settings: Settings): void {
@@ -1343,6 +1413,7 @@ export class TarnPanel extends LitElement {
             language: () => this.renderLanguage(),
             advanced: () => this.renderAdvanced(),
             custom: () => this.renderCustom(),
+            whatsNew: () => this.renderWhatsNew(),
           }[this.page]();
     return html`
       ${faceFilters}
@@ -1525,7 +1596,14 @@ export class TarnPanel extends LitElement {
               >`
             : nothing
         }
-        <span>${t('panel.version', {version: this.version})}</span>
+        <span class="links version">
+          <span>${t('panel.version', {version: this.version})}</span>
+          <span aria-hidden="true">·</span>
+          <button class="link" @click=${() => this.go('whatsNew')}>
+            ${this.unseenUpdate ? html`<span class="dot"></span>` : nothing}
+            ${t('panel.whatsNew')}
+          </button>
+        </span>
         <span class="links">
           <a href=${PRIVACY_URL} target="_blank" rel="noopener"
             >${t('panel.privacy')}</a
@@ -1534,6 +1612,14 @@ export class TarnPanel extends LitElement {
           <a href=${SOURCE_URL} target="_blank" rel="noopener"
             >${t('panel.source')}</a
           >
+          ${
+            this.reviewUrl
+              ? html`<span aria-hidden="true">·</span>
+                  <a href=${this.reviewUrl} target="_blank" rel="noopener"
+                    >${t('panel.rate')}</a
+                  >`
+              : nothing
+          }
         </span>
       </footer>
     `;
@@ -2136,16 +2222,77 @@ export class TarnPanel extends LitElement {
                   <span class="txt">${t('panel.about.version')}</span>
                   <span class="value">${this.version}</span>
                 </div>
+                <button class="row" @click=${() => this.go('whatsNew')}>
+                  ${icon('sparkle')}
+                  <span class="txt">${t('panel.whatsNew')}</span>
+                  ${
+                    this.unseenUpdate
+                      ? html`<span
+                          class="dot"
+                          role="img"
+                          aria-label=${t('panel.whatsNew.unseen')}
+                        ></span>`
+                      : nothing
+                  }
+                  ${chevron()}
+                </button>
+                ${
+                  this.reviewUrl
+                    ? html`<a
+                        class="row"
+                        href=${this.reviewUrl}
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        ${icon('star')}
+                        <span class="txt">${t('panel.rate')}</span>
+                      </a>`
+                    : nothing
+                }
+                <a
+                  class="row"
+                  href=${feedbackUrl(this.version)}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  ${icon('bubble')}
+                  <span class="txt">${t('panel.about.feedback')}</span>
+                </a>
+                <a
+                  class="row"
+                  href=${browser.runtime.getURL(LICENSES_PATH)}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  ${icon('seal')}
+                  <span class="txt">${t('panel.about.licenses')}</span>
+                </a>
                 <button class="row" @click=${this.copyDiagnostics}>
                   ${icon('doc')}
                   <span class="txt">${t('panel.about.diagnostics')}</span>
                 </button>
               </div>
-              <p class="note">${t('panel.about.diagnosticsNote')}</p>
+              <p class="note">${t('panel.about.note')}</p>
             </section>`
           : nothing
       }
     `;
+  }
+
+  /**
+   * What's new: each release's notes, newest first (RELEASES in
+   * about.ts). Opening it clears the dot an update left.
+   */
+  private renderWhatsNew() {
+    return RELEASES.map(
+      release =>
+        html`<section>
+          <h2>${t('panel.version', {version: release.version})}</h2>
+          <div class="group">
+            ${release.notes.map(note => html`<p class="row news">${t(note)}</p>`)}
+          </div>
+        </section>`,
+    );
   }
 
   /**
@@ -2560,6 +2707,10 @@ export class TarnPanel extends LitElement {
     this.jsonDraft = null;
     this.jsonStatus = '';
     this.scrollTop = 0;
+    if (page === 'whatsNew' && this.unseenUpdate) {
+      this.unseenUpdate = false;
+      void markUpdateSeen();
+    }
   }
 
   private onSearch = (event: Event) => {
@@ -3049,9 +3200,6 @@ const chevron = () =>
     ${GLYPHS.chevron}
   </svg>`;
 
-const PRIVACY_URL = 'https://github.com/Akmalchan/tarn/blob/main/PRIVACY.md';
-const SOURCE_URL = 'https://github.com/Akmalchan/tarn';
-
 /**
  * The browser Tarn runs in, for the signature's "for ..." line. Only names
  * a browser reports about itself; anything unrecognized shows no line.
@@ -3079,6 +3227,7 @@ const PAGE_TITLES: Record<Page, MessageKey> = {
   language: 'panel.page.language',
   advanced: 'panel.page.advanced',
   custom: 'panel.custom',
+  whatsNew: 'panel.whatsNew',
 };
 
 /** The browser's short name for the tab icon choice ("Edge"), or "Browser". */
@@ -3530,8 +3679,17 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     page: 'advanced',
     target: 'about',
     glyph: 'info',
-    words: 'about version debug copy bug diagnostics',
-    also: ['panel.about', 'panel.about.version', 'panel.about.diagnostics'],
+    words:
+      "about version what's new whats new release notes updates changelog rate review stars feedback bug report issue licenses license legal debug copy diagnostics",
+    also: [
+      'panel.about',
+      'panel.about.version',
+      'panel.whatsNew',
+      'panel.rate',
+      'panel.about.feedback',
+      'panel.about.licenses',
+      'panel.about.diagnostics',
+    ],
   },
 ];
 
