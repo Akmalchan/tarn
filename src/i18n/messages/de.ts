@@ -401,12 +401,11 @@ export const de: Catalog = {
   'panel.custom.about':
     'Programmier deine eigenen: Visualizer, Animationen, Uhren',
   'panel.custom.scratch': 'Bei null anfangen',
-  'panel.custom.scratchNote':
-    'Ein leeres Widget mit Kommentaren, die es erklären',
+  'panel.custom.scratchNote': 'Ein leeres, mit Kommentaren',
   'panel.custom.addExample': '{name} hinzufügen',
   'panel.custom.copyAi': 'Anleitung für eine KI kopieren',
-  'panel.custom.copyAiNote':
-    'Füg sie mit deiner Idee in ChatGPT, Claude oder Gemini ein und kopier den Code dann hierher',
+  'panel.custom.copyAiNote': 'Mit deiner Idee in einen KI-Chat einfügen',
+  'panel.custom.copiedShort': 'Kopiert',
   'panel.custom.copied': 'Anleitung kopiert. Schreib deine Idee ans Ende.',
   'panel.custom.yours': 'Deine eigenen Widgets',
   'panel.custom.edit': 'Code bearbeiten',

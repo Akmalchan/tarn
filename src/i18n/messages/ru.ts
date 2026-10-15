@@ -398,12 +398,11 @@ export const ru: Catalog = {
     'Нарисуйте свой виджет несколькими строками кода шейдера. Нажмите на пример или перетащите его на страницу и добавляйте сколько угодно.',
   'panel.custom.about': 'Напишите свои: визуализаторы, анимации, часы',
   'panel.custom.scratch': 'Начать с нуля',
-  'panel.custom.scratchNote':
-    'Пустой виджет с комментариями, которые всё объясняют',
+  'panel.custom.scratchNote': 'Пустой, с комментариями',
   'panel.custom.addExample': 'Добавить: {name}',
   'panel.custom.copyAi': 'Скопировать инструкцию для ИИ',
-  'panel.custom.copyAiNote':
-    'Вставьте её в ChatGPT, Claude или Gemini вместе со своей идеей, а затем вставьте сюда полученный код',
+  'panel.custom.copyAiNote': 'Вставьте в любой ИИ-чат вместе с идеей',
+  'panel.custom.copiedShort': 'Скопировано',
   'panel.custom.copied': 'Инструкция скопирована. Допишите свою идею в конце.',
   'panel.custom.yours': 'Ваши виджеты',
   'panel.custom.edit': 'Изменить код',

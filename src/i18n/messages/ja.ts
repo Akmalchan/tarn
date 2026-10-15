@@ -395,11 +395,11 @@ export const ja: Catalog = {
   'panel.custom.about':
     '自分でコードを書く: ビジュアライザー、アニメーション、時計',
   'panel.custom.scratch': 'ゼロから始める',
-  'panel.custom.scratchNote': '説明コメント付きの空のウィジェット',
+  'panel.custom.scratchNote': 'コメント付きの空のウィジェット',
   'panel.custom.addExample': '{name} を追加',
   'panel.custom.copyAi': 'AI 用の説明をコピー',
-  'panel.custom.copyAiNote':
-    'アイデアと一緒に ChatGPT、Claude、Gemini に貼り付けて、返ってきたコードをここに貼り付けます',
+  'panel.custom.copyAiNote': 'アイデアと一緒に AI チャットへ貼り付け',
+  'panel.custom.copiedShort': 'コピーしました',
   'panel.custom.copied':
     '説明をコピーしました。最後にアイデアを書き足してください。',
   'panel.custom.yours': 'あなたのカスタムウィジェット',

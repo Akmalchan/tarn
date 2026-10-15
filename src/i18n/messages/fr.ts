@@ -399,12 +399,11 @@ export const fr: Catalog = {
     'Dessinez votre propre widget en quelques lignes de code de shader. Cliquez sur un exemple ou faites-le glisser sur votre page, et ajoutez-en autant que vous voulez.',
   'panel.custom.about': 'Codez les vôtres : visualiseurs, animations, horloges',
   'panel.custom.scratch': 'Partir de zéro',
-  'panel.custom.scratchNote':
-    'Un widget vide, avec des commentaires qui l’expliquent',
+  'panel.custom.scratchNote': 'Un widget vide, commenté',
   'panel.custom.addExample': 'Ajouter {name}',
   'panel.custom.copyAi': 'Copier les instructions pour une IA',
-  'panel.custom.copyAiNote':
-    'Collez-les dans ChatGPT, Claude ou Gemini avec votre idée, puis collez son code ici',
+  'panel.custom.copyAiNote': 'À coller dans un chat IA avec votre idée',
+  'panel.custom.copiedShort': 'Copié',
   'panel.custom.copied': 'Instructions copiées. Ajoutez votre idée à la fin.',
   'panel.custom.yours': 'Vos widgets personnalisés',
   'panel.custom.edit': 'Modifier le code',

@@ -398,12 +398,11 @@ export const ptBR: Catalog = {
     'Desenhe seu próprio widget com algumas linhas de código de shader. Clique em um exemplo ou arraste-o para sua página, e adicione quantos quiser.',
   'panel.custom.about': 'Programe os seus: visualizadores, animações, relógios',
   'panel.custom.scratch': 'Começar do zero',
-  'panel.custom.scratchNote':
-    'Um widget em branco, com comentários que o explicam',
+  'panel.custom.scratchNote': 'Um em branco, com comentários',
   'panel.custom.addExample': 'Adicionar {name}',
   'panel.custom.copyAi': 'Copiar instruções para uma IA',
-  'panel.custom.copyAiNote':
-    'Cole no ChatGPT, Claude ou Gemini com sua ideia e depois cole o código aqui',
+  'panel.custom.copyAiNote': 'Cole em qualquer chat de IA com sua ideia',
+  'panel.custom.copiedShort': 'Copiado',
   'panel.custom.copied': 'Instruções copiadas. Adicione sua ideia no final.',
   'panel.custom.yours': 'Seus widgets personalizados',
   'panel.custom.edit': 'Editar código',

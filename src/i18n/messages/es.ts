@@ -396,12 +396,11 @@ export const es: Catalog = {
   'panel.custom.about':
     'Programa los tuyos: visualizadores, animaciones, relojes',
   'panel.custom.scratch': 'Empezar desde cero',
-  'panel.custom.scratchNote':
-    'Un widget en blanco, con comentarios que lo explican',
+  'panel.custom.scratchNote': 'Uno en blanco, con comentarios',
   'panel.custom.addExample': 'Añadir {name}',
   'panel.custom.copyAi': 'Copiar instrucciones para una IA',
-  'panel.custom.copyAiNote':
-    'Pégalas en ChatGPT, Claude o Gemini con tu idea y luego pega aquí su código',
+  'panel.custom.copyAiNote': 'Pégalas en cualquier chat de IA con tu idea',
+  'panel.custom.copiedShort': 'Copiado',
   'panel.custom.copied': 'Instrucciones copiadas. Añade tu idea al final.',
   'panel.custom.yours': 'Tus widgets personalizados',
   'panel.custom.edit': 'Editar código',

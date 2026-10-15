@@ -397,11 +397,12 @@ export const tr: Catalog = {
   'panel.custom.about':
     'Kendin kodla: görselleştiriciler, animasyonlar, saatler',
   'panel.custom.scratch': 'Sıfırdan başla',
-  'panel.custom.scratchNote': 'Açıklayan yorumlarla boş bir widget',
+  'panel.custom.scratchNote': 'Yorumlu, boş bir widget',
   'panel.custom.addExample': '{name} ekle',
   'panel.custom.copyAi': 'Yapay zekâ için talimatları kopyala',
   'panel.custom.copyAiNote':
-    'Fikrinle birlikte ChatGPT, Claude ya da Gemini’ye yapıştır, sonra verdiği kodu buraya yapıştır',
+    'Fikrinle birlikte bir yapay zekâ sohbetine yapıştır',
+  'panel.custom.copiedShort': 'Kopyalandı',
   'panel.custom.copied': 'Talimatlar kopyalandı. Fikrini sona ekle.',
   'panel.custom.yours': 'Özel widgetların',
   'panel.custom.edit': 'Kodu düzenle',

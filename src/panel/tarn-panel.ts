@@ -161,6 +161,7 @@ export class TarnPanel extends LitElement {
     codeOpen: {state: true},
     codeDraft: {state: true},
     codeState: {state: true},
+    aiCopied: {state: true},
     unseenUpdate: {state: true},
     reviewUrl: {state: true},
   };
@@ -863,17 +864,16 @@ export class TarnPanel extends LitElement {
       place-items: center;
       aspect-ratio: 1;
       border-radius: 14px;
+      background: #1f2024;
     }
 
     .code-thumb tarn-code {
       position: absolute;
-      inset: 7px;
+      inset: 0;
       width: auto;
       height: auto;
       overflow: hidden;
-      border-radius: 10px;
-      background: rgb(255 255 255 / 0.04);
-      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+      border-radius: inherit;
     }
 
     .code-thumb tarn-code.dark {
@@ -888,6 +888,58 @@ export class TarnPanel extends LitElement {
       --ink-dim: rgb(22 26 38 / 0.64);
       --chip: rgb(255 255 255 / 0.45);
       --chip-hover: rgb(255 255 255 / 0.65);
+    }
+
+    /* Start from scratch and the AI instructions: two quiet cards. */
+    .code-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .code-action {
+      display: grid;
+      align-content: start;
+      justify-items: start;
+      gap: 2px;
+      min-width: 0;
+      padding: 12px 14px 13px;
+      font: inherit;
+      color: var(--ink);
+      text-align: left;
+      background: var(--group);
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 150ms ease;
+    }
+
+    .code-action:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--group), var(--ink) 5%);
+    }
+
+    .code-action:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .code-action svg {
+      width: 22px;
+      height: 22px;
+      margin-bottom: 8px;
+      fill: var(--ink);
+    }
+
+    .code-action .title {
+      font-size: var(--title);
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .code-action .sub {
+      font-size: var(--desc);
+      line-height: var(--desc-lh);
+      color: var(--muted);
     }
 
     .code-editor {
@@ -905,6 +957,9 @@ export class TarnPanel extends LitElement {
     .code-editor .code-thumb tarn-code {
       position: relative;
       inset: auto;
+      border-radius: 12px;
+      background: rgb(255 255 255 / 0.04);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
       width: 124px;
       aspect-ratio: 1;
     }
@@ -1316,6 +1371,9 @@ export class TarnPanel extends LitElement {
   declare codeDraft: string;
   /** How the open code compiles, from its preview. */
   declare codeState: TileState;
+  /** The AI instructions were just copied: the button says so. */
+  declare aiCopied: boolean;
+  private aiCopiedTimer = 0;
   private saveCode = debounce((id: string, code: string) => {
     void saveWidgetData(id, {lang: 'glsl', code});
   }, 400);
@@ -1348,6 +1406,7 @@ export class TarnPanel extends LitElement {
     this.codeOpen = null;
     this.codeDraft = '';
     this.codeState = {state: 'ok'};
+    this.aiCopied = false;
     this.unseenUpdate = false;
     this.reviewUrl = null;
     // Re-renders in the new words when the language changes.
@@ -1432,7 +1491,7 @@ export class TarnPanel extends LitElement {
                   </div>`
             }
             ${
-              this.page === 'search'
+              this.page === 'search' || this.page === 'custom'
                 ? nothing
                 : html` <label class="search">
                     ${glyph('search')}
@@ -1815,8 +1874,9 @@ export class TarnPanel extends LitElement {
   private renderCustom() {
     const {scene} = this.settings;
     const full = this.settings.widgets.length >= MAX_WIDGETS;
-    const art = this.art(scene);
-    setCodeScene(sceneById(scene), art.tone);
+    // Previews sit on a plain dark gray, easy to see on any wallpaper;
+    // they keep the wallpaper's colors.
+    setCodeScene(sceneById(scene), 'dark');
     const yours = this.settings.widgets.filter(w => w.kind === 'code');
     return html`<section data-target="custom">
         <p class="lead">${t('panel.custom.lead')}</p>
@@ -1836,12 +1896,9 @@ export class TarnPanel extends LitElement {
                     'dragging',
                   )}
               >
-                <span
-                  class="thumb code-thumb"
-                  style="background: ${art.background}"
-                >
+                <span class="thumb code-thumb">
                   <tarn-code
-                    class=${art.tone}
+                    class="dark"
                     .code=${example.code}
                     .heading=${t(example.name)}
                   ></tarn-code>
@@ -1852,24 +1909,26 @@ export class TarnPanel extends LitElement {
               </button>`,
           )}
         </div>
-        <div class="group">
+        <div class="code-actions">
           <button
-            class="row"
+            class="code-action"
             ?disabled=${full}
             @click=${() => void this.addCustom(null)}
           >
-            ${icon('plus')}
-            <span class="txt"
-              >${t('panel.custom.scratch')}
-              <span class="sub">${t('panel.custom.scratchNote')}</span></span
-            >
+            ${glyph('plus')}
+            <span class="title">${t('panel.custom.scratch')}</span>
+            <span class="sub">${t('panel.custom.scratchNote')}</span>
           </button>
-          <button class="row" @click=${this.copyAi}>
-            ${icon('sparkle')}
-            <span class="txt"
-              >${t('panel.custom.copyAi')}
-              <span class="sub">${t('panel.custom.copyAiNote')}</span></span
+          <button
+            class="code-action"
+            ?data-done=${this.aiCopied}
+            @click=${this.copyAi}
+          >
+            ${glyph(this.aiCopied ? 'check' : 'sparkle')}
+            <span class="title"
+              >${t(this.aiCopied ? 'panel.custom.copiedShort' : 'panel.custom.copyAi')}</span
             >
+            <span class="sub">${t('panel.custom.copyAiNote')}</span>
           </button>
         </div>
       </section>
@@ -1878,7 +1937,7 @@ export class TarnPanel extends LitElement {
           ? html`<section data-target="custom-yours">
               <h2>${t('panel.custom.yours')}</h2>
               <div class="group">
-                ${yours.map(widget => this.customRow(widget, art))}
+                ${yours.map(widget => this.customRow(widget))}
               </div>
             </section>`
           : nothing
@@ -1896,7 +1955,7 @@ export class TarnPanel extends LitElement {
   }
 
   /** One of the user's custom widgets; opens into its code. */
-  private customRow(widget: WidgetEntry, art: Art) {
+  private customRow(widget: WidgetEntry) {
     const name = widget.name ?? t('widget.code');
     const open = this.codeOpen === widget.id;
     const state = this.codeState;
@@ -1915,12 +1974,9 @@ export class TarnPanel extends LitElement {
       ${
         open
           ? html`<div class="code-editor">
-              <span
-                class="thumb code-thumb code-${widget.size}"
-                style="background: ${art.background}"
-              >
+              <span class="thumb code-thumb code-${widget.size}">
                 <tarn-code
-                  class=${art.tone}
+                  class="dark"
                   .code=${this.codeDraft}
                   .heading=${name}
                   @code-state=${(event: CustomEvent<TileState>) =>
@@ -2601,10 +2657,7 @@ export class TarnPanel extends LitElement {
         aria-checked=${face === this.settings.clock}
         @click=${() => this.applyPatch({clock: face})}
       >
-        <span
-          class="thumb ${clockTone(this.settings.clockColor, art.tone)}"
-          style="background: ${art.background}"
-        >
+        <span class="thumb ${clockTone(this.settings.clockColor, art.tone)}">
           ${
             face === 'none'
               ? html`<span class="off">${t('panel.face.off')}</span>`
@@ -2811,6 +2864,12 @@ export class TarnPanel extends LitElement {
   private copyAi = async () => {
     try {
       await navigator.clipboard.writeText(aiInstructions());
+      this.aiCopied = true;
+      clearTimeout(this.aiCopiedTimer);
+      this.aiCopiedTimer = window.setTimeout(
+        () => (this.aiCopied = false),
+        2400,
+      );
       this.showToast(t('panel.custom.copied'));
     } catch {
       this.showToast(t('panel.about.cantCopy'));
@@ -3353,7 +3412,7 @@ function clockPreview(art: Art): ClockPreview {
 /** A "Show All" tile: a scene, blurred and faded, with a grid on it. */
 function showAll(art: Art) {
   return html`<span class="thumb more ${art.tone}" aria-hidden="true">
-    <span class="veil" style="background: ${art.background}"></span>
+    <span class="veil"></span>
     ${glyph('grid')}
   </span>`;
 }

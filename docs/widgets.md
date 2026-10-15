@@ -627,15 +627,18 @@ examples' names).
 
 - Six examples (`examples.ts`; owner: six, 2026-10-14; the first seven were
   "not cool"): Equalizer (M), Aurora (L), Synthwave (M), Galaxy (S), Clock
-  (S, the real time), Liquid (L, a drop follows the mouse). Each is live in
-  a small tile on the current wallpaper. Click adds one at its size, named
+  (S, the real time), Liquid (L, a drop follows the mouse). Each is live on
+  a plain dark gray (owner: the wallpaper behind them made them hard to
+  see), in the wallpaper's colors. Click adds one at its size, named
   after the example, and opens its code; drag puts it where it lands on the
   tab (the drag carries the code and size: `newWidgetSizeType`,
   `droppedCode` in `drag-new.ts`; the code is stored before the widget
   appears, `TarnBoard.dropNew(name, prepare)`).
-- "Start from scratch": `BLANK_CODE`, the smallest widget with comments.
-- "Copy instructions for an AI": `aiInstructions()` (English on purpose,
-  for the assistant; it answers in the user's language).
+- Two cards under them: "Start from scratch" (`BLANK_CODE`, the smallest
+  widget with comments) and "Copy instructions for an AI"
+  (`aiInstructions()`, English on purpose, for the assistant; it answers in
+  the user's language). The card says "Copied" for a moment.
+- No search field on this page.
 - "Your custom widgets": each opens into an editor: a live preview at the
   tile's shape, the code (Tab indents), and the errors with line numbers.
   Saved 400 ms after typing; every open tab follows.
