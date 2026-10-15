@@ -850,12 +850,79 @@ export class TarnPanel extends LitElement {
       margin-bottom: 14px;
     }
 
-    .code-picks .pick.dragging {
+    /* An example: drag it onto the tab (grab cursor, grip) or press +. */
+    .code-pick {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .code-pick:active {
+      cursor: grabbing;
+    }
+
+    .code-pick[data-full] {
+      cursor: default;
+      opacity: 0.5;
+    }
+
+    .code-pick.dragging {
       opacity: 0.4;
     }
 
-    .code-picks .meta {
-      justify-content: center;
+    .code-pick .thumb {
+      transition:
+        transform 150ms ease,
+        box-shadow 150ms ease;
+    }
+
+    .code-pick:hover:not([data-full]) .thumb {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+    }
+
+    .code-pick .grip {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      width: 8px;
+      height: 13px;
+      fill: rgb(255 255 255 / 0.55);
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+
+    .code-pick:hover .grip {
+      opacity: 1;
+    }
+
+    .code-pick .add {
+      position: absolute;
+      right: 7px;
+      bottom: 7px;
+      display: grid;
+      padding: 0;
+      background: none;
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .code-pick .add svg {
+      width: 24px;
+      height: 24px;
+      fill: rgb(255 255 255 / 0.92);
+      filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.4));
+    }
+
+    .code-pick .name {
+      overflow: hidden;
+      font: 500 var(--desc) / var(--desc-lh) var(--font-sans);
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .thumb.code-thumb {
@@ -1883,12 +1950,12 @@ export class TarnPanel extends LitElement {
         <div class="code-picks">
           ${CODE_EXAMPLES.map(
             example =>
-              html`<button
-                class="pick"
-                ?disabled=${full}
+              html`<div
+                class="code-pick"
+                ?data-full=${full}
                 draggable=${full ? 'false' : 'true'}
-                title=${t('panel.custom.addExample', {name: t(example.name)})}
-                @click=${() => void this.addCustom(example)}
+                title=${t('panel.custom.dragHint')}
+                @click=${() => full || void this.addCustom(example)}
                 @dragstart=${(event: DragEvent) =>
                   this.dragCustom(example, event)}
                 @dragend=${(event: DragEvent) =>
@@ -1902,11 +1969,26 @@ export class TarnPanel extends LitElement {
                     .code=${example.code}
                     .heading=${t(example.name)}
                   ></tarn-code>
+                  <svg class="grip" viewBox="0 0 10 16" aria-hidden="true">
+                    <circle cx="3" cy="3" r="1.3" />
+                    <circle cx="7" cy="3" r="1.3" />
+                    <circle cx="3" cy="8" r="1.3" />
+                    <circle cx="7" cy="8" r="1.3" />
+                    <circle cx="3" cy="13" r="1.3" />
+                    <circle cx="7" cy="13" r="1.3" />
+                  </svg>
+                  <button
+                    class="add"
+                    ?disabled=${full}
+                    aria-label=${t('panel.custom.addExample', {
+                      name: t(example.name),
+                    })}
+                  >
+                    ${glyph('plus')}
+                  </button>
                 </span>
-                <span class="meta"
-                  ><span class="label">${t(example.name)}</span></span
-                >
-              </button>`,
+                <span class="name">${t(example.name)}</span>
+              </div>`,
           )}
         </div>
         <div class="code-actions">
@@ -2657,7 +2739,10 @@ export class TarnPanel extends LitElement {
         aria-checked=${face === this.settings.clock}
         @click=${() => this.applyPatch({clock: face})}
       >
-        <span class="thumb ${clockTone(this.settings.clockColor, art.tone)}">
+        <span
+          class="thumb ${clockTone(this.settings.clockColor, art.tone)}"
+          style="background: ${art.background}"
+        >
           ${
             face === 'none'
               ? html`<span class="off">${t('panel.face.off')}</span>`
@@ -3412,7 +3497,7 @@ function clockPreview(art: Art): ClockPreview {
 /** A "Show All" tile: a scene, blurred and faded, with a grid on it. */
 function showAll(art: Art) {
   return html`<span class="thumb more ${art.tone}" aria-hidden="true">
-    <span class="veil"></span>
+    <span class="veil" style="background: ${art.background}"></span>
     ${glyph('grid')}
   </span>`;
 }

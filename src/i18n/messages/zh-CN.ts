@@ -381,7 +381,8 @@ export const zhCN: Catalog = {
   'code.newer': '由更新版本的 Tarn 创建',
   'panel.custom': '自定义小组件',
   'panel.custom.lead':
-    '用几行着色器代码画出你自己的小组件。点击示例或把它拖到页面上，想加多少都行。',
+    '用几行着色器代码画出你自己的小组件。把示例拖到标签页上放好，或按 + 添加到最后。',
+  'panel.custom.dragHint': '拖到标签页上，或点击添加',
   'panel.custom.about': '自己写代码：可视化、动画、时钟',
   'panel.custom.scratch': '从零开始',
   'panel.custom.scratchNote': '一个空白的，带注释',

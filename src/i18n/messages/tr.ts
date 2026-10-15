@@ -393,7 +393,8 @@ export const tr: Catalog = {
   'code.newer': 'Daha yeni bir Tarn ile yapıldı',
   'panel.custom': 'Özel widgetlar',
   'panel.custom.lead':
-    'Birkaç satır shader koduyla kendi widgetını çiz. Bir örneğe tıkla ya da sayfana sürükle, istediğin kadar ekle.',
+    'Birkaç satır shader koduyla kendi widgetını çiz. Bir örneği yerleştirmek için sekmene sürükle ya da sona eklemek için + düğmesine bas.',
+  'panel.custom.dragHint': 'Sekmene sürükle ya da eklemek için tıkla',
   'panel.custom.about':
     'Kendin kodla: görselleştiriciler, animasyonlar, saatler',
   'panel.custom.scratch': 'Sıfırdan başla',

@@ -629,9 +629,10 @@ examples' names).
   "not cool"): Equalizer (M), Aurora (L), Synthwave (M), Galaxy (S), Clock
   (S, the real time), Liquid (L, a drop follows the mouse). Each is live on
   a plain dark gray (owner: the wallpaper behind them made them hard to
-  see), in the wallpaper's colors. Click adds one at its size, named
-  after the example, and opens its code; drag puts it where it lands on the
-  tab (the drag carries the code and size: `newWidgetSizeType`,
+  see), in the wallpaper's colors. Each card has a + (adds it at the end; so does a
+  click) and lifts with a grip on hover: drag puts it where it lands on the
+  tab (owner: the first cards weren't clearly draggable). Added at its size,
+  named after the example, with its code open (the drag carries the code and size: `newWidgetSizeType`,
   `droppedCode` in `drag-new.ts`; the code is stored before the widget
   appears, `TarnBoard.dropNew(name, prepare)`).
 - Two cards under them: "Start from scratch" (`BLANK_CODE`, the smallest

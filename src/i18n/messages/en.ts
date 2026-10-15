@@ -434,7 +434,8 @@ export const en = {
   'code.newer': 'Made with a newer Tarn',
   'panel.custom': 'Custom widgets',
   'panel.custom.lead':
-    'Draw your own widget with a few lines of shader code. Click an example or drag it onto your page, and add as many as you like.',
+    'Draw your own widget with a few lines of shader code. Drag an example onto your tab to place it, or press + to add it at the end.',
+  'panel.custom.dragHint': 'Drag onto your tab, or click to add',
   'panel.custom.about': 'Code your own: visualizers, animations, clocks',
   'panel.custom.scratch': 'Start from scratch',
   'panel.custom.scratchNote': 'A blank one, with comments',

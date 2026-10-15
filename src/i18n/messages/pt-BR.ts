@@ -395,7 +395,8 @@ export const ptBR: Catalog = {
   'code.newer': 'Feito com um Tarn mais novo',
   'panel.custom': 'Widgets personalizados',
   'panel.custom.lead':
-    'Desenhe seu próprio widget com algumas linhas de código de shader. Clique em um exemplo ou arraste-o para sua página, e adicione quantos quiser.',
+    'Desenhe seu próprio widget com algumas linhas de código de shader. Arraste um exemplo para a sua aba para posicioná-lo, ou toque em + para adicioná-lo no final.',
+  'panel.custom.dragHint': 'Arraste para a sua aba ou clique para adicionar',
   'panel.custom.about': 'Programe os seus: visualizadores, animações, relógios',
   'panel.custom.scratch': 'Começar do zero',
   'panel.custom.scratchNote': 'Um em branco, com comentários',

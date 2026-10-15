@@ -396,7 +396,9 @@ export const fr: Catalog = {
   'code.newer': 'Créé avec une version plus récente de Tarn',
   'panel.custom': 'Widgets personnalisés',
   'panel.custom.lead':
-    'Dessinez votre propre widget en quelques lignes de code de shader. Cliquez sur un exemple ou faites-le glisser sur votre page, et ajoutez-en autant que vous voulez.',
+    'Dessinez votre propre widget en quelques lignes de code de shader. Faites glisser un exemple sur votre onglet pour le placer, ou appuyez sur + pour l’ajouter à la fin.',
+  'panel.custom.dragHint':
+    'Faites-le glisser sur votre onglet, ou cliquez pour l’ajouter',
   'panel.custom.about': 'Codez les vôtres : visualiseurs, animations, horloges',
   'panel.custom.scratch': 'Partir de zéro',
   'panel.custom.scratchNote': 'Un widget vide, commenté',

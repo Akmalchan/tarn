@@ -388,7 +388,8 @@ export const ko: Catalog = {
   'code.newer': '최신 버전의 Tarn으로 만들었습니다',
   'panel.custom': '사용자 지정 위젯',
   'panel.custom.lead':
-    '셰이더 코드 몇 줄로 나만의 위젯을 그려 보세요. 예제를 클릭하거나 페이지로 끌어다 놓고, 원하는 만큼 추가할 수 있습니다.',
+    '셰이더 코드 몇 줄로 나만의 위젯을 그려 보세요. 예제를 탭으로 끌어다 놓거나 +를 눌러 맨 끝에 추가하세요.',
+  'panel.custom.dragHint': '탭으로 끌어다 놓거나 클릭해서 추가',
   'panel.custom.about': '직접 코딩하기: 비주얼라이저, 애니메이션, 시계',
   'panel.custom.scratch': '처음부터 시작',
   'panel.custom.scratchNote': '주석이 달린 빈 위젯',

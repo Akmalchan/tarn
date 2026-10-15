@@ -392,7 +392,8 @@ export const es: Catalog = {
   'code.newer': 'Hecho con un Tarn más reciente',
   'panel.custom': 'Widgets personalizados',
   'panel.custom.lead':
-    'Dibuja tu propio widget con unas líneas de código de shader. Haz clic en un ejemplo o arrástralo a tu página, y añade todos los que quieras.',
+    'Dibuja tu propio widget con unas líneas de código de shader. Arrastra un ejemplo a tu pestaña para colocarlo, o pulsa + para añadirlo al final.',
+  'panel.custom.dragHint': 'Arrástralo a tu pestaña o haz clic para añadirlo',
   'panel.custom.about':
     'Programa los tuyos: visualizadores, animaciones, relojes',
   'panel.custom.scratch': 'Empezar desde cero',

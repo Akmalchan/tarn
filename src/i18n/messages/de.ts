@@ -397,7 +397,8 @@ export const de: Catalog = {
   'code.newer': 'Mit einer neueren Tarn-Version erstellt',
   'panel.custom': 'Eigene Widgets',
   'panel.custom.lead':
-    'Zeichne dein eigenes Widget mit ein paar Zeilen Shader-Code. Klick auf ein Beispiel oder zieh es auf deine Seite, und füge so viele hinzu, wie du willst.',
+    'Zeichne dein eigenes Widget mit ein paar Zeilen Shader-Code. Zieh ein Beispiel auf deinen Tab, um es zu platzieren, oder drück +, um es ans Ende zu setzen.',
+  'panel.custom.dragHint': 'Auf deinen Tab ziehen oder zum Hinzufügen klicken',
   'panel.custom.about':
     'Programmier deine eigenen: Visualizer, Animationen, Uhren',
   'panel.custom.scratch': 'Bei null anfangen',
