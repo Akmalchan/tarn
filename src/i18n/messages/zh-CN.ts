@@ -119,7 +119,6 @@ export const zhCN: Catalog = {
   'popup.on': '新标签页会打开 Tarn。',
   'popup.off': '新标签页会打开默认页面。',
   'popup.takeover': '其他新标签页抢先了？',
-  'popup.fix': '修复 →',
   'popup.firefox':
     '在 Firefox 中，请在“附加组件和主题”（about:addons）里关闭 Tarn。',
   'takeover.permissionTitle': '将 Tarn 设为新标签页',

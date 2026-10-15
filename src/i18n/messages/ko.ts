@@ -120,7 +120,6 @@ export const ko: Catalog = {
   'popup.on': '새 탭에서 Tarn이 열려요.',
   'popup.off': '새 탭에서 기본 페이지가 열려요.',
   'popup.takeover': '다른 새 탭이 대신 열리나요?',
-  'popup.fix': '고치기 →',
   'popup.firefox':
     'Firefox에서는 부가 기능 및 테마(about:addons)에서 Tarn을 끄세요.',
   'takeover.permissionTitle': 'Tarn을 새 탭으로 만들기',

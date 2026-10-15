@@ -123,7 +123,6 @@ export const ptBR: Catalog = {
   'popup.on': 'Novas guias abrem o Tarn.',
   'popup.off': 'Novas guias abrem a página padrão.',
   'popup.takeover': 'Outra nova guia assumindo?',
-  'popup.fix': 'Resolver →',
   'popup.firefox':
     'No Firefox, desative o Tarn em Extensões e temas (about:addons).',
   'takeover.permissionTitle': 'Faça do Tarn sua nova guia',

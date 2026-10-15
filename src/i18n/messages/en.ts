@@ -146,7 +146,6 @@ export const en = {
   'popup.on': 'New tabs open Tarn.',
   'popup.off': 'New tabs open the default page.',
   'popup.takeover': 'Other new tab taking over?',
-  'popup.fix': 'Fix it →',
   'popup.firefox':
     'In Firefox, turn Tarn off from Add-ons and themes (about:addons).',
 

@@ -95,6 +95,7 @@ import {
 import type {TileState} from '../widgets/code/renderer';
 import {normalizeCode} from '../widgets/code/source';
 import {setCodeScene} from '../widgets/code/stage';
+import {canManageRivals} from '../takeover/rivals';
 import {
   addWallpaper,
   deleteWallpaper,
@@ -2280,6 +2281,11 @@ export class TarnPanel extends LitElement {
     `;
   }
 
+  /** A full tab that switches off other new-tab extensions. */
+  private openTakeover = () => {
+    void browser.tabs.create({url: browser.runtime.getURL('/takeover.html')});
+  };
+
   private renderAdvanced() {
     const {tabIcon} = this.settings;
     // Search filters this page's sections (SEARCH_INDEX, page 'advanced').
@@ -2383,6 +2389,18 @@ export class TarnPanel extends LitElement {
                 }
               </div>
               <p class="note">${t('panel.keys.note')}</p>
+            </section>`
+          : nothing
+      }
+      ${
+        canManageRivals && !query
+          ? html`<section>
+              <div class="group">
+                <button class="row" @click=${this.openTakeover}>
+                  ${icon('sliders')}
+                  <span class="txt">${t('popup.takeover')}</span>
+                </button>
+              </div>
             </section>`
           : nothing
       }

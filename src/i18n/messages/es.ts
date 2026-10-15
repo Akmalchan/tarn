@@ -121,7 +121,6 @@ export const es: Catalog = {
   'popup.on': 'Las pestañas nuevas abren Tarn.',
   'popup.off': 'Las pestañas nuevas abren la página predeterminada.',
   'popup.takeover': '¿Otra pestaña nueva se impone?',
-  'popup.fix': 'Arreglarlo →',
   'popup.firefox':
     'En Firefox, desactiva Tarn desde Complementos y temas (about:addons).',
   'takeover.permissionTitle': 'Haz de Tarn tu nueva pestaña',
