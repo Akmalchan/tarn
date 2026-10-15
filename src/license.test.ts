@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: FSL-1.1-ALv2
+ * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
 import {describe, expect, it} from 'vitest';
@@ -18,10 +18,13 @@ describe('license headers', () => {
     expect(Object.keys(sources).length).toBeGreaterThan(50);
   });
 
-  it('every source file carries the FSL header', () => {
+  it('every source file carries the PolyForm Shield header', () => {
     const missing = Object.entries(sources)
       .filter(
-        ([, text]) => !text.includes('SPDX-License-Identifier: FSL-1.1-ALv2'),
+        ([, text]) =>
+          !text.includes(
+            'SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0',
+          ),
       )
       .map(([path]) => path);
     expect(missing).toEqual([]);

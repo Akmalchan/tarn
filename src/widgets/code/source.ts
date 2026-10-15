@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: FSL-1.1-ALv2
+ * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
 // A custom widget's content and the shader built from it. Pure, so the

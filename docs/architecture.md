@@ -13,7 +13,7 @@ deep for power users, private: nothing leaves the browser unless the user
 asks for a feature that needs it.
 
 Stack, decided (AGENTS.md): Lit + TypeScript (strict), WXT, raw WebGL2,
-plain CSS with tokens, FSL-1.1-ALv2. Lit is the only runtime dependency.
+plain CSS with tokens, PolyForm Shield 1.0.0. Lit is the only runtime dependency.
 
 ## Entrypoints
 

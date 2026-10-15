@@ -98,8 +98,7 @@ measured: [docs/research/2026-10-new-tab-performance.md](docs/research/2026-10-n
 
 ## License
 
-[Functional Source License, Version 1.1, ALv2 Future License](LICENSE)
-(FSL-1.1-ALv2). Use it, read it, fork it and contribute freely; just don't
-ship a competing product from it. Each version becomes Apache 2.0 two
-years after it's released. Code published before 14 October 2026 remains
-under [Apache 2.0](https://github.com/Akmalchan/tarn/blob/d0dbe7a/LICENSE).
+[PolyForm Shield License 1.0.0](LICENSE). Use it, read it, fork it and
+contribute freely; just don't ship a competing product from it. Code
+published before 14 October 2026 remains under
+[Apache 2.0](https://github.com/Akmalchan/tarn/blob/d0dbe7a/LICENSE).
