@@ -152,8 +152,9 @@ What's new
    Wallpapers, Clock, Widgets, Language and Advanced the field filters
    that page's choices or sections instead (`SCOPED_SEARCH`; Advanced
    matches its `SEARCH_INDEX` entries, each with `words` in English and
-   `also`, the labels of its rows, in the current language); the Search
-   page has no field.
+   `also`, the labels of its rows, in the current language). Search,
+   Custom widgets and What's new have no field (`NO_SEARCH_FIELD`; owner,
+   2026-10-14: nothing to search there).
 6. **Changes are live.** No Save button. Removing a widget or resetting
    shows a toast with Undo.
 7. **The panel doesn't turn Tarn off.** The owner removed the "Use Tarn

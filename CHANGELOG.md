@@ -154,6 +154,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- No search field on the What's new page.
 - Wallpaper cards say Live or Photo without an icon.
 - The Everything example setup shows each widget once, with no duplicates.
 - Shortcut keys show a + between keys (⌘ + K, ⌥ + 1-9).

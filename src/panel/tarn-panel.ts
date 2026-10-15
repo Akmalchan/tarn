@@ -134,6 +134,9 @@ type Page =
   | 'custom'
   | 'whatsNew';
 
+/** Pages without a search field: nothing on them to search. */
+const NO_SEARCH_FIELD: readonly Page[] = ['search', 'custom', 'whatsNew'];
+
 /**
  * Home shows three choices per picker, then a "Show All" tile that opens
  * the page with all of them. The current choice is always among the three.
@@ -1649,7 +1652,7 @@ export class TarnPanel extends LitElement {
                   </div>`
             }
             ${
-              this.page === 'search' || this.page === 'custom'
+              NO_SEARCH_FIELD.includes(this.page)
                 ? nothing
                 : html` <label class="search">
                     ${glyph('search')}
