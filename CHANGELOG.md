@@ -161,6 +161,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Widgets' frosted glass no longer lags and jumps behind them while a
+  page with many widgets scrolls.
 - The search box shrinks with a narrow window instead of running off it.
 - No search field on the What's new page.
 - Wallpaper cards say Live or Photo without an icon.

@@ -55,6 +55,7 @@ export class TarnApp extends LitElement {
     editing: {state: true},
     incoming: {state: true},
     showKeys: {state: true},
+    scrolling: {state: true},
   };
 
   static override styles = css`
@@ -253,6 +254,16 @@ export class TarnApp extends LitElement {
   declare incoming: WidgetKind | null;
   /** The ? sheet of shortcuts is open. */
   declare showKeys: boolean;
+  /**
+   * The page is scrolling: tiles use CSS glass, which the compositor moves
+   * with them, instead of the scene's frost, which is drawn at 20-30 fps a
+   * frame behind and visibly lagged and jumped under the tiles.
+   */
+  declare scrolling: boolean;
+  private scrollEnd = 0;
+  /** The scene's frost is off (set before, cleared before `scrolling`). */
+  private frostPaused = false;
+  private lastTiles: TilesDetail | null = null;
   private incomingTimer = 0;
 
   private schemeQuery = matchMedia('(prefers-color-scheme: dark)');
@@ -274,6 +285,7 @@ export class TarnApp extends LitElement {
     this.editing = false;
     this.incoming = null;
     this.showKeys = false;
+    this.scrolling = false;
   }
 
   override connectedCallback(): void {
@@ -382,7 +394,11 @@ export class TarnApp extends LitElement {
             search.show
               ? html`<tarn-search
                   .settings=${search}
-                  glass=${this.liveScene && widgets.length ? 'shader' : 'css'}
+                  glass=${
+                    this.liveScene && widgets.length && !this.scrolling
+                      ? 'shader'
+                      : 'css'
+                  }
                 ></tarn-search>`
               : nothing
           }
@@ -391,7 +407,7 @@ export class TarnApp extends LitElement {
               ? html`<tarn-board
                   .widgets=${widgets}
                   ?instant=${this.resumed}
-                  glass=${this.liveScene ? 'shader' : 'css'}
+                  glass=${this.liveScene && !this.scrolling ? 'shader' : 'css'}
                   ?editing=${this.editing}
                   @tarn-reorder=${this.onReorder}
                   @tarn-tiles=${this.onTiles}
@@ -444,16 +460,23 @@ export class TarnApp extends LitElement {
   };
 
   private onTiles = (event: CustomEvent<TilesDetail>) => {
-    const {strength, radius} = event.detail;
+    this.lastTiles = event.detail;
+    this.sendTiles();
+  };
+
+  private sendTiles(): void {
+    if (!this.lastTiles) return;
+    const {strength, radius} = this.lastTiles;
     // A frosted search box is one more frosted shape, measured with the
     // tiles so it follows the same settle and scroll.
-    const rects = [...event.detail.rects, ...this.searchGlassRect()];
+    const rects = [...this.lastTiles.rects, ...this.searchGlassRect()];
     const backdrop =
       this.renderRoot.querySelector<TarnBackdrop>('tarn-backdrop');
-    const live = this.liveScene;
+    // While scrolling the tiles carry their own CSS glass.
+    const live = this.liveScene && !this.frostPaused;
     backdrop?.setTiles(live ? rects : [], strength, radius);
     if (live && (strength === 1 || !rects.length)) rememberTiles(rects, radius);
-  };
+  }
 
   /** The search box's frame, when it's frosted glass: x, y, w, h or none. */
   private searchGlassRect(): number[] {
@@ -569,6 +592,19 @@ export class TarnApp extends LitElement {
 
   private scrollFrame = 0;
   private onScroll = () => {
+    if (!this.frostPaused) {
+      this.scrolling = true;
+      this.frostPaused = true;
+      this.sendTiles();
+    }
+    clearTimeout(this.scrollEnd);
+    this.scrollEnd = window.setTimeout(() => {
+      // Frost back first; CSS glass goes a few frames later, once the
+      // scene has drawn it, so the tiles are never bare.
+      this.frostPaused = false;
+      this.sendTiles();
+      this.scrollEnd = window.setTimeout(() => (this.scrolling = false), 80);
+    }, 180);
     if (this.scrollFrame) return;
     this.scrollFrame = requestAnimationFrame(() => {
       this.scrollFrame = 0;

@@ -356,6 +356,14 @@ How:
    (signed distance, `uRadius`), with a one-pixel anti-aliased edge;
    `uStrength` follows the widgets' fade.
 
+**While the page scrolls** (2026-10-14), the tiles and the search box
+switch to CSS glass (`glass='css'`) and the scene's frost turns off. The
+compositor moves tiles at the display rate, while the frost was drawn at
+20-30 fps, a frame behind, so it lagged and jumped under them (seen on a
+friend's Mac with many widgets). 180 ms after the last scroll event the
+frost comes back first, and the CSS glass goes 80 ms later, so a tile is
+never bare (`TarnApp.onScroll`, `frostPaused`).
+
 Where the rectangles come from:
 
 ```
