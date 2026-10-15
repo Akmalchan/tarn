@@ -10,6 +10,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 - Tarn's full name is now "Tarn: Modern New Tab" (translated after the
   colon), as the Chrome Web Store and the extensions page show it.
+- The privacy policy is rewritten: a short summary, what Tarn keeps and
+  where, exactly what leaves your computer and when, and each permission.
 
 ### Added
 
