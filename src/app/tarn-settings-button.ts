@@ -109,10 +109,12 @@ export class TarnSettingsButton extends LitElement {
       -webkit-backdrop-filter: blur(16px) saturate(1.5);
     }
 
+    /* Centered on the gear (14px from the corner, 32px wide). */
     .ring {
       position: absolute;
       right: 10px;
       bottom: 10px;
+      box-sizing: border-box;
       width: 40px;
       height: 40px;
       border: 1.5px solid rgb(255 255 255 / 0.55);
@@ -171,11 +173,12 @@ export class TarnSettingsButton extends LitElement {
       transition-duration: ${TIP_OUT_MS}ms;
     }
 
-    /* Points down at the gear. */
+    /* Points down at the gear's center (inside the card's 1px border). */
     .card::after {
       position: absolute;
-      right: 10px;
+      right: 9px;
       bottom: -7px;
+      box-sizing: border-box;
       width: 12px;
       height: 12px;
       content: '';
@@ -301,7 +304,6 @@ export class TarnSettingsButton extends LitElement {
     // The dev build (npm run dev) shows it on every new tab, for review.
     const show = import.meta.env.DEV || (await takeTip().catch(() => false));
     if (this.panelOpen || !show) return;
-    if (this.panelOpen) return;
     this.tip = 'out';
     await this.updateComplete;
     // One frame at opacity 0 first, so the card fades in.
