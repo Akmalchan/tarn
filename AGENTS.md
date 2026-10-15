@@ -27,11 +27,13 @@ same pull request** (map: `docs/README.md`).
 - **WXT**: builds Chromium and Firefox from one codebase (`src/entrypoints/`).
 - **Raw WebGL2**: no three.js or shader libraries.
 - **Plain CSS** with tokens in `src/styles/global.css`.
-- **FSL-1.1-ALv2** (since 2026-10-14; Apache 2.0 before): every source
-  file carries the SPDX header (`license.test.ts`). Anyone may use, read,
-  fork and contribute; no one may ship a competing product from the code;
-  each version becomes Apache 2.0 two years after release. Code published
-  before the switch stays Apache 2.0. Keep the copyright clean: no copied
+- **PolyForm Shield 1.0.0** (owner, 2026-10-14; Apache 2.0 before): every
+  source file carries the SPDX header
+  `LicenseRef-PolyForm-Shield-1.0.0` (`license.test.ts`). Anyone may use,
+  read, fork and contribute; no one may ship a competing product from the
+  code, ever. Chosen over FSL because the owner didn't want versions to
+  open up after two years. Code published before the switch stays Apache
+  2.0. Keep the copyright clean: no copied
   code, and outside contributions only under CONTRIBUTING.md's terms.
 - Google TypeScript style (ESLint + Prettier). `npm run check` must pass.
 

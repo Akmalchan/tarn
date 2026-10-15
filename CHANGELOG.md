@@ -8,10 +8,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Tarn's code is now under the Functional Source License (FSL-1.1-ALv2):
-  free to use, read, fork and contribute to, but not to ship as a
-  competing product. Each version becomes Apache 2.0 two years after it's
-  released; code published before 14 October 2026 stays Apache 2.0.
+- Tarn's code is now under the PolyForm Shield License 1.0.0: free to use,
+  read, fork and contribute to, but not to ship as a competing product.
+  Code published before 14 October 2026 stays Apache 2.0.
 - Tarn's full name is now "Tarn: Modern New Tab" (translated after the
   colon), as the Chrome Web Store and the extensions page show it.
 - The privacy policy is rewritten: a short summary, what Tarn keeps and

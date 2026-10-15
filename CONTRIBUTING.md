@@ -44,14 +44,13 @@ New source files start with the license header:
 ```ts
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: FSL-1.1-ALv2
+ * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 ```
 
-Tarn is licensed under the [Functional Source License](LICENSE)
-(FSL-1.1-ALv2), which becomes Apache 2.0 two years after each release. By
+Tarn is licensed under the [PolyForm Shield License 1.0.0](LICENSE). By
 submitting a contribution, you confirm that it is your own work, and you
 grant Akmal Shovkatov, and anyone Tarn is later transferred to, a perpetual,
 worldwide, royalty-free, irrevocable license to use, modify, sublicense
-and relicense it under any terms, including the FSL, Apache 2.0 or a
+and relicense it under any terms, including PolyForm Shield, Apache 2.0 or a
 commercial license. You keep the copyright to your contribution.

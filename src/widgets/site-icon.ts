@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: FSL-1.1-ALv2
+ * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
 // Site icons from Chrome's own icon cache (the favicon permission): no

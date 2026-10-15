@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: FSL-1.1-ALv2
+ * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
 // How much each scene asks of the computer, measured (not guessed): % of
