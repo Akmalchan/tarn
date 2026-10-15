@@ -35,7 +35,7 @@ this document should be fixed.
 - **Black and white chrome, color only in the scene.** UI is ink on frost
   (new tab) or black on white with a dark twin (settings). Scene colors never
   leak into controls.
-- **Fixed sizes on every screen.** 164px cells, 28px gap, 112px clock. No
+- **Fixed sizes on every screen.** 136px cells, 24px gap, 112px clock. No
   viewport scaling.
 - **Native feel.** Settings read like macOS System Settings; the search box
   looks like the browser's own.
@@ -275,14 +275,14 @@ and inner radii together.
 
 | Token                               | Value                                                                                         | Where                                                 |
 | ----------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Cell                                | 164px (`CELL`); content laid out at 136px and scaled 1.2x                                     | `src/widgets/geometry.ts`                             |
-| Gap                                 | 28px (`GAP`); pitch 192px                                                                     | `geometry.ts`                                         |
+| Cell                                | 136px (`CELL`); content never scaled                                                          | `src/widgets/geometry.ts`                             |
+| Gap                                 | 24px (`GAP`); pitch 160px                                                                     | `geometry.ts`                                         |
 | Columns                             | 2, 3, 4 or 6, max 6                                                                           | `src/layout/bands.ts`, `docs/widgets.md`              |
 | Widget sizes                        | S 1x1, M 2x1, L 2x2, XL 4x2 (each kind offers only some)                                      | `WIDGET_SIZE_OPTIONS`, `src/settings/schema.ts`       |
 | Page side margin                    | 24px                                                                                          | `MARGIN` in `tarn-board.ts`, `.page` in `tarn-app.ts` |
 | Clock to widgets                    | 56px group gap                                                                                | `.group` in `tarn-app.ts`                             |
 | Clock to search / search to widgets | 32px / 40px                                                                                   | `tarn-app.ts`                                         |
-| Search box width                    | 740px = 4 columns; 3 or 2 columns (the grid's width) under 788px; fits the window under 388px | `tarn-search.ts`                                      |
+| Search box width                    | 616px = 4 columns; 3 or 2 columns (the grid's width) under 664px; fits the window under 328px | `tarn-search.ts`                                      |
 | Vertical placement                  | Free space split 2 : 3 above/below, at least 40px each                                        | `.page` in `tarn-app.ts`                              |
 | Widget padding                      | 16px 18px, 8px gap                                                                            | `widgetStyles`                                        |
 | Panel page                          | 14px 16px 28px, 22px between sections                                                         | `tarn-panel.ts`                                       |

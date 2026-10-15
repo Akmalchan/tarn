@@ -9,16 +9,9 @@ import {layoutBands, type LayoutItem} from '../layout/bands';
 // drag-to-reorder share one source of truth, and it's easy to test.
 
 /** Tile and gap sizes, the same on every screen (docs/widgets.md). */
-export const CELL = 164;
-export const GAP = 28;
+export const CELL = 136;
+export const GAP = 24;
 export const PITCH = CELL + GAP;
-/**
- * Widgets lay out their content at the original 136px cell and are drawn
- * this much larger (owner, 2026-10-14: tiles 20% bigger), so every widget
- * grows in proportion without retuning its insides.
- */
-export const CONTENT_CELL = 136;
-export const CONTENT_SCALE = CELL / CONTENT_CELL;
 /** How far from the pointer a widget counts as "near" while dragging. */
 const SEARCH_RADIUS = PITCH * 2.5;
 

@@ -8,8 +8,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Widgets are 20% larger, and narrow windows use three columns when the
-  widgets fill them, instead of two with wide empty sides.
+- Narrow windows use three columns when the widgets fill them, instead of
+  two with wide empty sides.
 - Canopy is now a cyberpunk neon loading screen, and slower. Topology is
   slower and sharp on high-density screens. Convergence is slower, in teal
   and amber. Ribbons lost the small dashes under them.

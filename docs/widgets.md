@@ -25,9 +25,8 @@ Open it full screen and resize the window.
   | `calendar`  | Calendar  | S, M, L     | L            | `tarn-calendar`  |
   | `code`      | Custom    | S, M, L, XL | M            | `tarn-code`      |
 
-- Tiles are a fixed 164px cell with a 28px gap on every screen. Sizes are
-  whole cells: S 1x1, M 2x1, L 2x2, XL 4x2. Widget content is laid out at
-  the original 136px cell and drawn 1.2x larger (`CONTENT_SCALE`).
+- Tiles are a fixed 136px cell with a 24px gap on every screen. Sizes are
+  whole cells: S 1x1, M 2x1, L 2x2, XL 4x2.
 - `src/layout/bands.ts` places widgets in bands two cells tall on a 2, 3,
   4 or 6 column grid, with no holes. `src/widgets/tarn-board.ts` draws them with
   transforms and animates moves with FLIP.
@@ -219,11 +218,11 @@ so narrow windows don't leave wide empty sides.
 
 ### Geometry (`src/widgets/geometry.ts`)
 
-- `CELL = 164`, `GAP = 28`, `PITCH = 192` (2026-10-14; were 136/24/160).
-  `.content` in each tile is laid out at `CONTENT_CELL = 136` and scaled by
-  `CONTENT_SCALE` (~1.21) with a transform; it is the size container
-  widgets query. Favorites drag and Custom widget canvases account for the
-  scale.
+- `CELL = 136`, `GAP = 24`, `PITCH = 160`. Tried and reverted on
+  2026-10-14: 164px tiles (+20%). Scaling the content up with a transform
+  made text bigger, corners softer and site icons blurry; leaving it at
+  its size left dead space inside the tiles (owner: the old size was
+  right). Tile content is never scaled.
 - `placeTiles(items, columns)` turns placements into pixel boxes, in the
   widgets' order (reading and tab order). All bands share one grid and
   start at its left edge; the caller centers the grid.
@@ -716,8 +715,8 @@ are on the panel's main page.
 
 ### The rules
 
-1. **Same size on every screen.** Tiles are 164px squares with 28px between
-   them (20% larger since 2026-10-14, owner: "too small"). The clock is 112px. Nothing grows or shrinks with the window. Only
+1. **Same size on every screen.** Tiles are 136px squares with 24px between
+   them (164px was tried and reverted on 2026-10-14). The clock is 112px. Nothing grows or shrinks with the window. Only
    a phone-sized window gets a smaller clock.
 2. **Four widget sizes:** small (1x1), medium (2x1), large (2x2) and extra
    large (4x2), the same as iPhone and iPad widgets. Each kind offers only
