@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 // Adaptive quality. A background must never cost the page smoothness, so the

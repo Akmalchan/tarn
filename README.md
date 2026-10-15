@@ -7,7 +7,7 @@
 <p align="center"><b>A still, clear start to every tab.</b></p>
 
 <p align="center">
-  An open-source new tab page with living, GPU-rendered backgrounds.<br />
+  A source-available new tab page with living, GPU-rendered backgrounds.<br />
   Calm by default. No accounts, no tracking, no network calls unless you
   add the Weather widget.
 </p>
@@ -96,4 +96,8 @@ measured: [docs/research/2026-10-new-tab-performance.md](docs/research/2026-10-n
 
 ## License
 
-[Apache 2.0](LICENSE)
+[Functional Source License, Version 1.1, ALv2 Future License](LICENSE)
+(FSL-1.1-ALv2). Use it, read it, fork it and contribute freely; just don't
+ship a competing product from it. Each version becomes Apache 2.0 two
+years after it's released. Code published before 14 October 2026 remains
+under [Apache 2.0](https://github.com/Akmalchan/tarn/blob/d0dbe7a/LICENSE).
