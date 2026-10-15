@@ -1,6 +1,6 @@
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 
 // What a Favorites widget holds, and every change to it, as pure functions:

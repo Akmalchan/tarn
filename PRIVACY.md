@@ -2,7 +2,7 @@
 
 _Last updated: 14 October 2026_
 
-Tarn is a free, open-source new tab page for Chrome, other Chromium
+Tarn is a free new tab page, with its source code public, for Chrome, other Chromium
 browsers and Firefox, made by [The Tarn Authors](AUTHORS). This policy
 explains what Tarn does with your information. The short answer: almost
 nothing, and never without you asking.

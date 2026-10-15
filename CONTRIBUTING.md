@@ -44,8 +44,14 @@ New source files start with the license header:
 ```ts
 /**
  * Copyright 2026 The Tarn Authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: FSL-1.1-ALv2
  */
 ```
 
-By contributing, you agree your contribution is licensed under Apache 2.0.
+Tarn is licensed under the [Functional Source License](LICENSE)
+(FSL-1.1-ALv2), which becomes Apache 2.0 two years after each release. By
+submitting a contribution, you confirm that it is your own work, and you
+grant Akmal Shovkatov, and anyone Tarn is later transferred to, a perpetual,
+worldwide, royalty-free, irrevocable license to use, modify, sublicense
+and relicense it under any terms, including the FSL, Apache 2.0 or a
+commercial license. You keep the copyright to your contribution.

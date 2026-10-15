@@ -103,14 +103,13 @@ YOURS
   can switch it off for you.
 
 PRIVATE BY DESIGN
-Tarn makes no network requests of its own. The one exception is the
-Weather widget, and only after you add it and choose a place: it asks
-Open-Meteo (free, no account) for that place's forecast, at most every 30
-minutes. Searches go to your browser's own search engine, only when you
-press Enter.
+Tarn has no server, no account and no tracking. It goes online only when
+you use something that needs it: searches go to your browser's own search
+engine when you press Enter; voice, Google Lens and AI Mode go to Google
+only when you press them; and a Weather widget asks Open-Meteo for its
+place's forecast, at most every 30 minutes.
 
-Open source under the Apache 2.0 license:
-https://github.com/Akmalchan/tarn
+The source code is public: https://github.com/Akmalchan/tarn
 
 Works with Google Chrome™, Microsoft Edge, Brave, Arc, Opera, Vivaldi and
 Firefox.

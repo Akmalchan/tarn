@@ -3,9 +3,12 @@ Tarn: licenses
 
 Tarn
 ----
-Copyright 2026 The Tarn Authors.
-Licensed under the Apache License, Version 2.0 (full text at the end of
-this file). Source: https://github.com/Akmalchan/tarn
+Copyright 2026 Akmal Shovkatov.
+Licensed under the Functional Source License, Version 1.1, ALv2 Future
+License (FSL-1.1-ALv2): https://fsl.software. Each version becomes
+available under the Apache License, Version 2.0 (full text at the end of
+this file) two years after it is released.
+Source: https://github.com/Akmalchan/tarn
 
 Tarn ships the following software and fonts by others, each under its own
 license.
