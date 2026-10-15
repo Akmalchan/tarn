@@ -122,7 +122,6 @@ export const tr: Catalog = {
   'popup.on': "Yeni sekmeler Tarn'ı açar.",
   'popup.off': 'Yeni sekmeler varsayılan sayfayı açar.',
   'popup.takeover': 'Başka bir yeni sekme mi devraldı?',
-  'popup.fix': 'Düzelt →',
   'popup.firefox':
     "Firefox'ta Tarn'ı Eklentiler ve temalar (about:addons) bölümünden kapatın.",
   'takeover.permissionTitle': "Tarn'ı yeni sekmeniz yapın",

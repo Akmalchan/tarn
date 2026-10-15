@@ -123,7 +123,6 @@ export const fr: Catalog = {
   'popup.on': 'Les nouveaux onglets ouvrent Tarn.',
   'popup.off': 'Les nouveaux onglets ouvrent la page par défaut.',
   'popup.takeover': 'Un autre nouvel onglet prend le dessus ?',
-  'popup.fix': 'Corriger →',
   'popup.firefox':
     'Dans Firefox, désactivez Tarn depuis Modules complémentaires et thèmes (about:addons).',
   'takeover.permissionTitle': 'Faites de Tarn votre nouvel onglet',

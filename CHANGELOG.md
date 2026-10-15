@@ -27,6 +27,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A simpler toolbar menu that follows light and dark: Tarn's state, the
+  on/off switch and a Settings link. Switching off other new-tab
+  extensions moved to Settings > Advanced.
 - A custom clock color, behind a small arrow next to Auto, Light and Dark.
 - The settings home shows your most recent wallpapers and clock faces.
 - Eight new live wallpapers: Clouds (light, flying over a sea of clouds),

@@ -123,7 +123,6 @@ export const ru: Catalog = {
   'popup.on': 'Новые вкладки открывают Tarn.',
   'popup.off': 'Новые вкладки открывают стандартную страницу.',
   'popup.takeover': 'Другая новая вкладка мешает?',
-  'popup.fix': 'Исправить →',
   'popup.firefox':
     'В Firefox отключите Tarn в разделе «Дополнения и темы» (about:addons).',
   'takeover.permissionTitle': 'Сделайте Tarn новой вкладкой',

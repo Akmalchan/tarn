@@ -124,7 +124,6 @@ export const de: Catalog = {
   'popup.on': 'Neue Tabs öffnen Tarn.',
   'popup.off': 'Neue Tabs öffnen die Standardseite.',
   'popup.takeover': 'Übernimmt ein anderer neuer Tab?',
-  'popup.fix': 'Beheben →',
   'popup.firefox':
     'In Firefox schaltest du Tarn unter Add-ons und Themes (about:addons) aus.',
   'takeover.permissionTitle': 'Mach Tarn zu deinem neuen Tab',

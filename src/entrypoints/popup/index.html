@@ -2,8 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light dark" />
     <title>Tarn</title>
+    <style>
+      body {
+        margin: 0;
+        background: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #2a2a2c;
+        }
+      }
+    </style>
     <!-- The toolbar button keeps Tarn's icon. The manifest's own 16/32px
          icons are transparent on purpose: Chrome falls back to them as the
          tab icon for a moment during a reload, and the tab should only ever

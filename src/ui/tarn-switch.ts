@@ -30,7 +30,7 @@ export class TarnSwitch extends LitElement {
       padding: 0;
       border: 0;
       border-radius: 999px;
-      background: rgb(255 255 255 / 0.18);
+      background: var(--switch-off, rgb(255 255 255 / 0.18));
       cursor: pointer;
       transition: background-color 200ms ease;
     }
@@ -49,7 +49,7 @@ export class TarnSwitch extends LitElement {
     }
 
     button[aria-checked='true'] {
-      background: #3a9bc1;
+      background: var(--switch-on, #3a9bc1);
     }
 
     button[aria-checked='true']::after {
@@ -57,7 +57,7 @@ export class TarnSwitch extends LitElement {
     }
 
     button:focus-visible {
-      outline: 2px solid rgb(255 255 255 / 0.7);
+      outline: 2px solid var(--switch-focus, rgb(255 255 255 / 0.7));
       outline-offset: 2px;
     }
 

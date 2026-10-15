@@ -121,7 +121,6 @@ export const ja: Catalog = {
   'popup.on': '新しいタブで Tarn が開きます。',
   'popup.off': '新しいタブで標準のページが開きます。',
   'popup.takeover': 'ほかの新しいタブが優先されていますか？',
-  'popup.fix': '直す →',
   'popup.firefox':
     'Firefox では「アドオンとテーマ」（about:addons）で Tarn をオフにします。',
   'takeover.permissionTitle': 'Tarn を新しいタブにする',

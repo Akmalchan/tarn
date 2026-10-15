@@ -4,16 +4,18 @@
  */
 
 import {LitElement, css, html, nothing} from 'lit';
-import {browser} from 'wxt/browser';
 import {canHandOff} from '../app/handoff';
+import {openSidePanel, prepareSidePanel} from '../app/side-panel';
 import {setTarnEnabled} from '../settings/enabled';
 import {DEFAULT_SETTINGS, type Settings} from '../settings/schema';
 import {loadSettings} from '../settings/store';
-import {canManageRivals} from '../takeover/rivals';
 import '../ui/tarn-switch';
 import {LocaleController, t, useLanguage} from '../i18n';
 
-/** The toolbar popup: one switch that turns Tarn's new tab on or off. */
+/**
+ * The toolbar popup: Tarn's name and state, one switch that turns its new
+ * tab on or off, and a quiet link to settings.
+ */
 export class TarnPopup extends LitElement {
   static override properties = {
     settings: {state: true},
@@ -22,93 +24,96 @@ export class TarnPopup extends LitElement {
 
   static override styles = css`
     :host {
+      --bg: #ffffff;
+      --ink: #1d1d1f;
+      --dim: #6e6e73;
+      --hover: rgb(0 0 0 / 0.05);
+      --switch-on: #34c759;
+      --switch-off: #e5e5ea;
+      --switch-focus: rgb(0 0 0 / 0.4);
+      box-sizing: border-box;
       display: block;
-      width: 300px;
-      padding: 16px;
+      width: 260px;
+      padding: 14px 14px 10px;
       font-family:
         system-ui,
         -apple-system,
         'Segoe UI',
         Roboto,
         sans-serif;
-      color: rgb(244 247 251);
-      background: linear-gradient(180deg, #0d2740 0%, #05080f 100%);
+      color: var(--ink);
+      background: var(--bg);
       -webkit-font-smoothing: antialiased;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --bg: #2a2a2c;
+        --ink: #f5f5f7;
+        --dim: #98989d;
+        --hover: rgb(255 255 255 / 0.07);
+        --switch-on: #30d158;
+        --switch-off: #48484a;
+        --switch-focus: rgb(255 255 255 / 0.6);
+      }
     }
 
-    header img {
-      width: 28px;
-      height: 28px;
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
 
     h1 {
       margin: 0;
       font-size: 15px;
       font-weight: 600;
-      letter-spacing: 0.01em;
     }
 
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgb(255 255 255 / 0.06);
-      border: 1px solid rgb(255 255 255 / 0.1);
-    }
-
-    .label {
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .hint {
+    .state {
       margin-top: 2px;
       font-size: 12px;
-      color: rgb(244 247 251 / 0.6);
+      color: var(--dim);
     }
 
-    .fix {
+    .link {
       display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      width: 100%;
-      margin-top: 8px;
-      padding: 10px 14px;
+      align-items: center;
+      gap: 6px;
+      width: calc(100% + 12px);
+      margin: 8px -6px 0;
+      padding: 6px;
+      border: 0;
+      border-radius: 6px;
       font: inherit;
       font-size: 13px;
-      text-align: left;
-      color: rgb(244 247 251 / 0.8);
-      background: transparent;
-      border: 1px solid rgb(255 255 255 / 0.1);
-      border-radius: 14px;
+      color: var(--dim);
+      background: none;
       cursor: pointer;
-      transition: background-color 150ms ease;
+      text-align: left;
     }
 
-    .fix .go {
-      color: #a9cfe0;
-      white-space: nowrap;
+    .link:hover {
+      color: var(--ink);
+      background: var(--hover);
     }
 
-    .fix:hover {
-      background: rgb(255 255 255 / 0.06);
+    .link svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .note {
-      margin: 12px 2px 0;
+      margin: 8px 0 2px;
       font-size: 12px;
       line-height: 1.45;
-      color: rgb(244 247 251 / 0.55);
+      color: var(--dim);
     }
   `;
 
@@ -125,6 +130,7 @@ export class TarnPopup extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    void prepareSidePanel();
     void loadSettings().then(settings => {
       this.settings = settings;
       this.loaded = true;
@@ -135,14 +141,10 @@ export class TarnPopup extends LitElement {
   override render() {
     const {enabled} = this.settings;
     return html`
-      <header>
-        <img src="/icon/48.png" alt="" />
-        <h1>Tarn</h1>
-      </header>
-      <div class="row">
+      <div class="top">
         <div>
-          <div class="label">${t('popup.newTab')}</div>
-          <div class="hint">${enabled ? t('popup.on') : t('popup.off')}</div>
+          <h1>Tarn</h1>
+          <div class="state">${enabled ? t('popup.on') : t('popup.off')}</div>
         </div>
         <tarn-switch
           label=${t('popup.newTab')}
@@ -151,14 +153,15 @@ export class TarnPopup extends LitElement {
           @change=${this.onEnabledChange}
         ></tarn-switch>
       </div>
-      ${
-        canManageRivals
-          ? html`<button class="fix" @click=${this.openTakeover}>
-              <span>${t('popup.takeover')}</span>
-              <span class="go">${t('popup.fix')}</span>
-            </button>`
-          : nothing
-      }
+      <button class="link" @click=${this.openSettings}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
+          />
+        </svg>
+        ${t('common.settings')}
+      </button>
       ${canHandOff ? nothing : html`<p class="note">${t('popup.firefox')}</p>`}
     `;
   }
@@ -167,8 +170,9 @@ export class TarnPopup extends LitElement {
     this.settings = await setTarnEnabled(event.detail);
   };
 
-  private openTakeover = () => {
-    void browser.tabs.create({url: browser.runtime.getURL('/takeover.html')});
+  /** Settings live in the side panel; opened inside this click. */
+  private openSettings = () => {
+    openSidePanel();
     window.close();
   };
 }
