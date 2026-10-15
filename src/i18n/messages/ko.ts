@@ -190,6 +190,8 @@ export const ko: Catalog = {
   'panel.yourPhotos': '내 사진',
   'panel.live': '라이브',
   'panel.photo': '사진',
+  'panel.kind.live': '라이브',
+  'panel.kind.liveLabel': '움직이는 배경화면',
   'panel.deletePhoto': '삭제',
   'panel.deletePhotoNamed': '{name} 삭제',
   'panel.photoAdded': '내 사진에 추가했어요',

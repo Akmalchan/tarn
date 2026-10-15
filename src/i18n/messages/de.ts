@@ -195,6 +195,8 @@ export const de: Catalog = {
   'panel.yourPhotos': 'Deine Fotos',
   'panel.live': 'Animiert',
   'panel.photo': 'Foto',
+  'panel.kind.live': 'Animiert',
+  'panel.kind.liveLabel': 'Animiertes Hintergrundbild',
   'panel.deletePhoto': 'Löschen',
   'panel.deletePhotoNamed': '{name} löschen',
   'panel.photoAdded': 'Zu deinen Fotos hinzugefügt',

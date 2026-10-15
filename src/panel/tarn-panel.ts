@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
-import {LitElement, css, html, nothing} from 'lit';
+import {LitElement, css, html, nothing, svg} from 'lit';
 import {keyed} from 'lit/directives/keyed.js';
 import {browser} from 'wxt/browser';
 import {mirrorSettings} from '../app/mirror';
@@ -1083,7 +1083,38 @@ export class TarnPanel extends LitElement {
         monospace;
     }
 
+    /* Live scene or photo: a small glass mark in the card's corner. */
+    .thumb .kind {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px 2px 5px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 14px;
+      color: #fff;
+      background: rgb(0 0 0 / 0.38);
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+
+    .thumb .kind svg {
+      width: 11px;
+      height: 11px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .thumb {
+      position: relative;
       display: grid;
       place-content: center;
       justify-items: center;
@@ -2684,7 +2715,9 @@ export class TarnPanel extends LitElement {
         aria-checked=${scene.id === this.settings.scene}
         @click=${() => this.selectScene(scene.id)}
       >
-        <span class="thumb" style="background: ${scenePreview(scene)}"></span>
+        <span class="thumb" style="background: ${scenePreview(scene)}"
+          >${kindBadge('live')}</span
+        >
         <span class="meta">
           <span class="label">${scene.name}</span>
           ${gauge(loadLevel(scene.id))}
@@ -2707,7 +2740,9 @@ export class TarnPanel extends LitElement {
           aria-checked=${id === this.settings.scene}
           @click=${() => this.selectScene(id)}
         >
-          <span class="thumb" style="background: ${background}"></span>
+          <span class="thumb" style="background: ${background}"
+            >${kindBadge('photo')}</span
+          >
           <span class="meta">
             <span class="label">${name}</span>
             ${gauge('still')}
@@ -3539,6 +3574,23 @@ function gauge(level: LoadLevel) {
       <circle cx="12" cy="14" r="1.6" />
     </svg>
   </span>`;
+}
+
+/**
+ * A small mark in a wallpaper card's corner: a live (animated) scene or a
+ * still photo, so the two read apart at a glance.
+ */
+function kindBadge(kind: 'live' | 'photo') {
+  const label = kind === 'live' ? t('panel.kind.liveLabel') : t('panel.photo');
+  return html`<span class="kind" role="img" aria-label=${label} title=${label}
+    ><svg viewBox="0 0 16 16" aria-hidden="true">
+      ${
+        kind === 'live'
+          ? svg`<path d="M1.5 9c1.6-3.4 3.3-3.4 4.9 0s3.3 3.4 4.9 0 2.4-3 3.2-1.2" />`
+          : svg`<rect x="2" y="3" width="12" height="10" rx="2" /><path d="M2.6 11.6l3.6-3.4 2.6 2.4 1.8-1.6 2.8 2.6" /><circle cx="10.6" cy="6.2" r="1" />`
+      }</svg
+    >${kind === 'live' ? t('panel.kind.live') : t('panel.photo')}</span
+  >`;
 }
 
 /** The clock as a face draws it, for thumbnails and the preview. */
