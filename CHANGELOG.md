@@ -29,8 +29,8 @@ follow [Semantic Versioning](https://semver.org/).
 - Wallpaper cards in settings say Live or Photo in their corner.
 - Custom widgets: draw your own with a few lines of shader code, as many as
   you like, from Settings > Widgets > Custom widgets. Start from six live
-  examples in four bright colors (Equalizer, Aurora, Synthwave, Galaxy,
-  Clock, Liquid), click or drag one onto your page, edit its code and see
+  examples, each in a bright color of its own (Equalizer, Aurora,
+  Synthwave, Galaxy, Clock, Liquid), click or drag one onto your page, edit its code and see
   it on your tab as you type, or copy instructions for an AI chat and paste
   back what it writes. Shadertoy code works too. Your own can use the
   wallpaper's colors. They pause when the tab is hidden and can't reach the
