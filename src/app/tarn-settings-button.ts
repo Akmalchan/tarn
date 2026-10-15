@@ -298,7 +298,9 @@ export class TarnSettingsButton extends LitElement {
   }
 
   private async showTip(): Promise<void> {
-    if (this.panelOpen || !(await takeTip().catch(() => false))) return;
+    // The dev build (npm run dev) shows it on every new tab, for review.
+    const show = import.meta.env.DEV || (await takeTip().catch(() => false));
+    if (this.panelOpen || !show) return;
     if (this.panelOpen) return;
     this.tip = 'out';
     await this.updateComplete;

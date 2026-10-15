@@ -57,4 +57,5 @@ once instead of "nothing happened". Common, mildly pushy. Owner's call.
   panel opens. CSS blur like the gear's own hover, not shader glass.
   Opacity and transform only; nothing renders before the first mouse
   move or key.
+- **Dev build:** `npm run dev` shows it on every new tab, for review.
 - **Not built:** hint 2, "Show tips again", opening a tab on install.
