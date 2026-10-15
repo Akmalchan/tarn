@@ -58,15 +58,21 @@ store title and summary automatically. The rest is typed into the dashboard.
 | Support URL      | https://github.com/Akmalchan/tarn/issues                                                |
 | Mature content   | No                                                                                      |
 
-Title rules: no Google trademark in it ("Chrome" belongs in the
-description only, see BRAND.md), and no keyword lists; Google rejects
-both. Rejected for the title on 2026-10-14: "Calm New Tab" (the owner:
+Title rules: no Google trademark in it, and no keyword lists; Google
+rejects both. Rejected for the title on 2026-10-14: "Calm New Tab" (the owner:
 something more general), and the search-word versions ("Live Wallpaper
 New Tab", "Living New Tab", "New Tab, Still Water", "Quiet New Tab").
 
 ### Description
 
 Paste as is: the store shows plain text and keeps every line break, so each paragraph and bullet is one line here.
+
+No lists of names that read as search keywords. The first submission
+was rejected on 2026-10-15 for "keyword spam" (violation "Yellow
+Argon") over the line "Works with Google Chrome™, Microsoft Edge, Brave,
+Arc, Opera, Vivaldi and Firefox."; it is gone, and the list of the ten
+language names went with it. Fix and resubmit for such a rejection;
+an appeal only makes sense when the text is really fine.
 
 ```text
 Tarn turns every new tab into a calm, living page: a slow, hand-made background that moves like still water, a clock, a search box, and the few things you open every day. Nothing else. No accounts, no ads, no tracking.
@@ -86,7 +92,7 @@ WIDGETS
 • Keyboard shortcuts: Ctrl+K or / to search, Alt + 1-9 to open a bookmark.
 
 YOURS
-• Ten languages: English, Español, Português (Brasil), Français, Deutsch, Русский, 日本語, 简体中文, 한국어, Türkçe.
+• Ten languages: Tarn follows your browser's language, or pick one in settings.
 • Settings sync through your browser's own account, if you use one. Automatic backups before every update, plus export and import.
 • One click on the toolbar button turns Tarn off and gives you your browser's page back. If another new-tab extension is in the way, Tarn can switch it off for you.
 
@@ -94,8 +100,6 @@ PRIVATE BY DESIGN
 Tarn has no server, no account and no tracking. It goes online only when you use something that needs it: searches go to your browser's own search engine when you press Enter; voice, Google Lens and AI Mode go to Google only when you press them; and a Weather widget asks Open-Meteo for its place's forecast, at most every 30 minutes.
 
 The source code is public: https://github.com/Akmalchan/tarn
-
-Works with Google Chrome™, Microsoft Edge, Brave, Arc, Opera, Vivaldi and Firefox.
 ```
 
 ## Privacy practices tab

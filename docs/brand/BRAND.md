@@ -18,8 +18,8 @@ re-proposes it.
   the automatic twin.
 - **The living background is the signature.** The slow WebGL water and cloud
   scene is what people remember, not a logo or a color.
-- **Never "Chrome" in the name.** "Works with Google Chrome™" goes in
-  descriptions only.
+- **Never "Chrome" in the name.** Nor a list of browsers in the store
+  description: Google rejected that as keyword spam (2026-10-15).
 
 ## Name
 
@@ -37,8 +37,10 @@ re-proposes it.
   after the colon. It is the manifest `name`, so `chrome://extensions`
   shows it too; the toolbar button's tooltip stays **Tarn**. Fields and
   rejected titles: [publishing.md](../publishing.md).
-- Compatibility line, descriptions only: "Works with Google Chrome™,
-  Microsoft Edge, Brave, Arc, Opera, Vivaldi and Firefox."
+- No compatibility line in store listings: "Works with Google Chrome™,
+  Microsoft Edge, Brave, Arc, Opera, Vivaldi and Firefox." got the first
+  submission rejected as keyword spam (2026-10-15). The README can say
+  which browsers Tarn runs on.
 - Google's Chrome Web Store
   [branding guidelines](https://developer.chrome.com/docs/webstore/branding)
   forbid Google trademarks in an extension's name or logo without written
