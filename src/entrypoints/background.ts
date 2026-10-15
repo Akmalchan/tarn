@@ -5,6 +5,7 @@
 
 import {browser} from 'wxt/browser';
 import {defineBackground} from 'wxt/utils/define-background';
+import {markUpdateUnseen} from '../panel/about';
 import {saveAutoBackup} from '../settings/backup';
 
 /**
@@ -41,6 +42,8 @@ export default defineBackground(() => {
       void saveAutoBackup().catch(error =>
         console.warn('[tarn] backup before update failed:', error),
       );
+      // What's new in settings shows a dot until it's opened.
+      void markUpdateUnseen();
     }
     void ensureOffscreenDocument();
   });

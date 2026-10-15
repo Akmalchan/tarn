@@ -261,10 +261,23 @@ export const zhCN: Catalog = {
   'panel.about': '关于',
   'panel.about.version': '版本',
   'panel.about.diagnostics': '复制诊断信息',
-  'panel.about.diagnosticsNote': '复制版本、浏览器和设置，用于报告问题。',
   'panel.about.copied': '已复制诊断信息',
   'panel.about.cantCopy': '无法复制。请改用 settings.json。',
-  'panel.about.search': '版本与诊断',
+  'panel.about.search': '关于 Tarn',
+  'panel.about.feedback': '发送反馈',
+  'panel.about.licenses': '许可证',
+  'panel.about.note':
+    '“发送反馈”会打开一个新的 GitHub Issue，并已填好版本和浏览器。在你提交之前不会发送任何内容。“复制诊断信息”会复制版本、浏览器和设置，用于报告问题。',
+  'panel.whatsNew': '新功能',
+  'panel.whatsNew.unseen': '新',
+  'panel.rate': '为 Tarn 评分',
+  'whatsNew.v0_1_0.wallpapers': '由显卡绘制的动态壁纸，你不看时会自动暂停。',
+  'whatsNew.v0_1_0.widgets':
+    '时钟、与浏览器一致的搜索框，以及小组件：书签、便签、任务、日历、计时器和天气。',
+  'whatsNew.v0_1_0.keys':
+    '键盘快捷键：⌘K 或 Ctrl+K 搜索，Option 或 Alt + 1–9 打开书签，? 查看全部。',
+  'whatsNew.v0_1_0.private':
+    '支持十种语言，无需账号，不做跟踪。你的设置只保存在这台电脑上。',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': '搜索小组件',

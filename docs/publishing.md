@@ -26,7 +26,10 @@ Chrome Web Store developer dashboard > Settings. Decided with the owner on
 
 1. Bump `version` in `package.json` (Chrome refuses an upload whose version
    isn't higher than the published one). Move the `[Unreleased]` CHANGELOG
-   section under that version.
+   section under that version, and add the release's notes at the top of
+   `RELEASES` in `src/panel/about.ts` (Settings > Advanced > What's new):
+   the three to five changes people would notice, each a `whatsNew.v<x_y_z>.*`
+   key in all 10 catalogs. `about.test.ts` fails until they're there.
 2. `npm run check`, then `npm run zip` → `dist/tarn-<version>-chrome.zip`.
 3. Try the zip in a clean Chrome profile: load the unzipped folder,
    open a new tab, open settings, add a Weather widget, turn Tarn off and on.

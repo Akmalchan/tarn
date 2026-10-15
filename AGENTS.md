@@ -89,7 +89,10 @@ same pull request** (map: `docs/README.md`).
 - Show the owner real renders (headless Chrome screenshots at 2x), not
   descriptions. Short verdicts; their decisions go into the area's doc
   with the date.
-- Add a CHANGELOG line with every user-visible change.
+- Add a CHANGELOG line with every user-visible change. A version bump also
+  writes that release's What's new notes (`RELEASES` in
+  `src/panel/about.ts`, 3 to 5 lines, all 10 languages); the test fails
+  without them.
 
 ## Commands
 

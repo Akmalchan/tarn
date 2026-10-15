@@ -308,11 +308,24 @@ export const en = {
   'panel.about': 'About',
   'panel.about.version': 'Version',
   'panel.about.diagnostics': 'Copy diagnostics',
-  'panel.about.diagnosticsNote':
-    'Copies the version, browser and settings, for bug reports.',
   'panel.about.copied': 'Diagnostics copied',
   'panel.about.cantCopy': 'Couldn’t copy. Use settings.json instead.',
-  'panel.about.search': 'Version and diagnostics',
+  'panel.about.search': 'About Tarn',
+  'panel.about.feedback': 'Send feedback',
+  'panel.about.licenses': 'Licenses',
+  'panel.about.note':
+    'Send feedback opens a new GitHub issue with your version and browser filled in. Nothing is sent until you submit it. Copy diagnostics copies the version, browser and settings, for bug reports.',
+  'panel.whatsNew': 'What’s new',
+  'panel.whatsNew.unseen': 'New',
+  'panel.rate': 'Rate Tarn',
+  'whatsNew.v0_1_0.wallpapers':
+    'Living wallpapers, drawn by your graphics chip. They rest when you look away.',
+  'whatsNew.v0_1_0.widgets':
+    'A clock, a search box like your browser’s own, and widgets: bookmarks, notes, tasks, calendar, timer and weather.',
+  'whatsNew.v0_1_0.keys':
+    'Keyboard shortcuts: ⌘K or Ctrl+K to search, Option or Alt + 1–9 to open a bookmark, ? for the rest.',
+  'whatsNew.v0_1_0.private':
+    'Ten languages, no account and no tracking. Your setup stays on your computer.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'Search Widgets',

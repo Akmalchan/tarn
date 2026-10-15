@@ -271,11 +271,24 @@ export const fr: Catalog = {
   'panel.about': 'À propos',
   'panel.about.version': 'Version',
   'panel.about.diagnostics': 'Copier le diagnostic',
-  'panel.about.diagnosticsNote':
-    'Copie la version, le navigateur et les réglages, pour signaler un bug.',
   'panel.about.copied': 'Diagnostic copié',
   'panel.about.cantCopy': 'Copie impossible. Utilisez settings.json.',
-  'panel.about.search': 'Version et diagnostic',
+  'panel.about.search': 'À propos de Tarn',
+  'panel.about.feedback': 'Envoyer un avis',
+  'panel.about.licenses': 'Licences',
+  'panel.about.note':
+    'Envoyer un avis ouvre un ticket GitHub avec votre version et votre navigateur déjà remplis. Rien n’est envoyé avant que vous le publiiez. Copier le diagnostic copie la version, le navigateur et les réglages, pour signaler un bug.',
+  'panel.whatsNew': 'Nouveautés',
+  'panel.whatsNew.unseen': 'Nouveau',
+  'panel.rate': 'Noter Tarn',
+  'whatsNew.v0_1_0.wallpapers':
+    'Des fonds d’écran vivants, dessinés par votre puce graphique. Ils se reposent quand vous regardez ailleurs.',
+  'whatsNew.v0_1_0.widgets':
+    'Une horloge, une barre de recherche comme celle de votre navigateur, et des widgets : signets, notes, tâches, calendrier, minuteur et météo.',
+  'whatsNew.v0_1_0.keys':
+    'Raccourcis clavier : ⌘K ou Ctrl+K pour chercher, Option ou Alt + 1–9 pour ouvrir un signet, ? pour le reste.',
+  'whatsNew.v0_1_0.private':
+    'Dix langues, sans compte et sans pistage. Votre configuration reste sur votre ordinateur.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'Rechercher des widgets',
