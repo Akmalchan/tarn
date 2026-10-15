@@ -187,26 +187,26 @@ export class TarnSearch extends LitElement {
       position: relative;
       z-index: 5;
       display: block;
-      /* As wide as four widget columns (4 x 164 + 3 x 28), so its edges
+      /* As wide as four widget columns (4 x 136 + 3 x 24), so its edges
          line up with the tiles below; on a 6-column page it spans the
          middle four. Narrower windows have 3 or 2 columns, and so does it
          (the widths match columnsFor in layout/bands.ts); a window
          narrower than two columns gets a box that fits it. With 3
          columns the widgets may still use 2, and it follows them. */
-      width: 740px;
+      width: 616px;
       font-family: var(--font-sans);
       text-shadow: none;
     }
 
-    @media (max-width: 787.98px) {
+    @media (max-width: 663.98px) {
       :host {
-        width: clamp(356px, var(--tarn-grid-width, 548px), 548px);
+        width: clamp(296px, var(--tarn-grid-width, 456px), 456px);
       }
     }
 
-    @media (max-width: 595.98px) {
+    @media (max-width: 503.98px) {
       :host {
-        width: min(356px, 100vw - 32px);
+        width: min(296px, 100vw - 32px);
       }
     }
 

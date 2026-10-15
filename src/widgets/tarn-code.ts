@@ -11,7 +11,6 @@ import {DEFAULT_CODE} from './code/examples';
 import type {TileState} from './code/renderer';
 import {normalizeCode, type CodeContent} from './code/source';
 import {codeStage} from './code/stage';
-import {CONTENT_SCALE} from './geometry';
 import {LocaleController, t} from '../i18n';
 
 const normalize = (raw: unknown) => normalizeCode(raw, DEFAULT_CODE);
@@ -237,9 +236,7 @@ export class TarnCode extends LitElement {
   private sendSize(): void {
     const canvas = this.attached;
     if (!this.tileId || !canvas) return;
-    // The board draws tile content scaled up (CONTENT_SCALE); render at the
-    // size it is shown, so the picture stays sharp.
-    const ratio = Math.min(devicePixelRatio || 1, 2) * CONTENT_SCALE;
+    const ratio = Math.min(devicePixelRatio || 1, 2);
     codeStage().send({
       type: 'size',
       id: this.tileId,
@@ -251,7 +248,7 @@ export class TarnCode extends LitElement {
   /** The mouse over the tile, sent at most once a frame. */
   private onPointer = (event: PointerEvent) => {
     const rect = this.getBoundingClientRect();
-    const ratio = Math.min(devicePixelRatio || 1, 2) * CONTENT_SCALE;
+    const ratio = Math.min(devicePixelRatio || 1, 2);
     // The board may scale tiles while they settle; count in the tile's own pixels.
     const scale = rect.width ? this.clientWidth / rect.width : 1;
     this.mouse = {
