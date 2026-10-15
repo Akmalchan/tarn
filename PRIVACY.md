@@ -67,8 +67,10 @@ A few details:
   Tarn adds nothing that identifies you.
 - **Search, Lens and AI Mode open in your tab** like any link you follow,
   so the site sees you the same way it would if you'd gone there yourself.
-- **Links** in Tarn (such as Privacy and Source code in settings) open
-  only when you click them.
+- **Links** in Tarn (Privacy, Source code, Rate Tarn, Send feedback) open
+  only when you click them. Send feedback opens a GitHub issue with
+  Tarn's version and your browser filled in; nothing is sent unless you
+  submit it there.
 
 Once something reaches Google, Open-Meteo or your search engine, their
 privacy policies apply:

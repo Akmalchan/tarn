@@ -15,6 +15,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- What's new in settings: each release's notes, with a small dot after an
+  update until you open it. Settings > Advanced > About also gets Rate
+  Tarn (opens the store you installed from), Send feedback (a GitHub
+  issue with your version filled in) and Licenses.
 - Lighter wallpapers for slower computers: Tarn (calmer, less shiny,
   slower), Bloom, Silk, Aurora (more natural rays) and Contour draw with a
   fraction of the work; Wave is remade with layered, twisting ribbons of

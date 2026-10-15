@@ -25,6 +25,8 @@ export const GLYPHS = {
   reset: svg`<path fill-rule="evenodd" d="M12 3a9 9 0 1 1-8.5 12l2-.7A6.9 6.9 0 1 0 6.7 7.3L9 9.6H2.6V3.2l2.6 2.6A8.9 8.9 0 0 1 12 3z"/>`,
   bookmark: svg`<path d="M6.5 2.5h11A1.5 1.5 0 0 1 19 4v17.2l-7-4.4-7 4.4V4a1.5 1.5 0 0 1 1.5-1.5z"/>`,
   star: svg`<path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z"/>`,
+  bubble: svg`<path d="M5 3.5h14A2.5 2.5 0 0 1 21.5 6v9a2.5 2.5 0 0 1-2.5 2.5h-7.2L7 21.2v-3.7H5A2.5 2.5 0 0 1 2.5 15V6A2.5 2.5 0 0 1 5 3.5z"/>`,
+  seal: svg`<path fill-rule="evenodd" d="M12 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14zm0 3.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6z"/><path d="M8 16.6L6.5 22l5.5-2 5.5 2-1.5-5.4a8.6 8.6 0 0 1-8 0z"/>`,
   note: svg`<path fill-rule="evenodd" d="M5 3h10.2L20 7.8V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 7v1.6h10V10zm0 4v1.6h7V14z"/>`,
   checklist: svg`<path d="M3.3 6.2l1.4-1.4 1.6 1.6 3.4-3.4 1.4 1.4-4.8 4.8zM3.3 15.2l1.4-1.4 1.6 1.6 3.4-3.4 1.4 1.4-4.8 4.8z"/><rect x="13" y="5" width="8" height="2.2" rx="1.1"/><rect x="13" y="14" width="8" height="2.2" rx="1.1"/>`,
   weather: svg`<circle cx="8.5" cy="8.5" r="4.2"/><path d="M8.5 1.5v1.8M1.5 8.5h1.8M3.6 3.6l1.3 1.3M13.4 3.6l-1.3 1.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M9 21a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 20 13.6 3.8 3.8 0 0 1 19.2 21z"/>`,

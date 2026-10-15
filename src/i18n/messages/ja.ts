@@ -267,12 +267,25 @@ export const ja: Catalog = {
   'panel.about': 'このアプリについて',
   'panel.about.version': 'バージョン',
   'panel.about.diagnostics': '診断情報をコピー',
-  'panel.about.diagnosticsNote':
-    'バージョン、ブラウザ、設定をコピーします。不具合の報告にどうぞ。',
   'panel.about.copied': '診断情報をコピーしました',
   'panel.about.cantCopy':
     'コピーできませんでした。settings.json を使ってください。',
-  'panel.about.search': 'バージョンと診断情報',
+  'panel.about.search': 'Tarn について',
+  'panel.about.feedback': 'フィードバックを送信',
+  'panel.about.licenses': 'ライセンス',
+  'panel.about.note':
+    '「フィードバックを送信」は、バージョンとブラウザを記入済みの GitHub Issue を開きます。投稿するまで何も送信されません。「診断情報をコピー」はバージョン、ブラウザ、設定をコピーします。不具合の報告にどうぞ。',
+  'panel.whatsNew': '新機能',
+  'panel.whatsNew.unseen': '新着',
+  'panel.rate': 'Tarn を評価',
+  'whatsNew.v0_1_0.wallpapers':
+    'グラフィックチップが描く、動く壁紙。見ていないときは休みます。',
+  'whatsNew.v0_1_0.widgets':
+    '時計、ブラウザと同じような検索ボックス、そしてウィジェット：ブックマーク、メモ、タスク、カレンダー、タイマー、天気。',
+  'whatsNew.v0_1_0.keys':
+    'キーボードショートカット：⌘K または Ctrl+K で検索、Option または Alt + 1–9 でブックマークを開く、? でその他。',
+  'whatsNew.v0_1_0.private':
+    '10 言語に対応。アカウントもトラッキングもなし。設定はこのコンピュータに保存されます。',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'ウィジェットを検索',

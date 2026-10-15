@@ -270,11 +270,24 @@ export const ptBR: Catalog = {
   'panel.about': 'Sobre',
   'panel.about.version': 'Versão',
   'panel.about.diagnostics': 'Copiar diagnóstico',
-  'panel.about.diagnosticsNote':
-    'Copia a versão, o navegador e os ajustes, para relatar erros.',
   'panel.about.copied': 'Diagnóstico copiado',
   'panel.about.cantCopy': 'Não foi possível copiar. Use o settings.json.',
-  'panel.about.search': 'Versão e diagnóstico',
+  'panel.about.search': 'Sobre o Tarn',
+  'panel.about.feedback': 'Enviar feedback',
+  'panel.about.licenses': 'Licenças',
+  'panel.about.note':
+    'Enviar feedback abre uma issue nova no GitHub com sua versão e navegador já preenchidos. Nada é enviado até você publicá-la. Copiar diagnóstico copia a versão, o navegador e os ajustes, para relatar erros.',
+  'panel.whatsNew': 'Novidades',
+  'panel.whatsNew.unseen': 'Novo',
+  'panel.rate': 'Avaliar o Tarn',
+  'whatsNew.v0_1_0.wallpapers':
+    'Papéis de parede vivos, desenhados pelo seu chip gráfico. Eles descansam quando você olha para outro lado.',
+  'whatsNew.v0_1_0.widgets':
+    'Um relógio, uma caixa de pesquisa como a do seu navegador e widgets: favoritos, notas, tarefas, calendário, timer e clima.',
+  'whatsNew.v0_1_0.keys':
+    'Atalhos de teclado: ⌘K ou Ctrl+K para pesquisar, Option ou Alt + 1–9 para abrir um favorito, ? para o resto.',
+  'whatsNew.v0_1_0.private':
+    'Dez idiomas, sem conta e sem rastreamento. Sua configuração fica no seu computador.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'Buscar widgets',

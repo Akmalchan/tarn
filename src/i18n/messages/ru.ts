@@ -271,11 +271,24 @@ export const ru: Catalog = {
   'panel.about': 'О Tarn',
   'panel.about.version': 'Версия',
   'panel.about.diagnostics': 'Скопировать диагностику',
-  'panel.about.diagnosticsNote':
-    'Копирует версию, браузер и настройки — для сообщений об ошибках.',
   'panel.about.copied': 'Диагностика скопирована',
   'panel.about.cantCopy': 'Не удалось скопировать. Используйте settings.json.',
-  'panel.about.search': 'Версия и диагностика',
+  'panel.about.search': 'О Tarn',
+  'panel.about.feedback': 'Отправить отзыв',
+  'panel.about.licenses': 'Лицензии',
+  'panel.about.note':
+    '«Отправить отзыв» открывает новый issue на GitHub, где уже указаны версия и браузер. Ничего не отправляется, пока вы его не опубликуете. «Скопировать диагностику» копирует версию, браузер и настройки — для сообщений об ошибках.',
+  'panel.whatsNew': 'Что нового',
+  'panel.whatsNew.unseen': 'Новое',
+  'panel.rate': 'Оценить Tarn',
+  'whatsNew.v0_1_0.wallpapers':
+    'Живые обои, которые рисует видеочип. Они замирают, когда вы отводите взгляд.',
+  'whatsNew.v0_1_0.widgets':
+    'Часы, поиск как в вашем браузере и виджеты: закладки, заметки, задачи, календарь, таймер и погода.',
+  'whatsNew.v0_1_0.keys':
+    'Сочетания клавиш: ⌘K или Ctrl+K — поиск, Option или Alt + 1–9 — открыть закладку, ? — остальные.',
+  'whatsNew.v0_1_0.private':
+    'Десять языков, без аккаунта и слежки. Ваши настройки остаются на вашем компьютере.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': 'Поиск виджетов',

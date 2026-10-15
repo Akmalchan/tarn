@@ -266,11 +266,24 @@ export const ko: Catalog = {
   'panel.about': '정보',
   'panel.about.version': '버전',
   'panel.about.diagnostics': '진단 정보 복사',
-  'panel.about.diagnosticsNote':
-    '버그 신고용으로 버전, 브라우저, 설정을 복사해요.',
   'panel.about.copied': '진단 정보를 복사했어요',
   'panel.about.cantCopy': '복사할 수 없어요. settings.json을 사용하세요.',
-  'panel.about.search': '버전 및 진단',
+  'panel.about.search': 'Tarn 정보',
+  'panel.about.feedback': '피드백 보내기',
+  'panel.about.licenses': '라이선스',
+  'panel.about.note':
+    '‘피드백 보내기’는 버전과 브라우저가 미리 채워진 새 GitHub 이슈를 열어요. 직접 제출하기 전에는 아무것도 보내지 않아요. ‘진단 정보 복사’는 버그 신고용으로 버전, 브라우저, 설정을 복사해요.',
+  'panel.whatsNew': '새로운 기능',
+  'panel.whatsNew.unseen': '새 소식',
+  'panel.rate': 'Tarn 평가하기',
+  'whatsNew.v0_1_0.wallpapers':
+    '그래픽 칩이 그리는 살아 있는 배경화면. 보지 않을 때는 쉬어요.',
+  'whatsNew.v0_1_0.widgets':
+    '시계, 브라우저와 같은 검색창, 그리고 위젯: 북마크, 메모, 할 일, 캘린더, 타이머, 날씨.',
+  'whatsNew.v0_1_0.keys':
+    '키보드 단축키: ⌘K 또는 Ctrl+K로 검색, Option 또는 Alt + 1–9로 북마크 열기, ?로 나머지 보기.',
+  'whatsNew.v0_1_0.private':
+    '10개 언어 지원, 계정도 추적도 없어요. 설정은 이 컴퓨터에만 저장돼요.',
 
   // Settings polish (2026-10-14)
   'panel.searchWidgets': '위젯 검색',
