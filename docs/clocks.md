@@ -131,7 +131,8 @@ The clock follows the "Arrival" rules in `architecture.md`:
 The clock's ink comes from `src/ui/ink.ts` (`darkInk`, `lightInk`: `--ink`,
 `--ink-dim`, `--ink-faint`, `--ink-shadow`), the same values `tarn-app`
 uses for the rest of the page. `tarn-app` passes the clock a `tone`:
-`clockTone(settings.clockColor, sceneTone(scene))` in `clock-faces.ts`.
+`clockTone(settings.clockColor, sceneTone(scene), settings.clockHex)` in
+`clock-faces.ts`.
 With **Color** on Auto (the default) that is the wallpaper's tone: light
 digits on dark scenes, dark digits with no shadow on light ones. **Light**
 and **Dark** fix the digits on any wallpaper (owner, 2026-10-14: for people
@@ -142,6 +143,18 @@ so the widgets keep the wallpaper's ink. Faces that ignore tone on
 purpose: Flip (dark cards with light digits in any light) and Neon (fixed
 near-white with a pink glow). Glass switches to a second filter on a light
 tone (see below).
+
+**Custom** (owner, 2026-10-14: "hide it, a small arrow") sits behind an
+arrow at the end of the Color row; the row under it holds Custom (a check
+when in use) and a round color swatch (`input type=color`). The arrow
+stays open while Custom is the color. Picking a color shows at once and
+saves 350 ms after it settles (sync write quota). On the tab, `clockInk()`
+sets `--ink` and `--ink-dim` inline on `<tarn-clock>`; the tone (shadow,
+Glass filter) follows the color's lightness (`lightness()`, light above
+0.6). Thumbnails get only `color`, so the selection ring keeps the panel's
+ink. Known gap: in thumbnails Outline and Glass draw through the panel's
+filter definitions, so they don't take the custom color there (they do on
+the tab).
 
 ### How faces are applied
 
@@ -228,8 +241,10 @@ does not animate: the new number just appears.
 anything else into `'center'`. `'center'` is the Classic face; its id
 predates the other faces and was kept so stored settings keep working.
 
-`Settings.clockColor: ClockColor` (`'auto' | 'light' | 'dark'`, default
-`'auto'`, `CLOCK_COLORS`); anything else reads as `'auto'`. It is mirrored
+`Settings.clockColor: ClockColor` (`'auto' | 'light' | 'dark' |
+'custom'`, default `'auto'`, `CLOCK_COLORS`); anything else reads as
+`'auto'`. `Settings.clockHex` is the custom color, `#rrggbb` (default
+`#a8c7fa`), kept when another color is picked. It is mirrored
 for first paint with the face (`app/mirror.ts`).
 
 Settings sync between computers on different Tarn versions.
@@ -242,11 +257,13 @@ with a made-up newer face, `'hologram'`.
 ### Home: the Clock card
 
 `renderHome()` in `src/panel/tarn-panel.ts` shows a card of four square
-tiles: three faces and "Show All". The three come from
-`HOME_FACES = ['center', 'minimal', 'none']` through `pickShown`: if the
-current face is not among them, it takes the last place, so the user's
-choice is always visible and the tiles don't reshuffle. The "Show All"
-tile is the current wallpaper, blurred, with a grid glyph.
+tiles: the two most recently picked faces, None (always), and "Show All"
+(owner, 2026-10-14). `homeFaces()` uses `src/panel/recent.ts`: recent
+picks on this computer (localStorage `tarn.recent.faces`), filled with
+Classic and Minimal for a new install, the current face always among
+them. Picking a face already on the card leaves the card as it is; a face
+picked on the Clock page goes first. The "Show All" tile is the current
+wallpaper, blurred, with a grid glyph.
 
 ### The Clock page
 

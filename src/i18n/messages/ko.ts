@@ -154,6 +154,8 @@ export const ko: Catalog = {
   'panel.clockColor.auto': '자동',
   'panel.clockColor.light': '라이트',
   'panel.clockColor.dark': '다크',
+  'panel.clockColor.custom': '사용자 지정',
+  'panel.clockColor.more': '더 많은 색상',
   'panel.results': '검색 결과',
   'panel.undo': '실행 취소',
   'panel.none': '없음',

@@ -22,6 +22,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A custom clock color, behind a small arrow next to Auto, Light and Dark.
+- The settings home shows your most recent wallpapers and clock faces.
 - Eight new live wallpapers: Clouds (light, flying over a sea of clouds),
   Topology, Canopy, Convergence, Ribbons, Fringe, Night Sky and Matrix.
 - Wallpaper cards in settings say Live or Photo in their corner.
@@ -152,6 +154,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Wallpaper cards say Live or Photo without an icon.
 - The Everything example setup shows each widget once, with no duplicates.
 - Shortcut keys show a + between keys (⌘ + K, ⌥ + 1-9).
 - Search on the Advanced page finds that page's own settings.

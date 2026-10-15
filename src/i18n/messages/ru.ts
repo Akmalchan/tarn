@@ -158,6 +158,8 @@ export const ru: Catalog = {
   'panel.clockColor.auto': 'Авто',
   'panel.clockColor.light': 'Светлый',
   'panel.clockColor.dark': 'Тёмный',
+  'panel.clockColor.custom': 'Свой',
+  'panel.clockColor.more': 'Другие цвета',
   'panel.results': 'Результаты',
   'panel.undo': 'Отменить',
   'panel.none': 'Нет',

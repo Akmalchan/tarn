@@ -86,11 +86,12 @@ opens a page with the rest. There are no tabs and no close button.
 ```
 Settings (home)
 ├── Search field                   finds every setting, on any page
-├── Wallpaper                      3 scenes + "Show All"
+├── Wallpaper                      the 3 most recent picks + "Show All"
 │   └── Wallpapers                 Add Photo…, Your Photos, the live scenes
 │                                  (name on the left, a load gauge on the
 │                                  right; still thumbnails)
-├── Clock                          a card: Classic, Minimal, None + "Show All"
+├── Clock                          a card: the 2 most recent faces, None,
+│                                  "Show All" (panel/recent.ts)
 │   └── Clock                      Color (Auto, Light, Dark), then every
 │                                  face (docs/clocks.md)
 ├── Widgets ›                      on your tab (size, rename, remove), then
@@ -132,7 +133,9 @@ What's new
    the clock and widgets. Anything else goes one level down.
 2. **Show a few, then "Show All".** A picker shows three choices and a
    fourth tile, "Show All" (a background, blurred and faded, with a grid icon), that opens a page
-   with all of them (`HOME_SCENES`, `HOME_FACES` in the panel). Backgrounds
+   with all of them (`HOME_SCENES`, `HOME_FACES` in the panel). The three
+   are the most recent picks (`panel/recent.ts`; the clock keeps None as
+   its third); a pick already shown never reshuffles the card. Backgrounds
    are big 16:10 tiles on the page, the main tool; the clock is a card of
    square tiles under them. Sub-pages are just the grid: no preview, the
    tab next to the panel already shows the result. The current choice is

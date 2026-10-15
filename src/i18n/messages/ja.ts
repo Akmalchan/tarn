@@ -155,6 +155,8 @@ export const ja: Catalog = {
   'panel.clockColor.auto': '自動',
   'panel.clockColor.light': 'ライト',
   'panel.clockColor.dark': 'ダーク',
+  'panel.clockColor.custom': 'カスタム',
+  'panel.clockColor.more': 'その他の色',
   'panel.results': '検索結果',
   'panel.undo': '取り消す',
   'panel.none': 'なし',
