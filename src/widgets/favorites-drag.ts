@@ -111,13 +111,21 @@ export class SiteDrag {
     ];
   }
 
+  /** How much larger the grid is drawn than laid out (the board scales tiles). */
+  private scale(): number {
+    const {grid} = this.options;
+    const width = grid.getBoundingClientRect().width;
+    return width && grid.offsetWidth ? width / grid.offsetWidth : 1;
+  }
+
   /** The pointer in the grid's own coordinates (as offsetLeft/Top are). */
   private local(): {x: number; y: number} {
     const {grid} = this.options;
     const box = grid.getBoundingClientRect();
+    const scale = this.scale();
     return {
-      x: this.pointerX - box.left - grid.clientLeft + grid.scrollLeft,
-      y: this.pointerY - box.top - grid.clientTop + grid.scrollTop,
+      x: (this.pointerX - box.left) / scale - grid.clientLeft + grid.scrollLeft,
+      y: (this.pointerY - box.top) / scale - grid.clientTop + grid.scrollTop,
     };
   }
 
@@ -134,11 +142,12 @@ export class SiteDrag {
     if (icon) {
       const a = icon.getBoundingClientRect();
       const b = this.element.getBoundingClientRect();
+      const scale = this.scale();
       this.chip = {
-        x: a.left - b.left,
-        y: a.top - b.top,
-        w: a.width,
-        h: a.height,
+        x: (a.left - b.left) / scale,
+        y: (a.top - b.top) / scale,
+        w: a.width / scale,
+        h: a.height / scale,
       };
     } else {
       this.chip = {x: 0, y: 0, w: slot.w, h: slot.w};

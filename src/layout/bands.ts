@@ -300,8 +300,17 @@ function arrange(
     .filter(part => part.h === 2).length;
   // No holes come first (only the last band may be short); then your
   // chosen sizes: a widget is stretched beyond its size only when keeping
-  // it would leave a hole, even if keeping it takes another band.
-  const score = [gaps, grown, ordered.length, moved, full - widths.at(-1)!];
+  // it would leave a hole, even if keeping it takes another band. With as
+  // many bands, the wider grid wins, so a narrow window's columns are used
+  // instead of leaving wide empty sides (owner, 2026-10-14).
+  const score = [
+    gaps,
+    grown,
+    ordered.length,
+    cols - full,
+    moved,
+    full - widths.at(-1)!,
+  ];
 
   const placements: Placement[] = [];
   const bands: number[] = [];
@@ -386,11 +395,15 @@ function isLess(a: readonly number[], b: readonly number[]): boolean {
 }
 
 /**
- * Columns that fit a container width, for a given cell and gap: 2, 4 or 6.
- * Always even, because most widgets are two cells wide; with 3 or 5 columns
- * most bands would end in a one-cell gap (measured: 61% and 34% of bands).
+ * Columns that fit a container width, for a given cell and gap: 2, 3, 4 or
+ * 6. Mostly even, because most widgets are two cells wide; with 3 or 5
+ * columns random layouts often end a band in a one-cell gap (measured: 61%
+ * and 34% of bands). 3 is allowed anyway (owner, 2026-10-14): on narrow
+ * windows two columns left too much empty space on the sides.
  */
 export function columnsFor(width: number, cell: number, gap: number): number {
   const fit = Math.floor((width + gap) / (cell + gap));
-  return Math.max(2, Math.min(MAX_COLUMNS, fit - (fit % 2)));
+  // 3 fills the narrow windows where 2 left wide margins; 5 stays 4, so
+  // the search box (four columns wide) lines up with the grid.
+  return Math.max(2, Math.min(MAX_COLUMNS, fit === 5 ? 4 : fit));
 }

@@ -23,12 +23,20 @@ import {
   type WidgetEntry,
   type WidgetKind,
 } from '../settings/schema';
-import {CELL, GAP, PITCH, moveTo, nearestOrder, placeTiles} from './geometry';
+import {
+  CELL,
+  CONTENT_SCALE,
+  GAP,
+  PITCH,
+  moveTo,
+  nearestOrder,
+  placeTiles,
+} from './geometry';
 import {WIDGETS, renderWidget} from './registry';
 import {LocaleController, t} from '../i18n';
 
 export {CELL, GAP} from './geometry';
-export const RADIUS = 24;
+export const RADIUS = 28;
 /** Side margin the page keeps around the widgets. */
 const MARGIN = 24;
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -147,7 +155,6 @@ export class TarnBoard extends LitElement {
       position: absolute;
       left: 0;
       top: 0;
-      container-type: size;
       border-radius: ${RADIUS}px;
       border: 1px solid var(--tile-line);
       background: var(--tile-fill);
@@ -162,17 +169,23 @@ export class TarnBoard extends LitElement {
       -webkit-backdrop-filter: blur(24px) saturate(1.3);
     }
 
-    .content,
     .content > * {
       width: 100%;
       height: 100%;
     }
 
     /* The tile clips its content, not itself, so the holder can sit on its
-       top edge. */
+       top edge. The content is laid out at the original cell size and
+       scaled up to the tile (CONTENT_SCALE), so widgets grow in proportion;
+       it is the size container their own layouts query. */
     .content {
+      container-type: size;
+      width: calc(100% / ${CONTENT_SCALE});
+      height: calc(100% / ${CONTENT_SCALE});
+      transform: scale(${CONTENT_SCALE});
+      transform-origin: 0 0;
       overflow: hidden;
-      border-radius: inherit;
+      border-radius: ${RADIUS / CONTENT_SCALE}px;
     }
 
     /* Arranging: a holder on each tile's top edge with its name (click to
@@ -573,6 +586,11 @@ export class TarnBoard extends LitElement {
     const {tiles, width, height} = placeTiles(list, this.columns);
     this.style.width = `${width}px`;
     this.style.height = `${height}px`;
+    // The search box matches the grid's width on narrow windows, where the
+    // grid may use fewer columns than fit (tarn-search).
+    const root = document.documentElement.style;
+    if (tiles.length) root.setProperty('--tarn-grid-width', `${width}px`);
+    else root.removeProperty('--tarn-grid-width');
     const byId = new Map(list.map(w => [w.id, w]));
     const count = tiles.length;
     return html`

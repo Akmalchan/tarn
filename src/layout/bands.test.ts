@@ -173,8 +173,9 @@ describe('layoutBands', () => {
 });
 
 describe('columnsFor', () => {
-  it('fits an even number of cells, between 2 and 6', () => {
+  it('fits 2, 3, 4 or 6 cells (5 stays 4)', () => {
     expect(columnsFor(300, 136, 24)).toBe(2);
+    expect(columnsFor(3 * 160 - 24, 136, 24)).toBe(3);
     expect(columnsFor(5 * 160 - 24, 136, 24)).toBe(4);
     expect(columnsFor(4 * 160 - 24, 136, 24)).toBe(4);
     expect(columnsFor(3000, 136, 24)).toBe(6);
