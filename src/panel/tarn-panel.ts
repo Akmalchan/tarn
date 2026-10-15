@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
-import {LitElement, css, html, nothing, svg} from 'lit';
+import {LitElement, css, html, nothing} from 'lit';
 import {keyed} from 'lit/directives/keyed.js';
 import {browser} from 'wxt/browser';
 import {mirrorSettings} from '../app/mirror';
@@ -34,7 +34,6 @@ import {
   WIDGET_SIZE_OPTIONS,
   newWidgetId,
   type ClockStyle,
-  CLOCK_COLORS,
   type ClockColor,
   type SearchStyle,
   type SearchSettings,
@@ -74,6 +73,7 @@ import {
 } from '../settings/store';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {wordmark} from '../ui/wordmark';
+import {bump, picks, readRecent, writeRecent} from './recent';
 import {chordKeys, shortcutFor, shortcutList} from '../app/shortcuts';
 import {
   clockText,
@@ -139,7 +139,8 @@ type Page =
  * the page with all of them. The current choice is always among the three.
  */
 const HOME_SCENES = 3;
-const HOME_FACES: readonly ClockStyle[] = ['center', 'minimal', 'none'];
+/** Faces on home: the two most recent, then None. */
+const HOME_FACES = 3;
 
 /**
  * Settings, docked in the browser's side panel next to the new tab. Every
@@ -158,6 +159,7 @@ export class TarnPanel extends LitElement {
     photos: {state: true},
     backups: {state: true},
     googleKey: {state: true},
+    colorsOpen: {state: true},
     codeOpen: {state: true},
     codeDraft: {state: true},
     codeState: {state: true},
@@ -555,6 +557,75 @@ export class TarnPanel extends LitElement {
     /* Lists without icons (Language): hairlines start at the text. */
     .plain .row + .row::before {
       left: var(--row-x);
+    }
+
+    /* The Color row's arrow: opens the Custom row under it. */
+    .more-colors {
+      display: grid;
+      flex: none;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-left: -4px;
+      padding: 0;
+      color: var(--muted);
+      background: none;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .more-colors:hover {
+      background: var(--press);
+    }
+
+    .more-colors svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+      transition: transform 200ms ease;
+    }
+
+    .more-colors[aria-expanded='true'] svg {
+      transform: rotate(180deg);
+    }
+
+    .pick-custom {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: var(--row-gap);
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .swatch {
+      flex: none;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .swatch::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .swatch::-webkit-color-swatch {
+      border: 1px solid var(--hair);
+      border-radius: 50%;
+    }
+
+    .swatch::-moz-color-swatch {
+      border: 1px solid var(--hair);
+      border-radius: 50%;
     }
 
     .check {
@@ -1086,8 +1157,7 @@ export class TarnPanel extends LitElement {
       bottom: 6px;
       display: inline-flex;
       align-items: center;
-      gap: 3px;
-      padding: 2px 6px 2px 5px;
+      padding: 2px 7px;
       border-radius: 999px;
       font-size: 10px;
       font-weight: 600;
@@ -1097,16 +1167,6 @@ export class TarnPanel extends LitElement {
       background: rgb(0 0 0 / 0.38);
       backdrop-filter: blur(6px);
       pointer-events: none;
-    }
-
-    .thumb .kind svg {
-      width: 11px;
-      height: 11px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.6;
-      stroke-linecap: round;
-      stroke-linejoin: round;
     }
 
     .thumb {
@@ -1460,6 +1520,9 @@ export class TarnPanel extends LitElement {
   declare backups: AutoBackupInfo[];
   /** The Google Weather API key, from storage.local (never synced). */
   declare googleKey: string;
+  /** The Clock page shows the Custom color row. */
+  declare colorsOpen: boolean;
+  private hexTimer = 0;
   /** The custom widget whose code is open in the editor, by id. */
   declare codeOpen: string | null;
   declare codeDraft: string;
@@ -1497,6 +1560,7 @@ export class TarnPanel extends LitElement {
     this.photos = [];
     this.backups = [];
     this.googleKey = '';
+    this.colorsOpen = false;
     this.codeOpen = null;
     this.codeDraft = '';
     this.codeState = {state: 'ok'};
@@ -1648,12 +1712,8 @@ export class TarnPanel extends LitElement {
   private renderHome() {
     const {widgets} = this.settings;
     const preview = clockPreview(this.art(this.settings.scene));
-    const scenes = pickShown(
-      SCENES.map(s => s.id),
-      HOME_SCENES,
-      this.settings.scene,
-    );
-    const faces = pickShown(HOME_FACES, HOME_FACES.length, this.settings.clock);
+    const scenes = this.homeScenes();
+    const faces = this.homeFaces();
     // The background "Show All" tile shows a scene that isn't on home.
     const moreScene = SCENES.find(s => !scenes.includes(s.id)) ?? SCENES[0]!;
     return html`
@@ -1836,6 +1896,8 @@ export class TarnPanel extends LitElement {
       t(FACE_NAMES[face]).toLowerCase().includes(query),
     );
     const {clockColor} = this.settings;
+    // Custom hides behind the arrow, unless it's the color in use.
+    const moreColors = this.colorsOpen || clockColor === 'custom';
     return html`
       <section data-target="clock-color">
         <div class="group">
@@ -1847,7 +1909,7 @@ export class TarnPanel extends LitElement {
               role="radiogroup"
               aria-label=${t('panel.clockColor')}
             >
-              ${CLOCK_COLORS.map(
+              ${BASIC_CLOCK_COLORS.map(
                 value => html`
                   <button
                     role="radio"
@@ -1859,7 +1921,48 @@ export class TarnPanel extends LitElement {
                 `,
               )}
             </span>
+            <button
+              class="more-colors"
+              aria-expanded=${moreColors}
+              aria-label=${t('panel.clockColor.more')}
+              title=${t('panel.clockColor.more')}
+              @click=${() => (this.colorsOpen = !moreColors)}
+            >
+              ${glyph('down')}
+            </button>
           </div>
+          ${
+            moreColors
+              ? html`<div class="row custom-color">
+                  <button
+                    class="pick-custom"
+                    role="radio"
+                    aria-checked=${clockColor === 'custom'}
+                    @click=${() => this.applyPatch({clockColor: 'custom'})}
+                  >
+                    <span class="txt">${t('panel.clockColor.custom')}</span>
+                    ${
+                      clockColor === 'custom'
+                        ? html`<svg
+                            class="check"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            ${GLYPHS.check}
+                          </svg>`
+                        : nothing
+                    }
+                  </button>
+                  <input
+                    class="swatch"
+                    type="color"
+                    aria-label=${t('panel.clockColor.custom')}
+                    .value=${this.settings.clockHex}
+                    @input=${this.onClockHex}
+                  />
+                </div>`
+              : nothing
+          }
         </div>
       </section>
       ${
@@ -2756,16 +2859,20 @@ export class TarnPanel extends LitElement {
   /** A clock face, drawn on the current background so it previews truly. */
   private faceButton(face: ClockStyle, preview: ClockPreview) {
     const {art} = preview;
+    const {clockColor, clockHex} = this.settings;
     return html`
       <button
         class="pick"
         role="radio"
         aria-checked=${face === this.settings.clock}
-        @click=${() => this.applyPatch({clock: face})}
+        @click=${() => this.selectFace(face)}
       >
         <span
-          class="thumb ${clockTone(this.settings.clockColor, art.tone)}"
-          style="background: ${art.background}"
+          class="thumb ${clockTone(clockColor, art.tone, clockHex)}"
+          style="background: ${art.background};${
+            // Text only: the selection ring keeps the panel's ink.
+            clockColor === 'custom' ? ` color: ${clockHex}` : ''
+          }"
         >
           ${
             face === 'none'
@@ -3172,7 +3279,56 @@ export class TarnPanel extends LitElement {
     });
   }
 
+  /** Home's wallpapers: the most recent picks (panel/recent.ts). */
+  private homeScenes(): string[] {
+    const exists = (id: string) =>
+      isPhotoId(id)
+        ? this.photos.some(p => p.id === id) || id in photoMirror()
+        : SCENES.some(s => s.id === id);
+    return picks(
+      readRecent('scenes'),
+      SCENES.map(s => s.id),
+      HOME_SCENES,
+      this.settings.scene,
+      exists,
+    );
+  }
+
+  /** Home's faces: the two most recent picks, then None, always. */
+  private homeFaces(): ClockStyle[] {
+    const exists = (id: string) =>
+      id !== 'none' && CLOCK_STYLES.includes(id as ClockStyle);
+    const recent = picks(
+      readRecent('faces'),
+      ['center', 'minimal', ...CLOCK_STYLES],
+      HOME_FACES - 1,
+      this.settings.clock,
+      exists,
+    ) as ClockStyle[];
+    return [...recent, 'none'];
+  }
+
+  /** The custom clock color: shown at once, saved once it settles. */
+  private onClockHex = (event: Event) => {
+    const clockHex = (event.target as HTMLInputElement).value;
+    this.settings = {...this.settings, clockColor: 'custom', clockHex};
+    clearTimeout(this.hexTimer);
+    this.hexTimer = window.setTimeout(
+      () => this.applyPatch({clockColor: 'custom', clockHex}),
+      350,
+    );
+  };
+
+  private selectFace(face: ClockStyle): void {
+    if (face !== 'none') {
+      const card = this.homeFaces().filter(f => f !== 'none');
+      writeRecent('faces', bump(card, readRecent('faces'), face));
+    }
+    this.applyPatch({clock: face});
+  }
+
   private selectScene(id: string): void {
+    writeRecent('scenes', bump(this.homeScenes(), readRecent('scenes'), id));
     this.settings = {...this.settings, scene: id};
     // Mirror for first paint too, so the next new tab opens on it directly.
     mirrorSettings(this.settings);
@@ -3571,13 +3727,7 @@ function gauge(level: LoadLevel) {
  */
 function kindBadge(kind: 'live' | 'photo') {
   const label = kind === 'live' ? t('panel.kind.liveLabel') : t('panel.photo');
-  return html`<span class="kind" role="img" aria-label=${label} title=${label}
-    ><svg viewBox="0 0 16 16" aria-hidden="true">
-      ${
-        kind === 'live'
-          ? svg`<path d="M1.5 9c1.6-3.4 3.3-3.4 4.9 0s3.3 3.4 4.9 0 2.4-3 3.2-1.2" />`
-          : svg`<rect x="2" y="3" width="12" height="10" rx="2" /><path d="M2.6 11.6l3.6-3.4 2.6 2.4 1.8-1.6 2.8 2.6" /><circle cx="10.6" cy="6.2" r="1" />`
-      }</svg
+  return html`<span class="kind" title=${label} aria-label=${label}
     >${kind === 'live' ? t('panel.kind.live') : t('panel.photo')}</span
   >`;
 }
@@ -3587,17 +3737,6 @@ function clockArt(face: ClockStyle, {time, date}: ClockPreview) {
   if (face === 'none') return nothing;
   return html`<span class="t ${face}">${clockTime(face, time)}</span>
     ${face === 'minimal' ? nothing : html`<span class="d">${date}</span>`}`;
-}
-
-/**
- * The choices a home picker shows: the first few, with the current one
- * always among them (in the last place when it's further down the list),
- * so the choice is visible and the tiles don't reshuffle on every pick.
- */
-function pickShown<T>(all: readonly T[], count: number, current: T): T[] {
-  const shown = all.slice(0, count);
-  if (shown.includes(current)) return shown;
-  return [...shown.slice(0, -1), current];
 }
 
 const FACE_NAMES: Record<ClockStyle, MessageKey> = {
@@ -3669,7 +3808,11 @@ const CLOCK_COLOR_NAMES: Record<ClockColor, MessageKey> = {
   auto: 'panel.clockColor.auto',
   light: 'panel.clockColor.light',
   dark: 'panel.clockColor.dark',
+  custom: 'panel.clockColor.custom',
 };
+
+/** The colors in the Color row; Custom sits behind its arrow. */
+const BASIC_CLOCK_COLORS: readonly ClockColor[] = ['auto', 'light', 'dark'];
 
 const STYLE_NAMES: Record<SearchStyle, MessageKey> = {
   auto: 'panel.search.auto',

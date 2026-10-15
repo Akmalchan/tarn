@@ -10,7 +10,7 @@ import type {TarnBackdrop} from '../backdrop/tarn-backdrop';
 import './tarn-settings-button';
 import '../widgets/tarn-board';
 import '../widgets/tarn-clock';
-import {clockTone} from '../widgets/clock-faces';
+import {clockInk, clockTone} from '../widgets/clock-faces';
 import '../search/tarn-search';
 import type {
   ReorderDetail,
@@ -370,6 +370,11 @@ export class TarnApp extends LitElement {
                   tone=${clockTone(
                     this.settings.clockColor,
                     sceneTone(sceneById(this.settings.scene)),
+                    this.settings.clockHex,
+                  )}
+                  style=${clockInk(
+                    this.settings.clockColor,
+                    this.settings.clockHex,
                   )}
                 ></tarn-clock>`
           }

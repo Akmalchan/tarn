@@ -21,10 +21,10 @@ export function mirrorSettings(settings: Settings): void {
   rememberEnabled(settings.enabled);
   rememberTabIcon(settings.tabIcon);
   try {
-    const {clock, clockColor, widgets, search} = settings;
+    const {clock, clockColor, clockHex, widgets, search} = settings;
     localStorage.setItem(
       HOME_KEY,
-      JSON.stringify({clock, clockColor, widgets, search}),
+      JSON.stringify({clock, clockColor, clockHex, widgets, search}),
     );
   } catch {
     // Blocked storage: the page waits for synced settings instead.

@@ -184,6 +184,8 @@ export const en = {
   'panel.clockColor.auto': 'Auto',
   'panel.clockColor.light': 'Light',
   'panel.clockColor.dark': 'Dark',
+  'panel.clockColor.custom': 'Custom',
+  'panel.clockColor.more': 'More colors',
   'panel.results': 'Results',
   'panel.undo': 'Undo',
   'panel.none': 'None',

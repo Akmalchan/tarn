@@ -158,6 +158,8 @@ export const fr: Catalog = {
   'panel.clockColor.auto': 'Auto',
   'panel.clockColor.light': 'Clair',
   'panel.clockColor.dark': 'Sombre',
+  'panel.clockColor.custom': 'Personnalisée',
+  'panel.clockColor.more': 'Plus de couleurs',
   'panel.results': 'Résultats',
   'panel.undo': 'Annuler',
   'panel.none': 'Aucun',

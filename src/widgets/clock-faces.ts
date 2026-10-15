@@ -193,10 +193,30 @@ const TICKS = (() => {
 export function clockTone(
   color: ClockColor,
   sceneTone: 'light' | 'dark',
+  hex = '#ffffff',
 ): 'light' | 'dark' {
   if (color === 'light') return 'dark';
   if (color === 'dark') return 'light';
+  if (color === 'custom') return lightness(hex) > 0.6 ? 'dark' : 'light';
   return sceneTone;
+}
+
+/** Perceived lightness of `#rrggbb`, 0 to 1 (sRGB luminance, gamma ~2). */
+export function lightness(hex: string): number {
+  const n = Number.parseInt(hex.slice(1), 16);
+  if (Number.isNaN(n)) return 1;
+  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map(c => (c / 255) ** 2);
+  return Math.sqrt(0.2126 * r! + 0.7152 * g! + 0.0722 * b!);
+}
+
+/**
+ * Inline style for a custom-colored clock: its ink. Empty for the other
+ * colors, which come from `tone`.
+ */
+export function clockInk(color: ClockColor, hex: string): string {
+  return color === 'custom'
+    ? `--ink: ${hex}; --ink-dim: color-mix(in srgb, ${hex} 70%, transparent); color: ${hex}`
+    : '';
 }
 
 /**

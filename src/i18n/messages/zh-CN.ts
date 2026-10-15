@@ -152,6 +152,8 @@ export const zhCN: Catalog = {
   'panel.clockColor.auto': '自动',
   'panel.clockColor.light': '浅色',
   'panel.clockColor.dark': '深色',
+  'panel.clockColor.custom': '自定义',
+  'panel.clockColor.more': '更多颜色',
   'panel.results': '结果',
   'panel.undo': '撤销',
   'panel.none': '无',

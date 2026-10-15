@@ -42,6 +42,11 @@ describe('clockTone', () => {
     expect(clockTone('auto', 'dark')).toBe('dark');
   });
 
+  it('draws a custom color by how light it is', () => {
+    expect(clockTone('custom', 'light', '#ffe8a0')).toBe('dark');
+    expect(clockTone('custom', 'dark', '#202a60')).toBe('light');
+  });
+
   it('draws light digits as on a dark wallpaper, and the reverse', () => {
     for (const scene of ['light', 'dark'] as const) {
       expect(clockTone('light', scene)).toBe('dark');

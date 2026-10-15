@@ -44,10 +44,17 @@ export type ClockStyle =
   | 'none';
 /**
  * The clock's color: 'auto' follows the wallpaper (light digits on dark
- * scenes, dark ones on light scenes); 'light' and 'dark' fix it.
+ * scenes, dark ones on light scenes); 'light' and 'dark' fix it; 'custom'
+ * uses `clockHex` (behind an arrow in settings, owner 2026-10-14).
  */
-export type ClockColor = 'auto' | 'light' | 'dark';
-export const CLOCK_COLORS: readonly ClockColor[] = ['auto', 'light', 'dark'];
+export type ClockColor = 'auto' | 'light' | 'dark' | 'custom';
+export const CLOCK_COLORS: readonly ClockColor[] = [
+  'auto',
+  'light',
+  'dark',
+  'custom',
+];
+const HEX = /^#[0-9a-f]{6}$/i;
 
 /** In the order settings shows them. */
 export const CLOCK_STYLES: readonly ClockStyle[] = [
@@ -217,6 +224,8 @@ export interface Settings {
   readonly tabIcon: TabIcon;
   readonly clock: ClockStyle;
   readonly clockColor: ClockColor;
+  /** The custom color, `#rrggbb`; kept when another color is picked. */
+  readonly clockHex: string;
   /** Single-key shortcuts on the new tab (app/shortcuts.ts). */
   readonly shortcuts: boolean;
   /** In the user's order. Empty by default: a calm page is the default. */
@@ -246,6 +255,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tabIcon: 'chrome',
   clock: 'center',
   clockColor: 'auto',
+  clockHex: '#a8c7fa',
   shortcuts: true,
   widgets: START_WIDGETS,
   weather: {provider: 'open-meteo', units: 'auto'},
@@ -307,6 +317,10 @@ export function normalizeSettings(raw: unknown): Settings {
     tabIcon,
     clock,
     clockColor,
+    clockHex:
+      typeof value.clockHex === 'string' && HEX.test(value.clockHex)
+        ? value.clockHex.toLowerCase()
+        : DEFAULT_SETTINGS.clockHex,
     shortcuts:
       typeof value.shortcuts === 'boolean'
         ? value.shortcuts

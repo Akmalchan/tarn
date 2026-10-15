@@ -156,6 +156,8 @@ export const tr: Catalog = {
   'panel.clockColor.auto': 'Otomatik',
   'panel.clockColor.light': 'Açık',
   'panel.clockColor.dark': 'Koyu',
+  'panel.clockColor.custom': 'Özel',
+  'panel.clockColor.more': 'Daha fazla renk',
   'panel.results': 'Sonuçlar',
   'panel.undo': 'Geri al',
   'panel.none': 'Yok',

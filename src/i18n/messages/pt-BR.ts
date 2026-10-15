@@ -158,6 +158,8 @@ export const ptBR: Catalog = {
   'panel.clockColor.auto': 'Auto',
   'panel.clockColor.light': 'Claro',
   'panel.clockColor.dark': 'Escuro',
+  'panel.clockColor.custom': 'Personalizada',
+  'panel.clockColor.more': 'Mais cores',
   'panel.results': 'Resultados',
   'panel.undo': 'Desfazer',
   'panel.none': 'Nenhum',
