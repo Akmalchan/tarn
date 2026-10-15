@@ -75,8 +75,8 @@ few things you open every day. Nothing else. No accounts, no ads, no
 tracking.
 
 LIVING BACKGROUNDS
-• Twelve original scenes drawn on your graphics chip: Tarn, Ember, Bloom,
-  Wave, Aurora, Silk, Comet, Lumen and Contour.
+• Sixteen original scenes drawn on your graphics chip, from calm water,
+  clouds and northern lights to a night sky and digital rain.
 • Or your own photos.
 • Light on your computer: it pauses when the tab is hidden, slows down
   when you're away, and holds a still frame if you prefer reduced motion.

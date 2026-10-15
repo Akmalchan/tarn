@@ -16,6 +16,6 @@ describe('scene load', () => {
     expect(loadLevel('photo:abc')).toBe('still');
     expect(loadLevel('tarn')).toBe('light');
     expect(loadLevel('matrix')).toBe('medium');
-    expect(loadLevel('comet')).toBe('heavy');
+    expect(loadLevel('contour')).toBe('heavy');
   });
 });

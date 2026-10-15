@@ -269,15 +269,16 @@ export const DEFAULT_SETTINGS: Settings = {
  * whoever picked one keeps a similar background instead of the default.
  */
 const REPLACED_SCENES: Readonly<Record<string, string>> = {
-  rain: 'comet',
-  nebula: 'comet',
+  rain: 'nightsky',
+  nebula: 'nightsky',
   dunes: 'contour',
   mist: 'contour',
   sora: 'aurora',
-  fireflies: 'comet',
+  fireflies: 'nightsky',
   sakura: 'bloom',
   koi: 'tarn',
-  window: 'comet',
+  window: 'nightsky',
+  comet: 'nightsky',
 };
 
 /**
