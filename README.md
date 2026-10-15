@@ -18,8 +18,8 @@
 
 ## Features
 
-- **Living backgrounds.** Seventeen hand-written WebGL2 shaders: Tarn,
-  Ember, Bloom, Wave, Aurora, Silk, Comet, Lumen, Contour, Clouds,
+- **Living backgrounds.** Sixteen hand-written WebGL2 shaders: Tarn,
+  Ember, Bloom, Wave, Aurora, Silk, Lumen, Contour, Clouds,
   Topology, Canopy, Convergence, Ribbons, Fringe, Night Sky and Matrix.
   Each shows a gauge for how much it asks of your computer. Or use your
   own photos.

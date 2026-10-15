@@ -388,193 +388,6 @@ vec3 scene(vec2 uv, float t) {
 }
 `,
 };
-
-/**
- * Mist: layered hills at dawn, each fainter with distance, with fog
- * drifting slowly between them.
- */
-const comet: Scene = {
-  id: 'comet',
-  name: 'Comet',
-  colors: ['#070b26', '#3a2a6e', '#f09a78', '#bfe6ff'],
-  base: '#0b0f2c',
-  speed: 0.2,
-  resolution: 1,
-  fragment: /* glsl */ `
-// Twilight by a mountain lake: a comet over the ranges, stars coming out,
-// the whole sky mirrored in still water with a few lights on the far shore.
-
-float stars(vec2 uv, float scale, float density, float t) {
-  vec2 g = uv * scale;
-  vec2 cell = floor(g);
-  float r = hash01(cell + 3.1);
-  if (r < 1.0 - density) return 0.0;
-  vec2 c = vec2(hash01(cell + 7.7), hash01(cell + 1.9)) * 0.6 + 0.2;
-  float d = length(fract(g) - c);
-  float twinkle = 0.5 + 0.5 * sin(t * (2.0 + 4.0 * r) + 40.0 * r);
-  return smoothstep(0.12, 0.0, d) * twinkle * (0.4 + 0.6 * hash01(cell + 5.3));
-}
-
-vec3 sky(vec2 uv, float t) {
-  float y = uv.y;
-  // Indigo overhead, violet, then the warm afterglow at the horizon.
-  vec3 col = mix(uColors[1], uColors[0], smoothstep(-0.2, 0.5, y));
-  col = mix(col, uColors[2], smoothstep(0.05, -0.3, y) * 0.85);
-  col += vec3(0.25, 0.12, 0.05) * exp(-12.0 * abs(y + 0.26)) * 0.6;
-
-  // The Milky Way: a faint diagonal river of dust and tiny stars.
-  vec2 m = mat2(0.86, 0.5, -0.5, 0.86) * uv;
-  float band = exp(-pow((m.y - 0.12 + 0.05 * fbmFast(m * 2.0)) / 0.12, 2.0));
-  float dust = smoothstep(-0.2, 0.5, fbmFast(m * vec2(3.0, 8.0) + 2.0));
-  float sky = smoothstep(-0.2, 0.25, y);
-  col += uColors[3] * band * (0.06 + 0.1 * dust) * sky;
-  float s = stars(uv, 300.0, 0.1 + 0.35 * band, t) * (0.45 + 0.55 * band)
-          + stars(uv, 150.0, 0.08, t) * 1.1
-          + stars(uv + 3.0, 70.0, 0.05, t) * 1.5
-          + stars(uv + 7.0, 34.0, 0.04, t) * 2.0;
-  col += vec3(0.9, 0.95, 1.0) * s * sky;
-
-  // The comet: a small bright head, its tails streaming up and away from
-  // the sun below the horizon, fanning out and fading. It drifts slowly.
-  vec2 head = vec2(0.52 + 0.03 * sin(0.004 * t), 0.08 + 0.02 * sin(0.003 * t));
-  vec2 dir = normalize(vec2(-0.55, 0.83));
-  vec2 rel = uv - head;
-  float along = dot(rel, dir);
-  float across = dot(rel, vec2(-dir.y, dir.x));
-  float tail = smoothstep(-0.01, 0.03, along) * exp(-max(along, 0.0) * 1.7);
-  float ionW = 0.003 + 0.022 * max(along, 0.0);
-  float ion = exp(-pow(across / ionW, 2.0)) * tail;
-  float bend = across - 0.22 * along * along;
-  float dustW = 0.006 + 0.11 * max(along, 0.0);
-  float dustTail = exp(-pow(bend / dustW, 2.0)) * tail;
-  float rays = 0.7 + 0.3 * noiseFast(vec2(across / (0.01 + 0.05 * along) * 3.0, along * 2.0 - 0.15 * t));
-  col += mix(uColors[3], vec3(0.6, 0.85, 1.0), 0.5) * ion * 0.55 * rays;
-  col += mix(uColors[3], vec3(1.0, 0.86, 0.72), 0.65) * dustTail * 0.38 * rays;
-  float coma = exp(-length(rel) * 140.0) + 0.35 * exp(-length(rel) * 30.0);
-  col += vec3(1.0, 0.98, 0.95) * coma * 0.9;
-
-  // Now and then a shooting star.
-  float period = 9.0;
-  float k = floor(t / period);
-  float ph = fract(t / period) * period;
-  if (ph < 1.2) {
-    vec2 a = vec2(hash01(vec2(k, 1.0)) - 0.6, 0.15 + 0.3 * hash01(vec2(k, 2.0)));
-    vec2 v = normalize(vec2(-0.8, -0.35));
-    vec2 p = a + v * ph * 0.5;
-    vec2 r = uv - p;
-    float l = dot(r, -v);
-    float w = abs(dot(r, vec2(-v.y, v.x)));
-    float streak = smoothstep(0.0015, 0.0, w) * smoothstep(0.18, 0.0, l) * step(0.0, l);
-    col += vec3(1.0) * streak * sin(3.14 * ph / 1.2) * 0.9;
-  }
-
-  // A plane crossing, high up, its light blinking.
-  float flight = fract(t / 70.0);
-  vec2 plane = vec2(-1.0 + 2.2 * flight, 0.38 - 0.08 * flight);
-  float blink = step(0.85, fract(t * 1.2));
-  col += vec3(1.0, 0.45, 0.4) * blink * smoothstep(0.004, 0.0, length(uv - plane));
-  col += vec3(1.0) * 0.6 * smoothstep(0.0025, 0.0, length(uv - plane - vec2(0.006, 0.0)));
-
-  // Thin clouds, dark violet with undersides lit by the afterglow.
-  vec2 cq = uv * vec2(1.3, 11.0) + vec2(0.035 * t, 0.0);
-  float shape = fbmFast(cq + 5.0) + 0.3 * fbmFast(cq * 2.7);
-  float cl = smoothstep(0.02, 0.3, shape) * exp(-pow((y + 0.17) / 0.13, 2.0));
-  // Lit from below: the lower edge of each streak glows.
-  float above = fbmFast(cq + 5.0 + vec2(0.0, 0.35)) + 0.3 * fbmFast((cq + vec2(0.0, 0.35)) * 2.7);
-  float underside = clamp((shape - above) * 4.0, 0.0, 1.0);
-  vec3 cloudCol = mix(mix(uColors[1], uColors[0], 0.4), uColors[2] * 1.15, underside);
-  col = mix(col, cloudCol, cl * 0.9);
-
-  return col;
-}
-
-// Ridged noise: sharp crests, like eroded mountains.
-float ridged(float x, float seed) {
-  float sum = 0.0;
-  float amp = 0.55;
-  float f = 1.0;
-  for (int i = 0; i < 4; i++) {
-    float n = 1.0 - abs(noise(vec2(x * f, seed + float(i) * 7.3)) * 1.6);
-    sum += amp * n * n;
-    f *= 2.1;
-    amp *= 0.45;
-  }
-  return sum;
-}
-
-// Lights scattered along the far shore: positions in cells along x.
-vec3 shoreLight(float cell, float shore) {
-  // Lights gather in a few small villages along the shore.
-  float village = smoothstep(-0.05, 0.2, noise(vec2(cell * 0.13, 3.0)));
-  float on = step(hash01(vec2(cell, 80.0)), 0.7 * village);
-  vec2 at = vec2((cell + 0.2 + 0.6 * hash01(vec2(cell, 81.0))) / 28.0, shore + 0.004 + 0.008 * hash01(vec2(cell, 82.0)));
-  return vec3(at, on);
-}
-
-// The land above the shore at p over the sky color: two ranges fading
-// into the haze, rim-lit by the afterglow, then the dark forested shore.
-vec3 land(vec3 col, vec2 p, float t, float shore, float px) {
-  // Big peaks and low saddles, not a row of equal bumps.
-  float massif = 0.45 + 0.75 * smoothstep(-0.45, 0.45, noise(vec2(p.x * 0.9 + 2.0, 3.0)));
-  float far = shore + 0.04 + 0.15 * massif * ridged(p.x * 1.4 + 3.0, 1.0);
-  float farMask = smoothstep(px, -px, p.y - far);
-  // Lit warm along the crests by the afterglow, cooler and darker below.
-  float below = smoothstep(shore + 0.17, shore + 0.01, p.y);
-  vec3 haze = mix(mix(uColors[1], uColors[2], 0.45) * 0.7, mix(uColors[1], uColors[0], 0.5) * 0.55, below);
-  col = mix(col, haze, farMask);
-  col += uColors[2] * 0.3 * farMask * smoothstep(0.006, 0.0, far - p.y);
-  // Faint ridgelines in the far range.
-  col *= 1.0 - 0.08 * farMask * smoothstep(0.4, 0.9, ridged(p.x * 6.0 + p.y * 3.0, 9.0));
-  float mid = shore + 0.025 + 0.08 * ridged(p.x * 2.4 + 11.0, 4.0);
-  float midMask = smoothstep(px, -px, p.y - mid);
-  col = mix(col, mix(uColors[1] * 0.42, uColors[0], 0.4), midMask);
-  col += uColors[2] * 0.12 * midMask * smoothstep(0.005, 0.0, mid - p.y);
-  // The near shore: a ragged line of treetops.
-  float trees = shore + 0.012 + 0.012 * fbmFast(vec2(p.x * 9.0, 2.0))
-    + 0.006 * abs(noise(vec2(p.x * 140.0, 5.0))) + 0.004 * abs(noise(vec2(p.x * 300.0, 8.0)));
-  col = mix(col, uColors[0] * 0.55, smoothstep(px, -px, p.y - trees));
-  // Lights on the far shore, among the trees.
-  for (int i = -1; i <= 1; i++) {
-    vec3 l = shoreLight(floor(p.x * 28.0) + float(i), shore);
-    float d = length(p - l.xy);
-    float glow = exp(-d * d / (0.0013 * 0.0013)) + 0.18 * exp(-d * 55.0);
-    col += vec3(1.0, 0.75, 0.45) * glow * l.z * (0.85 + 0.15 * sin(t * 1.1 + l.x * 90.0));
-  }
-  return col;
-}
-
-vec3 scene(vec2 uv, float t) {
-  float shore = -0.27;
-  float px = 1.5 / uResolution.y;
-  if (uv.y > shore) return land(sky(uv, t), uv, t, shore, px);
-
-  // The lake: the land and sky mirrored, broken by slow ripples that
-  // stretch the reflection more the nearer the water.
-  float depth = shore - uv.y;
-  float ripple = noiseFast(vec2(uv.x * 5.0 + 0.02 * t, depth * 90.0 / (0.3 + depth * 3.0) - 0.35 * t));
-  vec2 m = vec2(uv.x + 0.004 * ripple * (0.2 + 4.0 * depth), shore + depth * 0.9 + 0.003 * ripple);
-  vec3 col = land(sky(m, t), m, t, shore, px);
-  // Water is darker than what it mirrors, more so close by.
-  col *= mix(0.72, 0.42, smoothstep(0.0, 0.22, depth));
-  col = mix(col, uColors[0] * 0.5, 0.15);
-  // Fine, bright ripple lines catching the afterglow.
-  float lines = smoothstep(0.55, 0.9, noiseFast(vec2(uv.x * 2.0, depth * 400.0 / (0.4 + depth * 6.0) - 0.5 * t)));
-  col += uColors[2] * 0.08 * lines * smoothstep(0.3, 0.0, depth);
-  // The shore lights' reflections: long shimmering streaks below each.
-  for (int i = -1; i <= 1; i++) {
-    vec3 l = shoreLight(floor(uv.x * 28.0) + float(i), shore);
-    float dx = uv.x - l.x;
-    float streak = exp(-dx * dx / (0.0018 * 0.0018 * (1.0 + 40.0 * depth))) * exp(-depth * 7.0);
-    float shimmer = smoothstep(-0.2, 0.6, noiseFast(vec2(l.x * 50.0, depth * 160.0 - 0.8 * t)));
-    col += vec3(1.0, 0.72, 0.42) * streak * shimmer * l.z * 0.7;
-  }
-  // A thin dark line where water meets land.
-  col *= 1.0 - 0.4 * smoothstep(0.004, 0.0, depth);
-  return col;
-}
-`,
-};
-
 const lumen: Scene = {
   id: 'lumen',
   name: 'Lumen',
@@ -844,40 +657,68 @@ const topology: Scene = {
   name: 'Topology',
   colors: ['#002222', '#89964e', '#c9d48a', '#5c7a4c'],
   base: '#002222',
-  speed: 0.15,
-  resolution: 1,
+  speed: 0.075,
+  // Screen density, so the hairlines stay smooth on a 2x display.
+  resolution: Math.min(globalThis.devicePixelRatio || 1, 1.5),
   fragment: /* glsl */ `
 // Topology: fine silk threads streaming along a slowly drifting flow.
 // Threads are level lines of a smooth stream function, so they follow the
 // flow and never cross within a layer. A monotonic warp across the flow
 // bunches them into bright bundles with dark gaps between. Two layers at
 // slightly different angles read as loose fibres laid over each other.
+//
+// Drawn at the screen's density (hairlines need real pixels), so the
+// noise is cheap: gradient noise with a float-only lattice hash (no
+// integer math, no trig), all four corners at once. Thin lines need
+// noise that is smooth in its slope, so no texture noise here.
+
+// One random number in [0, 1) for each corner of the cell at i. The
+// offset keeps the screen away from cell 0, where this hash is weakest.
+vec4 corners(vec2 i) {
+  i += vec2(101.0, 43.0);
+  vec2 a = fract((i.x + vec2(0.0, 1.0)) * 0.1031);
+  vec2 b = fract((i.y + vec2(0.0, 1.0)) * 0.1137);
+  vec4 c = (a * 17.31 + 5.0).xyxy + b.xxyy * (a * 31.1 + 13.73).xyxy;
+  return fract(c * c * 1.371);
+}
+
+// Gradient noise, about +-0.7 like the prelude's.
+float flowNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = p - i;
+  vec4 s = corners(i);
+  vec4 gx = s - 0.5;
+  vec4 gy = fract(s * 91.7) - 0.5;
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  vec4 d = gx * (f.x - vec4(0.0, 1.0, 0.0, 1.0)) + gy * (f.y - vec4(0.0, 0.0, 1.0, 1.0));
+  vec2 m = mix(d.xz, d.yw, u.x);
+  return 2.35 * mix(m.x, m.y, u.y);
+}
+
+// The same noise with its analytic gradient: (value, d/dx, d/dy).
+vec3 flowNoiseGrad(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = p - i;
+  vec4 s = corners(i);
+  vec4 gx = s - 0.5;
+  vec4 gy = fract(s * 91.7) - 0.5;
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  vec2 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+  vec4 d = gx * (f.x - vec4(0.0, 1.0, 0.0, 1.0)) + gy * (f.y - vec4(0.0, 0.0, 1.0, 1.0));
+  float k = d.x - d.y - d.z + d.w;
+  float v = d.x + (d.y - d.x) * u.x + (d.z - d.x) * u.y + k * u.x * u.y;
+  vec2 kg = vec2(gx.x - gx.y - gx.z + gx.w, gy.x - gy.y - gy.z + gy.w);
+  vec2 g = vec2(gx.x, gy.x) + u.x * vec2(gx.y - gx.x, gy.y - gy.x)
+         + u.y * vec2(gx.z - gx.x, gy.z - gy.x) + u.x * u.y * kg
+         + du * vec2(d.y - d.x + k * u.y, d.z - d.x + k * u.x);
+  return 2.35 * vec3(v, g);
+}
 
 float stream(vec2 p, float t) {
   vec2 q = p * vec2(0.38, 0.9);
-  float w = 1.3 * noise(q * 0.6 + vec2(0.04 * t, 3.7));
-  float n1 = noise(q + vec2(-0.1 * t, 0.02 * t) + w);
+  float w = 1.3 * flowNoise(q * 0.6 + vec2(0.04 * t, 3.7));
+  float n1 = flowNoise(q + vec2(-0.1 * t, 0.02 * t) + w);
   return p.y + 0.42 * n1;
-}
-
-// The prelude's gradient noise with its analytic gradient: (value, d/dx, d/dy).
-vec3 noiseGrad(vec2 p) {
-  ivec2 i = ivec2(floor(p));
-  vec2 f = fract(p);
-  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-  vec2 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
-  vec2 ga = gradient(i);
-  vec2 gb = gradient(i + ivec2(1, 0));
-  vec2 gc = gradient(i + ivec2(0, 1));
-  vec2 gd = gradient(i + ivec2(1, 1));
-  float a = dot(ga, f);
-  float b = dot(gb, f - vec2(1.0, 0.0));
-  float c = dot(gc, f - vec2(0.0, 1.0));
-  float d = dot(gd, f - vec2(1.0, 1.0));
-  float k3 = a - b - c + d;
-  vec2 g = ga + u.x * (gb - ga) + u.y * (gc - ga) + u.x * u.y * (ga - gb - gc + gd)
-         + du * vec2(b - a + k3 * u.y, c - a + k3 * u.x);
-  return vec3(a + (b - a) * u.x + (c - a) * u.y + k3 * u.x * u.y, g);
 }
 
 // Threads crowd where this warp is steep and part where it is flat. The
@@ -885,33 +726,42 @@ vec3 noiseGrad(vec2 p) {
 // spaced, and drifts along the flow. Returns (warped s, crowding).
 vec2 bunch(float s, float k, float x, float t, float o) {
   float u = s * k + o;
-  vec3 n = noiseGrad(vec2(0.8 * u + 0.2 * x - 0.05 * t, 0.6 * u - 0.25 * x + 0.04 * t));
+  vec3 n = flowNoiseGrad(vec2(0.8 * u + 0.2 * x - 0.05 * t, 0.6 * u - 0.25 * x + 0.04 * t));
   return vec2(s + (0.7 / k) * n.x, 1.0 + 0.7 * dot(n.yz, vec2(0.8, 0.6)));
 }
 
-// Hairlines on the integers of b.x * n. Each thread has its own brightness,
-// which shimmers slowly along it; crowded threads glow more, and threads
-// closer than ~2 px fade to their mean to avoid moire.
-float strands(vec2 b, float n, float gs, float px, float x, float t, float seed) {
+// Brightness of thread id: its own level, shimmering slowly along it;
+// crowded threads glow more.
+float level(float id, float crowd, float x, float t, float seed) {
+  float h = fract(id * 0.6180339 + seed);
+  float h2 = fract(id * 0.7548777 + seed);
+  float l = (0.25 + 0.75 * h) * crowd * crowd;
+  return l * (0.65 + 0.35 * sin(x * (1.5 + 3.0 * h2) - t * (0.5 + 0.5 * h) + 6.2832 * h2));
+}
+
+// Hairlines on the integers of b.x * n. The two nearest threads are
+// summed, so close threads never leave a seam between them. hw is the half
+// width in canvas pixels, with a smooth 1.5 px edge; threads closer than
+// about 2 px fade to their average cover, which avoids moire.
+float strands(vec2 b, float n, float gs, float hw, float x, float t, float seed) {
   float f = b.x * n;
   float crowd = max(b.y, 0.05);
   float w = gs * n * crowd;  // threads per pixel across the flow
   float id = floor(f + 0.5);
-  float h = fract(id * 0.6180339 + seed);
-  float h2 = fract(id * 0.7548777 + seed);
-  float level = (0.25 + 0.75 * h) * crowd * crowd;
-  level *= 0.65 + 0.35 * sin(x * (1.5 + 3.0 * h2) - t * (0.4 + 0.4 * h) + 6.2832 * h2);
-  float d = abs(f - id) / w;
-  float line = clamp(px * 0.55 + 0.5 - d, 0.0, 1.0);
-  return mix(line, 0.7 * px * w, smoothstep(0.3, 0.6, w)) * level;
+  float fr = f - id;
+  float l1 = level(id, crowd, x, t, seed);
+  float l2 = level(id + (fr < 0.0 ? -1.0 : 1.0), crowd, x, t, seed);
+  float lines = (1.0 - smoothstep(hw - 0.75, hw + 0.75, abs(fr) / w)) * l1
+              + (1.0 - smoothstep(hw - 0.75, hw + 0.75, (1.0 - abs(fr)) / w)) * l2;
+  return mix(lines, hw * w * (l1 + l2), smoothstep(0.45, 0.8, w));
 }
 
 vec3 scene(vec2 uv, float t) {
   float s = stream(uv, t);
   float gs = length(vec2(dFdx(s), dFdy(s)));  // smooth: varies over many pixels
-  float px = max(uResolution.y / 900.0, 1.0);
-  float a = strands(bunch(s, 14.0, uv.x, t, 0.0), 220.0, gs, px, uv.x, t, 0.0);
-  float b = strands(bunch(s + 0.013, 9.0, uv.x, t, 17.0), 150.0, gs, px, uv.x, t, 0.37);
+  float hw = 0.55 * uResolution.y / 900.0;    // threads about 1.1 CSS px wide
+  float a = strands(bunch(s, 14.0, uv.x, t, 0.0), 220.0, gs, hw, uv.x, t, 0.0);
+  float b = strands(bunch(s + 0.013, 9.0, uv.x, t, 17.0), 150.0, gs, hw, uv.x, t, 0.37);
   // The far layer in a cooler, dimmer thread; where both crowd, a pale glow.
   vec3 col = mix(uColors[0], uColors[3], clamp(b, 0.0, 1.0));
   col = mix(col, uColors[1], clamp(a, 0.0, 1.0));
@@ -926,13 +776,14 @@ vec3 scene(vec2 uv, float t) {
 const canopy: Scene = {
   id: 'canopy',
   name: 'Canopy',
-  colors: ['#141618', '#4b7059', '#72b866', '#e6f682'],
-  base: '#141618',
-  speed: 1,
+  colors: ['#07061a', '#d0207f', '#1fd6ff', '#d4f8ff'],
+  base: '#07061a',
+  speed: 0.45,
   resolution: 1,
   fragment: /* glsl */ `
-// Canopy: a conifer canopy drawn as a lattice of lit points, seen from a
-// slow glide above it. Points sit on fixed screen columns (so a crown is
+// Canopy: a conifer canopy drawn as a lattice of neon points, seen from a
+// slow glide above it, with a faint haze on the horizon and a slow scan
+// that sweeps the rows outward like a loading screen. Points sit on fixed screen columns (so a crown is
 // always a few points wide) and on world depth rows that drift towards the
 // viewer. Per pixel: a short march on the hills finds where the view ray
 // meets the canopy; then the depth rows from there are tested front to
@@ -947,6 +798,7 @@ const float CROWN_H = 0.03;   // crown height scale
 const float CROWN_W = 4.5;    // crown width in columns
 const float SHELL = 0.015;    // how far below the surface the ray may see
 const float STACK_DY = 0.011; // world spacing of points in a near stack
+const float SCAN_PERIOD = 40.0; // clock seconds between scan passes
 
 float hills(vec2 p) {
   return 0.15 + 0.14 * noiseFast(p * vec2(0.45, 0.35) + vec2(3.1, 7.7));
@@ -962,7 +814,10 @@ vec3 scene(vec2 uv, float t) {
   vec3 bg = uColors[0];
   float px = 1.0 / uResolution.y;
   float d = HORIZON - uv.y;
-  vec3 sky = bg * (1.0 + 0.2 * exp(-abs(d) * 9.0));
+  // Horizon haze in the far colour: a thin bright core and a wide soft
+  // skirt, stronger below the line than above.
+  float hz = exp(-abs(d) * (d > 0.0 ? 7.0 : 16.0));
+  vec3 sky = bg + uColors[1] * (0.07 * hz + 0.08 * hz * hz * hz * hz * hz * hz);
   if (d < 0.004) return sky;
 
   // Points live on fixed screen columns.
@@ -981,29 +836,16 @@ vec3 scene(vec2 uv, float t) {
   float zB = min(CAM_Y / d, 60.0);
   float span = (zB - zA) / 3.0;
   float zs = zA;
-  float hLo = hills(vec2(sx * zA + camX, zA + camZ));
-  float hHi = hLo;
   for (int i = 0; i < 3; i++) {
     float zn = zs + span;
-    hHi = hills(vec2(sx * zn + camX, zn + camZ));
-    if (CAM_Y - d * zn < hHi + 0.6 * crownAmp(zn)) break;
+    if (CAM_Y - d * zn < hills(vec2(sx * zn + camX, zn + camZ)) + 0.6 * crownAmp(zn)) break;
     zs = zn;
-    hLo = hHi;
   }
   for (int i = 0; i < 4; i++) {
     span *= 0.5;
     float zn = zs + span;
-    float hn = hills(vec2(sx * zn + camX, zn + camZ));
-    if (CAM_Y - d * zn >= hn + 0.6 * crownAmp(zn)) {
-      zs = zn;
-      hLo = hn;
-    } else {
-      hHi = hn;
-    }
+    if (CAM_Y - d * zn >= hills(vec2(sx * zn + camX, zn + camZ)) + 0.6 * crownAmp(zn)) zs = zn;
   }
-  // The hills change slowly: over the few rows walked below, a straight
-  // line through the bracket is close enough and saves a fetch per row.
-  float hSlope = (hHi - hLo) / span;
 
   // Light coming through: slow drifting patches over the canopy, looked up
   // once per pixel at a depth set by the screen height (smooth, so a point
@@ -1014,11 +856,13 @@ vec3 scene(vec2 uv, float t) {
   light = smoothstep(0.0, 0.42, light);
   light *= 0.3 + 0.7 * smoothstep(0.05, 0.45, length(uv * vec2(0.75, 1.6)));
   light *= 0.6 + 0.4 * smoothstep(1.3, 2.6, zl);  // patches at the camera are huge
-  // Distant points cool slightly towards blue-grey.
-  vec3 dim = mix(uColors[1], uColors[1].rbg, 0.5 * smoothstep(3.0, 14.0, zl));
-  vec3 tint = mix(dim, uColors[2], smoothstep(0.0, 0.5, light));
-  tint = mix(tint, uColors[3], smoothstep(0.4, 1.0, light));
-  tint *= 0.8 + 0.5 * light;
+  // Near points take the near neon, distant ones the far neon; lit
+  // patches heat up towards the highlight.
+  float far = smoothstep(1.3, 5.5, zl);
+  vec3 tint = mix(uColors[2], uColors[1] * 1.3, far);
+  tint = mix(tint * 0.55, tint, smoothstep(0.0, 0.5, light));
+  tint = mix(tint, uColors[3], 0.8 * smoothstep(0.5, 1.0, light));
+  tint *= 0.75 + 0.45 * light;
   float rLight = 0.85 + 0.35 * light;
 
   // Row stride keeps rows about one row gap apart on screen; rows about to
@@ -1043,7 +887,10 @@ vec3 scene(vec2 uv, float t) {
     float zc = (jj * stride - camRow) * DZ;
     float cx = (sx + camX / zc) / (DOT_GAP * CROWN_W);
     float crown = crownAmp(zc) * noiseFast(vec2(cx, jj * stride * DZ * 4.0) + vec2(11.0, 2.0));
-    float h = hLo + hSlope * (zc - zs) + crown;
+    // Each row reads the hills at its own point: an estimate shared by the
+    // pixel's own march would place a far point slightly differently on
+    // each pixel row and smear it into a flickering vertical tick.
+    float h = hills(vec2(sx * zc + camX, zc + camZ)) + crown;
     float sy = HORIZON - (CAM_Y - h) / zc;
     bool hidden = CAM_Y - d * zc < h - SHELL || zc > zB;
     if (n > 0) {
@@ -1055,9 +902,16 @@ vec3 scene(vec2 uv, float t) {
       float dist = length(vec2(ex, uv.y - (prevSy - k * stackY)));
       float r = rMax * clamp(pow(1.4 / prevZ, 0.4), 0.35, 1.0) * rLight * (1.0 - 0.18 * k);
       float rr = max(r, 0.7 * px);
-      float cover = smoothstep(rr + 0.6 * px, rr - 0.6 * px, dist);
+      float cover = smoothstep(rr + 0.8 * px, rr - 0.6 * px, dist);
       cover *= (r * r) / (rr * rr) * prevW * smoothstep(0.9, 2.1, gap / r);
-      vec3 c = mix(bg, tint * (1.0 - 0.25 * k), exp(-prevZ * 0.05));
+      // Rows closer than a few pixels on screen would pile into
+      // flickering vertical ticks once upscaled; let them fade out.
+      cover *= smoothstep(1.5 * px, 3.5 * px, gap);
+      // The scan: a soft band of brighter rows rolling away from the
+      // viewer, one pass every SCAN_PERIOD clock seconds.
+      float sc = fract(prevZ * 0.09 - t * (1.0 / SCAN_PERIOD));
+      float scan = 1.0 + 0.6 * sc * sc * sc * sc * sc * sc;
+      vec3 c = mix(bg, tint * scan * (1.0 - 0.25 * k), exp(-prevZ * 0.05));
       col += (1.0 - alpha) * cover * c;
       alpha += (1.0 - alpha) * cover;
     }
@@ -1074,14 +928,14 @@ vec3 scene(vec2 uv, float t) {
 const convergence: Scene = {
   id: 'convergence',
   name: 'Convergence',
-  colors: ['#020104', '#2030ff', '#d070ff', '#d43408'],
-  base: '#050309',
-  speed: 1.4,
+  colors: ['#03070c', '#10a8c0', '#fff0d0', '#ff7a2e'],
+  base: '#03070c',
+  speed: 0.7,
   resolution: 0.35,
   fragment: /* glsl */ `
 // Convergence: three soft streams of light cross the screen in a rotated,
 // slowly flowing field. Each stream is split like light through a prism
-// edge: blue leading, magenta where they overlap, ember trailing.
+// edge: teal leading, amber trailing, a warm white where they overlap.
 vec3 scene(vec2 uv, float t) {
   // Rotate so streams climb from bottom-left to top-right (~33 deg).
   const vec2 R = vec2(0.839, 0.545);
@@ -1107,21 +961,21 @@ vec3 scene(vec2 uv, float t) {
   float d = (v - cell * S) * inversesqrt(1.0 + dw * dw);
   cell += steps; // stable id per stream, for its brightness
 
-  // Prism split: the same soft-shouldered stream, shifted up for the blue
-  // copy and down for the ember copy; they overlap as magenta in the core.
+  // Prism split: the same soft-shouldered stream, shifted up for the teal
+  // copy and down for the amber copy; they overlap in the core.
   vec2 e = vec2(d - 0.022, d + 0.02) * 17.0;
   e *= e;
-  vec2 lobe = exp(-e * e); // flat-topped: x = blue, y = ember
+  vec2 lobe = exp(-e * e); // flat-topped: x = teal, y = amber
   float halo = exp(-d * d * 60.0);
 
   // Brightness drifts along each stream; the centre stays calmer for the
   // clock.
   float along = 0.72 + 0.28 * sin(1.2 * p.x - 0.15 * t + 2.3 * cell);
-  float calm = 0.62 + 0.38 * smoothstep(0.05, 0.5, length(uv * vec2(0.75, 1.0)));
+  float calm = 0.45 + 0.55 * smoothstep(0.05, 0.55, length(uv * vec2(0.75, 1.0)));
   float g = along * calm;
 
   vec3 col = uColors[0] + uColors[1] * halo * 0.06 * calm;
-  // Where the copies overlap the light runs hot, towards pink-white.
+  // Where the copies overlap the light runs hot, towards warm white.
   float hot = lobe.x * lobe.y;
   col += (uColors[1] * lobe.x + uColors[3] * lobe.y + uColors[2] * hot * 0.15) * g;
   return col;
@@ -1138,9 +992,8 @@ const ribbons: Scene = {
   resolution: 0.75,
   fragment: /* glsl */ `
 // Ribbons: flat translucent vector ribbons that twist and drift across a
-// deep field, over a bundle of fine dashed strands. Analytic curves (sums
-// of sines with exact slopes), edges anti-aliased in pixels. No noise, no
-// textures.
+// deep field. Analytic curves (sums of sines with exact slopes), edges
+// anti-aliased in pixels. No noise, no textures.
 
 const int RIBBONS = 7;
 
@@ -1150,35 +1003,6 @@ vec3 scene(vec2 uv, float t) {
   vec2 q = uv - vec2(-0.15, -0.05);
   float glow = exp(-2.2 * dot(q, q));
   vec3 col = uColors[0] * (0.75 + 0.45 * glow) + uColors[1] * 0.07 * glow;
-
-  // Strand bundle: parallel hairlines around one curve whose spacing swells
-  // and pinches along x; one curve evaluation draws every line.
-  {
-    float x = uv.x;
-    float a = 0.33 * t;
-    float g = -0.23 + 0.2 * x + 0.07 * sin(2.1 * x + a) + 0.03 * sin(4.7 * x - 1.4 * a + 1.7);
-    float sp = 0.011 * (1.0 + 0.5 * sin(2.9 * x + 0.8 * a + 0.6));
-    float v = (uv.y - g) / sp;
-    if (abs(v) < 12.0) {
-      float dg = 0.2 + 0.147 * cos(2.1 * x + a) + 0.141 * cos(4.7 * x - 1.4 * a + 1.7);
-      float idx = floor(v + 0.5);
-      float d = abs(v - idx) * sp * inversesqrt(1.0 + dg * dg);
-      float line = 1.0 - smoothstep(0.3 * px, 1.3 * px, d);
-      float env = 1.0 - smoothstep(3.0, 10.0, abs(idx + 2.0 * sin(1.3 * x + 0.5 * a)));
-      float h = fract(idx * 0.618 + 0.3);
-      // Dashes slide along; a third of the strands are solid.
-      // Dash length and gap vary per strand: long dashes to fine dots.
-      float h2 = fract(idx * 0.381 + 0.17);
-      float f = 4.0 + 22.0 * h2 * h2;
-      float gap = 0.25 + 0.4 * h2;
-      float u = fract(x * f - a * (0.25 + 0.5 * h) + h * 7.0);
-      // Anti-aliased dash ends, measured in pixels along x.
-      float dash = h < 0.33 ? 1.0
-        : clamp((0.5 - 0.5 * gap - abs(u - 0.5 - 0.5 * gap)) / (f * px) + 0.5, 0.0, 1.0);
-      vec3 sc = h < 0.33 ? uColors[2] : h < 0.66 ? uColors[1] : uColors[3];
-      col = mix(col, sc, line * env * dash * 0.6);
-    }
-  }
 
   // Ribbons, back to front.
   for (int i = 0; i < RIBBONS; i++) {
@@ -1531,7 +1355,6 @@ export const SCENES: readonly Scene[] = [
   wave,
   aurora,
   silk,
-  comet,
   lumen,
   contour,
   clouds,

@@ -24,7 +24,6 @@ const MOMENTS = {
   wave: 12,
   aurora: 100,
   silk: 40,
-  comet: 30,
   lumen: 20,
   contour: 20,
   clouds: 30,

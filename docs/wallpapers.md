@@ -1,7 +1,7 @@
 # Wallpapers
 
 Everything about Tarn's backgrounds in one place: the engine that draws
-them, the seventeen living scenes, the user's own photos, the settings UI,
+them, the sixteen living scenes, the user's own photos, the settings UI,
 what each scene costs, and what the owner liked and rejected. It replaced
 `docs/wallpapers.md` (2026-10-14).
 
@@ -13,7 +13,7 @@ explains how the code meets them.
 ## Summary
 
 - A wallpaper is a **scene**: one fragment shader plus a little data
-  (`src/backdrop/scenes/types.ts`). Seventeen are built in; a user's photo
+  (`src/backdrop/scenes/types.ts`). Sixteen are built in; a user's photo
   is a scene too (`photo:<id>`).
 - `<tarn-backdrop>` owns a full-screen canvas. In production it hands the
   canvas to a worker (`OffscreenCanvas`), where `Renderer` draws with raw
@@ -483,7 +483,7 @@ at the scenes and "looked off").
   down.
 - Output: `public/scenes/<id>.webp`, 320x200 (twice a ~160x100 card), WebP
   quality 0.8. On disk now (2026-10-14): 1.7-14.9 KB each, about 98 KB for
-  all seventeen; the fine-line scenes (Topology, Matrix, Night Sky) are
+  all sixteen; the fine-line scenes (Topology, Matrix, Night Sky) are
   the largest.
 - `MOMENTS` picks the moment (seconds of animation clock) each thumbnail
   shows. Pick one that shows the scene at its best. An id missing from
@@ -508,25 +508,24 @@ settings. The default is Tarn (`DEFAULT_SCENE_ID`). There are no keyboard
 shortcuts: number keys switched scenes until 2026-10-14, when the owner
 removed them (people typed numbers and the wallpaper changed).
 
-| #   | id            | Name        | What it draws                                                                                                                                                                                                                                                                                                                                                                                  | Tone  | Speed | Resolution             | Noise                                                                                          |
-| --- | ------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | ---------------------- | ---------------------------------------------------------------------------------------------- |
-| 1   | `tarn`        | Tarn        | Light moving through still water: triple domain-warped noise in navy, teal and pale blue, slow and tempered (highlights capped). The default and the brand's signature.                                                                                                                                                                                                                        | dark  | 0.18  | 0.35                   | `fbmFast` (3 octaves on the warps, 4 on the surface)                                           |
-| 2   | `ember`       | Ember       | Folding purple-pink-orange color waves under fine film grain that changes every frame, even at calm pace.                                                                                                                                                                                                                                                                                      | dark  | 0.6   | 0.75                   | `noiseFast`, `hash01` grain                                                                    |
-| 3   | `bloom`       | Bloom       | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                                                                                                                                                                                                                                                                | light | 0.18  | 0.2                    | texture noise, 3 octaves                                                                       |
-| 4   | `wave`        | Wave        | Three twisting ribbons of light at three depths (far dim, middle sharp, near out of focus), each a translucent sheet with bright rims and fine strands with light running along them, over a lit swell in deep blue; sparkles and soft motes; the top and middle stay calm.                                                                                                                    | dark  | 0.35  | 0.75                   | `noiseFast`                                                                                    |
-| 5   | `aurora`      | Aurora      | Northern lights: two parallel arcs that take turns being lit, folding ribbons whose edge-on folds glow brighter, thin streaky rays bunching there, teal rising to violet; a night sky with slowly twinkling stars.                                                                                                                                                                             | dark  | 0.25  | 0.4                    | `noiseFast` (5 fetches per pixel)                                                              |
-| 6   | `silk`        | Silk        | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights. Slope computed analytically (one evaluation).                                                                                                                                                                                                                        | light | 0.2   | 0.33                   | `noiseFast`                                                                                    |
-| 7   | `comet`       | Comet       | Twilight over a mountain lake: indigo to a warm afterglow, the Milky Way and twinkling stars, a comet with an ion and a dust tail, shooting stars, a plane's blinking light, drifting pink-lit clouds; a rugged range lit warm along its crests, a dark forested shore with a few villages' lights, all mirrored in still water with slow ripples and the lights' long shimmering reflections. | dark  | 0.2   | 1                      | `noise` (ridged), `fbmFast`, `noiseFast`, `hash01`                                             |
-| 8   | `lumen`       | Lumen       | Light through haze: shafts from an opening above that sway, widen and dim on their own, haze rolling through, pulses running down the beams, dust in three depths glinting only in the light.                                                                                                                                                                                                  | dark  | 0.4   | 0.5                    | `fbmFast`, `noiseFast`, `hash01`                                                               |
-| 9   | `contour`     | Contour     | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper.                                                                                                                                                                                                             | light | 0.12  | screen density (≤ 1.5) | its own float-hash gradient noise (C2, no integer math); finest octave a B-spline texture read |
-| 10  | `clouds`      | Clouds      | Skimming over a sea of soft cumulus under a clear blue sky: camera-facing slices of noise (volumetric billboards) drift toward the viewer and recycle at the back; round, bumpy puff tops, near ones big and soft. A look-alike of Vanta's Clouds 2, written from scratch.                                                                                                                     | light | 0.35  | 0.33                   | `noiseFast`                                                                                    |
-| 11  | `topology`    | Topology    | Fine silk threads streaming along a slowly drifting flow: level lines of a smooth stream function, bunched into bright bundles with dark gaps, two layers at slightly different angles. Olive and lime on deep teal; a look-alike of Vanta's Topology.                                                                                                                                         | dark  | 0.15  | 1                      | `noise` (exact)                                                                                |
-| 12  | `canopy`      | Canopy      | A conifer canopy as a lattice of lit points seen from a slow glide above it: points on fixed screen columns and drifting depth rows, a short ray march over the hills. Lime on charcoal, a calm loading-screen feel (inspired by ThreeUI's Pine Canopy).                                                                                                                                       | dark  | 1     | 1                      | `noiseFast`, float loop counters                                                               |
-| 13  | `convergence` | Convergence | Three soft streams of light cross the screen on a rotated, flowing S-curve, each split like light through a prism: blue leading, magenta where they overlap, ember trailing (inspired by ThreeUI's Stream Convergence).                                                                                                                                                                        | dark  | 1.4   | 0.35                   | none (analytic)                                                                                |
-| 14  | `ribbons`     | Ribbons     | Flat translucent vector ribbons that twist and drift over a bundle of fine dashed strands; analytic sine curves with exact slopes, edges anti-aliased in pixels (inspired by animated SVG wave backgrounds).                                                                                                                                                                                   | dark  | 0.25  | 0.75                   | none (analytic)                                                                                |
-| 15  | `fringe`      | Fringe      | One glowing sine band whose color channels part toward the screen's edges, as a lens does: red, green and blue sliding apart around a white core, swinging wider at the edges so it stays below the clock.                                                                                                                                                                                     | dark  | 1     | 0.4                    | none (analytic)                                                                                |
-| 16  | `nightsky`    | Night Sky   | A deep sky with a soft, slowly drifting Milky Way (violet core, grey-teal ends, dust that lives only in the band), stars in four twinkling layers, and now and then a shooting star.                                                                                                                                                                                                           | dark  | 0.25  | 1                      | `noiseFast`, float-only cell hash                                                              |
-| 17  | `matrix`      | Matrix      | Digital rain in three depth layers: each column's drops are analytic trails (no feedback buffer); glyphs are strokes on a 2x3 lattice chosen by a hash, an invented katakana-like script; bright heads, green trails.                                                                                                                                                                          | dark  | 1     | 1                      | float-only cell hash                                                                           |
+| #   | id            | Name        | What it draws                                                                                                                                                                                                                                                                                                                                       | Tone  | Speed | Resolution             | Noise                                                                                          |
+| --- | ------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| 1   | `tarn`        | Tarn        | Light moving through still water: triple domain-warped noise in navy, teal and pale blue, slow and tempered (highlights capped). The default and the brand's signature.                                                                                                                                                                             | dark  | 0.18  | 0.35                   | `fbmFast` (3 octaves on the warps, 4 on the surface)                                           |
+| 2   | `ember`       | Ember       | Folding purple-pink-orange color waves under fine film grain that changes every frame, even at calm pace.                                                                                                                                                                                                                                           | dark  | 0.6   | 0.75                   | `noiseFast`, `hash01` grain                                                                    |
+| 3   | `bloom`       | Bloom       | Soft pastel mesh gradient pushed around by low-frequency noise.                                                                                                                                                                                                                                                                                     | light | 0.18  | 0.2                    | texture noise, 3 octaves                                                                       |
+| 4   | `wave`        | Wave        | Three twisting ribbons of light at three depths (far dim, middle sharp, near out of focus), each a translucent sheet with bright rims and fine strands with light running along them, over a lit swell in deep blue; sparkles and soft motes; the top and middle stay calm.                                                                         | dark  | 0.35  | 0.75                   | `noiseFast`                                                                                    |
+| 5   | `aurora`      | Aurora      | Northern lights: two parallel arcs that take turns being lit, folding ribbons whose edge-on folds glow brighter, thin streaky rays bunching there, teal rising to violet; a night sky with slowly twinkling stars.                                                                                                                                  | dark  | 0.25  | 0.4                    | `noiseFast` (5 fetches per pixel)                                                              |
+| 6   | `silk`        | Silk        | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights. Slope computed analytically (one evaluation).                                                                                                                                                                             | light | 0.2   | 0.33                   | `noiseFast`                                                                                    |
+| 7   | `lumen`       | Lumen       | Light through haze: shafts from an opening above that sway, widen and dim on their own, haze rolling through, pulses running down the beams, dust in three depths glinting only in the light.                                                                                                                                                       | dark  | 0.4   | 0.5                    | `fbmFast`, `noiseFast`, `hash01`                                                               |
+| 8   | `contour`     | Contour     | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper.                                                                                                                                                                  | light | 0.12  | screen density (≤ 1.5) | its own float-hash gradient noise (C2, no integer math); finest octave a B-spline texture read |
+| 9   | `clouds`      | Clouds      | Skimming over a sea of soft cumulus under a clear blue sky: camera-facing slices of noise (volumetric billboards) drift toward the viewer and recycle at the back; round, bumpy puff tops, near ones big and soft. A look-alike of Vanta's Clouds 2, written from scratch.                                                                          | light | 0.35  | 0.33                   | `noiseFast`                                                                                    |
+| 10  | `topology`    | Topology    | Fine silk threads streaming along a slowly drifting flow: level lines of a smooth stream function, bunched into bright bundles with dark gaps, two layers at slightly different angles. Each pixel sums its two nearest threads with a smooth 1.5 px edge, so hairlines stay smooth. Olive and lime on deep teal; a look-alike of Vanta's Topology. | dark  | 0.075 | screen density (≤ 1.5) | float-hash gradient noise (4 evaluations), no textures                                         |
+| 11  | `canopy`      | Canopy      | A cyberpunk loading screen: a canopy of lit points seen from a slow glide above it, cyan up close fading to magenta toward a hazy magenta horizon on indigo-black; a soft band of brighter rows sweeps away every 89 s. Each depth row reads its own hill height, so far points stay round (inspired by ThreeUI's Pine Canopy).                     | dark  | 0.45  | 1                      | `noiseFast`, float loop counters                                                               |
+| 12  | `convergence` | Convergence | Three soft streams of light cross the screen on a rotated, flowing S-curve, each split like light through a prism: teal leading, amber trailing, warm white where they overlap (inspired by ThreeUI's Stream Convergence).                                                                                                                          | dark  | 0.7   | 0.35                   | none (analytic)                                                                                |
+| 13  | `ribbons`     | Ribbons     | Seven flat translucent vector ribbons that twist and drift across a deep field; analytic sine curves with exact slopes, edges anti-aliased in pixels (inspired by animated SVG wave backgrounds).                                                                                                                                                   | dark  | 0.25  | 0.75                   | none (analytic)                                                                                |
+| 14  | `fringe`      | Fringe      | One glowing sine band whose color channels part toward the screen's edges, as a lens does: red, green and blue sliding apart around a white core, swinging wider at the edges so it stays below the clock.                                                                                                                                          | dark  | 1     | 0.4                    | none (analytic)                                                                                |
+| 15  | `nightsky`    | Night Sky   | A deep sky with a soft, slowly drifting Milky Way (violet core, grey-teal ends, dust that lives only in the band), stars in four twinkling layers, and now and then a shooting star.                                                                                                                                                                | dark  | 0.25  | 1                      | `noiseFast`, float-only cell hash                                                              |
+| 16  | `matrix`      | Matrix      | Digital rain in three depth layers: each column's drops are analytic trails (no feedback buffer); glyphs are strokes on a 2x3 lattice chosen by a hash, an invented katakana-like script; bright heads, green trails.                                                                                                                               | dark  | 1     | 1                      | float-only cell hash                                                                           |
 
 ### Data
 
@@ -538,13 +537,12 @@ removed them (people typed numbers and the wallpaper changed).
 | `wave`        | `#071230` | `#050d24` `#173f8f` `#4f8dff` `#d6e7ff` | 12                   |
 | `aurora`      | `#03070d` | `#02050b` `#08141f` `#3ed6a6` `#8d7ce0` | 100                  |
 | `silk`        | `#e2eaf0` | `#9ab4c8` `#dce6ee` `#fcfdfe` `#efb497` | 40                   |
-| `comet`       | `#0b0f2c` | `#070b26` `#3a2a6e` `#f09a78` `#bfe6ff` | 30                   |
 | `lumen`       | `#05080d` | `#030509` `#0c1622` `#ffd9a1` `#7fb8c9` | 20                   |
 | `contour`     | `#f1eee7` | `#f4f1ea` `#dfe7ec` `#3d5468` `#e9b99c` | 20                   |
 | `clouds`      | `#b9c2d6` | `#08507a` `#8fc0da` `#7685b0` `#e2e6ef` | 30                   |
 | `topology`    | `#002222` | `#002222` `#89964e` `#c9d48a` `#5c7a4c` | 15                   |
-| `canopy`      | `#141618` | `#141618` `#4b7059` `#72b866` `#e6f682` | 35                   |
-| `convergence` | `#050309` | `#020104` `#2030ff` `#d070ff` `#d43408` | 10                   |
+| `canopy`      | `#07061a` | `#07061a` `#d0207f` `#1fd6ff` `#d4f8ff` | 35                   |
+| `convergence` | `#03070c` | `#03070c` `#10a8c0` `#fff0d0` `#ff7a2e` | 10                   |
 | `ribbons`     | `#0b1622` | `#0b1622` `#24588f` `#3aae9f` `#e9876b` | 20                   |
 | `fringe`      | `#0a0a0c` | `#0a0a0c` `#ff2a10` `#1aff60` `#1040ff` | 120                  |
 | `nightsky`    | `#08041a` | `#070318` `#0a0912` `#58887a` `#8274a8` | 40                   |
@@ -555,7 +553,8 @@ removed them (people typed numbers and the wallpaper changed).
 **The gauge** reads `SCENE_LOAD` in `scenes/load.ts`: the scene's own
 drawing work in ms per frame on the GPU, at 1920x1200 CSS pixels times
 its resolution, M4, headless Chrome for Testing 155 (ANGLE Metal), median
-of 7 interleaved rounds with the GPU otherwise quiet (`opt/bench-all.mjs`
+of 7 interleaved rounds with the GPU otherwise quiet; scenes drawn at
+screen density (Contour, Topology) at 1.5 (`opt/bench-all.mjs`
 in the session scratchpad: each shader through the real prelude, timed
 with GPU timer queries). Light < 0.03, medium < 0.12, heavy above
 (2026-10-14).
@@ -570,22 +569,21 @@ spreads the scenes over a factor of 40.
 | Scene       | GPU ms/frame | Gauge  |
 | ----------- | ------------ | ------ |
 | Bloom       | 0.007        | light  |
+| Convergence | 0.010        | light  |
 | Silk        | 0.011        | light  |
 | Tarn        | 0.012        | light  |
-| Convergence | 0.012        | light  |
-| Fringe      | 0.012        | light  |
-| Aurora      | 0.013        | light  |
-| Clouds      | 0.013        | light  |
-| Lumen       | 0.034        | medium |
-| Ember       | 0.036        | medium |
+| Fringe      | 0.013        | light  |
+| Aurora      | 0.014        | light  |
+| Clouds      | 0.014        | light  |
+| Lumen       | 0.036        | medium |
+| Ember       | 0.037        | medium |
 | Wave        | 0.049        | medium |
-| Ribbons     | 0.056        | medium |
-| Canopy      | 0.077        | medium |
-| Night Sky   | 0.084        | medium |
-| Matrix      | 0.086        | medium |
-| Topology    | 0.097        | medium |
-| Contour     | 0.163        | heavy  |
-| Comet       | 0.267        | heavy  |
+| Ribbons     | 0.050        | medium |
+| Canopy      | 0.079        | medium |
+| Matrix      | 0.084        | medium |
+| Night Sky   | 0.087        | medium |
+| Contour     | 0.164        | heavy  |
+| Topology    | 0.191        | heavy  |
 
 CPU, for reference (older runs: M4, headed 1440x900, active pace, 8 s per
 scene, `SystemInfo.getProcessInfo`; page / GPU process, % of one core):
@@ -623,7 +621,7 @@ Notes:
   Comet 0.27, Ember 0.05, Lumen 0.05 unchanged. On the M4 the bench
   bottoms out near 0.03 ms (tile rendering skips covered work), so small
   numbers are noisy.
-- `load.test.ts` pins Tarn as light, Matrix as medium and Comet as heavy;
+- `load.test.ts` pins Tarn as light, Matrix as medium and Contour as heavy;
   changing their numbers may need the test updated.
 
 ### Replaced and removed scenes
@@ -632,17 +630,18 @@ Notes:
 nearest current scene in `normalizeSettings`, so whoever picked one keeps
 a similar background instead of the default:
 
-| Stored id   | Becomes   |
-| ----------- | --------- |
-| `rain`      | `comet`   |
-| `nebula`    | `comet`   |
-| `dunes`     | `contour` |
-| `mist`      | `contour` |
-| `sora`      | `aurora`  |
-| `fireflies` | `comet`   |
-| `sakura`    | `bloom`   |
-| `koi`       | `tarn`    |
-| `window`    | `comet`   |
+| Stored id   | Becomes    |
+| ----------- | ---------- |
+| `rain`      | `nightsky` |
+| `nebula`    | `nightsky` |
+| `dunes`     | `contour`  |
+| `mist`      | `contour`  |
+| `sora`      | `aurora`   |
+| `fireflies` | `nightsky` |
+| `sakura`    | `bloom`    |
+| `koi`       | `tarn`     |
+| `window`    | `nightsky` |
+| `comet`     | `nightsky` |
 
 Any other unknown id becomes the default (`tarn`).
 
@@ -718,6 +717,18 @@ Convergence, Ribbons, Fringe, Night Sky and Matrix. Ember's grain had
 looked lower in quality since the calm pace: it was tied to scene time,
 which slows to 40%, so it froze; it now changes every frame. The gauge
 moved from CPU % to measured GPU ms the same day.
+
+The owner's verdict the same evening: Fringe, Night Sky and Matrix
+"fucking sick". Comet removed (its id and the ids that pointed to it now
+map to Night Sky). Canopy "why is it green? I said cyberpunk": recolored
+to cyan and magenta neon on indigo-black, slower (1 to 0.45). Topology
+slower (0.15 to 0.075) and "I can see pixels": it drew 1-pixel hairlines
+at CSS resolution, which a 2x screen magnified into stair steps; it now
+renders at screen density (≤ 1.5) with smooth 1.5 px thread edges, which
+doubles its cost (0.10 to 0.19 ms, gauge "higher"). Convergence slower
+(1.4 to 0.7) with a new palette, teal and amber, picked from seven
+rendered options. Ribbons "a little weird... that small flying stuff is
+too extra": the dashed strands under the ribbons were removed.
 
 ### Rejected scenes
 
@@ -833,8 +844,6 @@ Not built yet:
   draw their land at 1/8 size into a texture and read it with a smooth
   B-spline at full size; the frame would still sit at the pixel-count
   floor.
-- **Comet on weak GPUs**: the heaviest shader now (0.27 ms on the M4
-  bench).
 - **A battery saver.**
 - **Light/dark twins** that follow the system theme (BRAND.md: light
   first). Bloom, Silk and Contour are the light scenes so far.
@@ -856,7 +865,7 @@ Not built yet:
 | `src/backdrop/noise-texture.ts`              | Bakes the 512x512 R16F noise texture from an exact port of the GLSL hash                                         |
 | `src/backdrop/scenes/types.ts`               | The `Scene` type                                                                                                 |
 | `src/backdrop/scenes/glsl.ts`                | Full-screen vertex shader and the fragment prelude (uniforms, hash, noise, fbm, dither)                          |
-| `src/backdrop/scenes/index.ts`               | The seventeen scenes, `SCENES`, `sceneById`, `sceneTone`, `sceneStill`, `scenePreview`, `photoScene`             |
+| `src/backdrop/scenes/index.ts`               | The sixteen scenes, `SCENES`, `sceneById`, `sceneTone`, `sceneStill`, `scenePreview`, `photoScene`               |
 | `src/backdrop/scenes/load.ts`                | `SCENE_LOAD` measurements and `loadLevel` for the gauge                                                          |
 | `src/backdrop/*.test.ts`, `scenes/*.test.ts` | Noise texture, pace, quality, scene shape and load tests                                                         |
 | `src/app/first-paint.ts`                     | Blocking first paint: start color, arrival, ghost read/paint/save, clock and scene mirrors                       |

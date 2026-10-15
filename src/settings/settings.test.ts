@@ -104,8 +104,8 @@ describe('normalizeSettings', () => {
   });
 
   it('moves a replaced scene to its nearest new one', () => {
-    expect(normalizeSettings({scene: 'rain'}).scene).toBe('comet');
-    expect(normalizeSettings({scene: 'nebula'}).scene).toBe('comet');
+    expect(normalizeSettings({scene: 'rain'}).scene).toBe('nightsky');
+    expect(normalizeSettings({scene: 'comet'}).scene).toBe('nightsky');
     expect(normalizeSettings({scene: 'toString'}).scene).toBe(
       DEFAULT_SETTINGS.scene,
     );

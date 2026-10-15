@@ -8,6 +8,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Canopy is now a cyberpunk neon loading screen, and slower. Topology is
+  slower and sharp on high-density screens. Convergence is slower, in teal
+  and amber. Ribbons lost the small dashes under them.
 - Ember's film grain is fine and alive again: it no longer slows and
   freezes when the page goes calm.
 - The load gauge on each wallpaper now reflects how hard the scene works
@@ -149,6 +152,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- The Comet wallpaper; whoever used it now gets Night Sky.
 - The number keys no longer switch wallpapers (typing a number changed it
   by surprise). The raw settings editor is only in development builds.
 
