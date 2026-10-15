@@ -9,7 +9,7 @@
 // Needs a Chrome or Chromium binary; nothing is downloaded.
 
 import {spawn} from 'node:child_process';
-import {mkdirSync, mkdtempSync, writeFileSync} from 'node:fs';
+import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -59,10 +59,17 @@ const bundle = await build({
 const code = bundle[0].output[0].code;
 
 const port = 9300 + Math.floor(Math.random() * 300);
+// A throwaway profile (tens of MB), deleted on exit: left behind, one per
+// run, they filled a disk.
+const profile = mkdtempSync(join(tmpdir(), 'tarn-previews-'));
+process.on('exit', () => {
+  browser.kill();
+  rmSync(profile, {recursive: true, force: true, maxRetries: 3});
+});
 const browser = spawn(chrome, [
   '--headless=new',
   `--remote-debugging-port=${port}`,
-  `--user-data-dir=${mkdtempSync(join(tmpdir(), 'tarn-previews-'))}`,
+  `--user-data-dir=${profile}`,
   'about:blank',
 ]);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
