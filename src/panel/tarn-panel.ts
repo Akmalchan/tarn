@@ -523,10 +523,6 @@ export class TarnPanel extends LitElement {
       border-radius: 6px;
     }
 
-    .ico.blank {
-      background: none;
-    }
-
     .ico svg {
       width: 15px;
       height: 15px;
@@ -2215,9 +2211,8 @@ export class TarnPanel extends LitElement {
         show('keys')
           ? html`<section>
               <h2>${t('panel.keys')}</h2>
-              <div class="group" data-target="keys">
+              <div class="group plain" data-target="keys">
                 <div class="row">
-                  ${icon('keyboard')}
                   <span class="txt">${t('panel.keys.shortcuts')}</span>
                   <span
                     class="seg"
@@ -2242,7 +2237,6 @@ export class TarnPanel extends LitElement {
                     ? shortcutList().map(
                         row => html`
                           <div class="row">
-                            <span class="ico blank"></span>
                             <span class="txt">${t(row.label)}</span>
                             <span class="keys">${chordKeys(row)}</span>
                           </div>
@@ -2250,11 +2244,6 @@ export class TarnPanel extends LitElement {
                       )
                     : nothing
                 }
-                <div class="row">
-                  ${icon('search')}
-                  <span class="txt">${t('panel.searchSettings')}</span>
-                  <span class="keys">${chordKeys(shortcutList()[0]!)}</span>
-                </div>
               </div>
               <p class="note">${t('panel.keys.note')}</p>
             </section>`

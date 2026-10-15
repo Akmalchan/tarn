@@ -111,7 +111,7 @@ Settings (home)
 Advanced
     ├── Tab icon                   the browser's own / None / Your own image
     ├── Weather                    provider (Open-Meteo or Google + key)
-    ├── Keyboard                   shortcuts On/Off, the list, ⌘K or "/" here
+    ├── Keyboard                   shortcuts On/Off and the list (no icons)
     ├── Backup                     export, import (settings + widget
     │                              content)
     ├── Previous Setups            saved before each update; restore one
