@@ -12,6 +12,10 @@ export const es: Catalog = {
   'common.remove': 'Quitar',
   'common.settings': 'Ajustes',
   'common.openSettings': 'Abrir ajustes',
+  'tip.title': 'Hazlo tuyo',
+  'tip.body':
+    'Aquí están los fondos, las esferas del reloj y los widgets. Con los ajustes abiertos, arrastra los widgets para moverlos.',
+  'tip.gotIt': 'Entendido',
   'widget.favorites': 'Marcadores',
   'widget.notes': 'Notas',
   'widget.tasks': 'Tareas',

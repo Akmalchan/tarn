@@ -12,6 +12,10 @@ export const de: Catalog = {
   'common.remove': 'Entfernen',
   'common.settings': 'Einstellungen',
   'common.openSettings': 'Einstellungen öffnen',
+  'tip.title': 'Ganz nach deinem Geschmack',
+  'tip.body':
+    'Hier findest du Hintergrundbilder, Zifferblätter und Widgets. Solange die Einstellungen offen sind, kannst du Widgets verschieben.',
+  'tip.gotIt': 'Verstanden',
   'widget.favorites': 'Lesezeichen',
   'widget.notes': 'Notizen',
   'widget.tasks': 'Aufgaben',

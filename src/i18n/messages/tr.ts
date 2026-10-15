@@ -12,6 +12,10 @@ export const tr: Catalog = {
   'common.remove': 'Kaldır',
   'common.settings': 'Ayarlar',
   'common.openSettings': 'Ayarları aç',
+  'tip.title': 'Kendinize göre ayarlayın',
+  'tip.body':
+    'Duvar kâğıtları, saat yüzleri ve widget’lar burada. Ayarlar açıkken widget’ları sürükleyerek taşıyabilirsiniz.',
+  'tip.gotIt': 'Anladım',
   'widget.favorites': 'Yer imleri',
   'widget.notes': 'Notlar',
   'widget.tasks': 'Görevler',

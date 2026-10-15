@@ -12,6 +12,10 @@ export const ko: Catalog = {
   'common.remove': '삭제',
   'common.settings': '설정',
   'common.openSettings': '설정 열기',
+  'tip.title': '나만의 화면으로',
+  'tip.body':
+    '배경화면, 시계 디자인, 위젯을 여기서 바꿀 수 있어요. 설정이 열려 있는 동안 위젯을 드래그해 옮길 수 있어요.',
+  'tip.gotIt': '확인',
   'widget.favorites': '북마크',
   'widget.notes': '메모',
   'widget.tasks': '할 일',

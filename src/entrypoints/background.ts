@@ -5,6 +5,7 @@
 
 import {browser} from 'wxt/browser';
 import {defineBackground} from 'wxt/utils/define-background';
+import {markFirstRun} from '../app/first-run';
 import {markUpdateUnseen} from '../panel/about';
 import {saveAutoBackup} from '../settings/backup';
 
@@ -44,6 +45,12 @@ export default defineBackground(() => {
       );
       // What's new in settings shows a dot until it's opened.
       void markUpdateUnseen();
+    }
+    // A fresh install: the first new tabs point out the settings gear.
+    if (reason === 'install') {
+      void markFirstRun().catch(error =>
+        console.warn('[tarn] first-run tip failed:', error),
+      );
     }
     void ensureOffscreenDocument();
   });

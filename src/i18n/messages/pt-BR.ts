@@ -12,6 +12,10 @@ export const ptBR: Catalog = {
   'common.remove': 'Remover',
   'common.settings': 'Ajustes',
   'common.openSettings': 'Abrir ajustes',
+  'tip.title': 'Deixe do seu jeito',
+  'tip.body':
+    'Papéis de parede, mostradores de relógio e widgets ficam aqui. Com os ajustes abertos, arraste os widgets para movê-los.',
+  'tip.gotIt': 'Entendi',
   'widget.favorites': 'Favoritos',
   'widget.notes': 'Notas',
   'widget.tasks': 'Tarefas',

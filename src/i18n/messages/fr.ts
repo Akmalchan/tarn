@@ -12,6 +12,10 @@ export const fr: Catalog = {
   'common.remove': 'Retirer',
   'common.settings': 'Réglages',
   'common.openSettings': 'Ouvrir les réglages',
+  'tip.title': 'Personnalisez votre page',
+  'tip.body':
+    'Fonds d’écran, cadrans et widgets se trouvent ici. Quand les réglages sont ouverts, faites glisser les widgets pour les déplacer.',
+  'tip.gotIt': 'Compris',
   'widget.favorites': 'Signets',
   'widget.notes': 'Notes',
   'widget.tasks': 'Tâches',

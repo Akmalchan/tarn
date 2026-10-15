@@ -16,6 +16,7 @@ in the panel.
 | Your own tab icon                                                                                                         | localStorage `tarn.tabIcon.custom` | No                                 | `src/panel/tarn-panel.ts`, `src/app/first-paint.ts`     |
 | Mirrors for first paint (scene, base color, home settings, widget content, icons, tile rects, ghost)                      | localStorage / sessionStorage      | No                                 | `src/app/mirror.ts`, `first-paint.ts`, `tile-memory.ts` |
 | Automatic backups (last 3)                                                                                                | `storage.local`, `backups.auto`    | No                                 | `src/settings/backup.ts`                                |
+| First-run tip still to show (fresh install only, removed once done)                                                       | `storage.local`, `tip.settings`    | No                                 | `src/app/first-run.ts`                                  |
 
 The schema is `src/settings/schema.ts`: the `Settings` type, its
 defaults (`DEFAULT_SETTINGS`), the start setup (`START_WIDGETS`) and
