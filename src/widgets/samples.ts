@@ -5,6 +5,7 @@
 
 import type {WidgetSize} from '../layout/bands';
 import {
+  CUSTOM_KINDS,
   WIDGET_KINDS,
   WIDGET_SIZE_OPTIONS,
   newWidgetId,
@@ -126,10 +127,8 @@ export async function buildExample(preset: Preset): Promise<WidgetEntry[]> {
   // Presets are layout shapes, so sizes win: a kind that doesn't offer
   // the size is swapped for the next one that does.
   const widgets = preset.map(([wanted, size], i) => {
-    const kinds = [
-      ...WIDGET_KINDS.slice(i % WIDGET_KINDS.length),
-      ...WIDGET_KINDS,
-    ];
+    const plain = WIDGET_KINDS.filter(k => !CUSTOM_KINDS.includes(k));
+    const kinds = [...plain.slice(i % plain.length), ...plain];
     const kind = WIDGET_SIZE_OPTIONS[wanted].includes(size)
       ? wanted
       : kinds.find(k => WIDGET_SIZE_OPTIONS[k].includes(size))!;

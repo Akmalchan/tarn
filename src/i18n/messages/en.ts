@@ -31,6 +31,7 @@ export const en = {
   'widget.focus': 'Timer',
   'widget.weather': 'Weather',
   'widget.calendar': 'Calendar',
+  'widget.code': 'Custom',
 
   // Arranging widgets (settings open)
   'board.hint': 'Drag to rearrange · drag a corner to resize',
@@ -258,6 +259,7 @@ export const en = {
   'panel.widgetAbout.weather': 'Today and the week ahead',
   'panel.widgetAbout.calendar': 'This month at a glance',
   'panel.widgetAbout.focus': 'A countdown, any length you like',
+  'panel.widgetAbout.code': 'Your own shader code',
 
   // Settings panel: language
   'panel.language.auto': 'Same as browser',
@@ -416,6 +418,47 @@ export const en = {
   'keys.help': 'Show shortcuts',
   'keys.leave': 'Leave a text field',
   'keys.or': 'or',
+
+  // Custom widgets (the panel's Custom widgets section and the tile)
+  'code.example.equalizer': 'Equalizer',
+  'code.example.aurora': 'Aurora',
+  'code.example.synthwave': 'Synthwave',
+  'code.example.galaxy': 'Galaxy',
+  'code.example.clock': 'Clock',
+  'code.example.liquid': 'Liquid',
+  'code.errorLine': 'Line {line}: {message}',
+  'code.missing': 'Write a widget function to draw here',
+  'code.heavy': 'Paused: too heavy for this computer',
+  'code.run': 'Run anyway',
+  'code.unavailable': "This browser can't draw custom widgets",
+  'code.newer': 'Made with a newer Tarn',
+  'panel.custom': 'Custom widgets',
+  'panel.custom.lead':
+    'Draw your own widget with a few lines of shader code. Drag an example onto your tab to place it, or press + to add it at the end.',
+  'panel.custom.dragHint': 'Drag onto your tab, or click to add',
+  'panel.custom.about': 'Code your own: visualizers, animations, clocks',
+  'panel.custom.scratch': 'Start from scratch',
+  'panel.custom.scratchNote': 'A blank one, with comments',
+  'panel.custom.addExample': 'Add {name}',
+  'panel.custom.copyAi': 'Copy instructions for an AI',
+  'panel.custom.copyAiNote': 'Paste into any AI chat with your idea',
+  'panel.custom.copiedShort': 'Copied',
+  'panel.custom.copied': 'Instructions copied. Add your idea at the end.',
+  'panel.custom.yours': 'Your custom widgets',
+  'panel.custom.edit': 'Edit code',
+  'panel.custom.done': 'Done',
+  'panel.custom.codeOf': 'Code of {name}',
+  'panel.custom.live': 'Changes show on your tab as you type.',
+  'panel.custom.how': 'How it works',
+  'panel.custom.rule1':
+    'Write vec4 widget(vec2 uv, float t). It runs for every pixel of the tile and returns a color and how solid it is.',
+  'panel.custom.rule2':
+    'uv is where the pixel is: (0, 0) is the middle, and y goes from -0.5 to 0.5. t is time in seconds.',
+  'panel.custom.rule3':
+    "uColors[0] to uColors[3] are the wallpaper's colors and uInk is the text color, so a widget matches any wallpaper. uMouse and uDate are there too.",
+  'panel.custom.rule4': 'Shadertoy code with mainImage works as is.',
+  'panel.custom.rule5':
+    'Only math: no pictures, no internet. A widget too heavy for the computer pauses.',
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof en;

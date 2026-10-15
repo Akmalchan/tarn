@@ -38,7 +38,9 @@ import {watchSidePanel} from './side-panel';
 import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
 import {useLanguage} from '../i18n';
-import {draggedKind} from '../widgets/drag-new';
+import {draggedKind, draggedSize, droppedCode} from '../widgets/drag-new';
+import {saveWidgetData} from '../widgets/data';
+import {setCodeScene} from '../widgets/code/stage';
 import {darkInk, lightInk} from '../ui/ink';
 import {chordKeys, isTyping, shortcutFor, shortcutList} from './shortcuts';
 import {t} from '../i18n';
@@ -397,7 +399,11 @@ export class TarnApp extends LitElement {
   }
 
   override willUpdate(): void {
-    this.setAttribute('tone', sceneTone(sceneById(this.settings.scene)));
+    const scene = sceneById(this.settings.scene);
+    const tone = sceneTone(scene);
+    this.setAttribute('tone', tone);
+    // Custom widgets draw with the wallpaper's colors and ink.
+    setCodeScene(scene, tone);
   }
 
   private lastSearchLook = '';
@@ -511,7 +517,12 @@ export class TarnApp extends LitElement {
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'copy';
     this.incoming = kind;
-    this.board?.hoverNew(kind, event.clientX, event.clientY);
+    this.board?.hoverNew(
+      kind,
+      event.clientX,
+      event.clientY,
+      draggedSize(event.dataTransfer) ?? undefined,
+    );
     // A safety net: a drag over the page keeps firing dragover, so a long
     // silence means it ended somewhere we didn't hear about.
     clearTimeout(this.incomingTimer);
@@ -532,7 +543,16 @@ export class TarnApp extends LitElement {
     if (!draggedKind(event.dataTransfer) || !this.incoming) return;
     event.preventDefault();
     clearTimeout(this.incomingTimer);
-    this.board?.dropNew();
+    // A custom widget from an example brings its code: stored before the
+    // widget appears, so it starts with it.
+    const code =
+      this.incoming === 'code' ? droppedCode(event.dataTransfer) : null;
+    this.board?.dropNew(
+      code?.name,
+      code
+        ? id => void saveWidgetData(id, {lang: 'glsl', code: code.code})
+        : undefined,
+    );
     this.incoming = null;
   };
 

@@ -18,6 +18,7 @@ import {MAX_COLUMNS, SPAN, columnsFor, type WidgetSize} from '../layout/bands';
 import {
   DEFAULT_WIDGET_SIZE,
   WIDGET_SIZE_OPTIONS,
+  fitWidgetSize,
   newWidgetId,
   type WidgetEntry,
   type WidgetKind,
@@ -900,7 +901,12 @@ export class TarnBoard extends LitElement {
   private incomingAt = {x: Infinity, y: Infinity};
 
   /** A new widget of `kind` hovers at the pointer (viewport px). */
-  hoverNew(kind: WidgetKind, clientX: number, clientY: number): void {
+  hoverNew(
+    kind: WidgetKind,
+    clientX: number,
+    clientY: number,
+    size: WidgetSize = DEFAULT_WIDGET_SIZE[kind],
+  ): void {
     if (this.drag || this.resizing) return;
     const current = this.preview?.some(w => w.id === INCOMING)
       ? this.preview
@@ -915,7 +921,7 @@ export class TarnBoard extends LitElement {
     this.incomingAt = {x: clientX, y: clientY};
     const list = current ?? [
       ...this.widgets,
-      {id: INCOMING, kind, size: DEFAULT_WIDGET_SIZE[kind]},
+      {id: INCOMING, kind, size: fitWidgetSize(kind, size)},
     ];
     const board = this.getBoundingClientRect();
     const next = nearestOrder(
@@ -937,13 +943,21 @@ export class TarnBoard extends LitElement {
     this.incomingAt = {x: Infinity, y: Infinity};
   }
 
-  /** Dropped: the empty tile becomes a real widget, saved in its place. */
-  dropNew(): void {
+  /**
+   * Dropped: the empty tile becomes a real widget, saved in its place.
+   * `name` names it; `prepare` runs with its id before the save (a custom
+   * widget's code is stored first, so it never shows other code).
+   */
+  dropNew(name?: string, prepare?: (id: string) => void): void {
     const list = this.preview;
     const incoming = list?.find(w => w.id === INCOMING);
     this.incomingAt = {x: Infinity, y: Infinity};
     if (!list || !incoming) return;
-    const added = {...incoming, id: newWidgetId(incoming.kind)};
+    const id = newWidgetId(incoming.kind);
+    const added: WidgetEntry = name
+      ? {...incoming, id, name}
+      : {...incoming, id};
+    prepare?.(id);
     const next = list.map(w => (w.id === INCOMING ? added : w));
     this.preview = next;
     this.announcement = t('board.moved', {

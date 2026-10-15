@@ -12,7 +12,7 @@ Open it full screen and resize the window.
 - A widget is one custom element plus one entry in `src/widgets/registry.ts`.
   Nothing else in Tarn needs to know about a kind, except a few typed maps
   (schema, panel, i18n) that the compiler points you to.
-- There are six kinds. The ids in code and storage never change; some
+- There are seven kinds. The ids in code and storage never change; some
   user-facing names do:
 
   | Kind id     | Shown as  | Sizes       | Default size | Element          |
@@ -23,6 +23,7 @@ Open it full screen and resize the window.
   | `focus`     | Timer     | S, M        | S            | `tarn-focus`     |
   | `weather`   | Weather   | S, M, L     | M            | `tarn-weather`   |
   | `calendar`  | Calendar  | S, M, L     | L            | `tarn-calendar`  |
+  | `code`      | Custom    | S, M, L, XL | M            | `tarn-code`      |
 
 - Tiles are a fixed 136px cell with a 24px gap on every screen. Sizes are
   whole cells: S 1x1, M 2x1, L 2x2, XL 4x2.
@@ -543,6 +544,109 @@ Files: `tarn-calendar.ts`, `src/calendar/` (`dates.ts`, `sources.ts`,
   (proposal in `docs/design/onboarding-plan.md`, section 3).
 - Wakes only at midnight (and when the tab becomes visible).
 
+### Custom (`code`)
+
+Files: `tarn-code.ts`, `src/widgets/code/` (`source.ts`, `examples.ts`,
+`renderer.ts`, `stage.ts`, `code.worker.ts`, `ai-prompt.ts`).
+
+![Custom widgets on the Tarn wallpaper](design/custom-widgets.png)
+
+The user's own shader, drawn edge to edge in its tile: a visualizer, an
+animation, a clock of their own. Any number of them. Decided with the owner
+on 2026-10-14: shaders, not HTML/JS; a page of their own in the panel
+(Widgets > Custom widgets), out of the plain widget list (owner: "i dont
+want it to be as part of widgets"), with a short tutorial, six examples
+and a button that copies instructions for an AI chat.
+
+**Why shaders, not HTML/CSS/JS** (researched 2026-10-14):
+
+|               | Shader (GLSL), built                      | HTML/CSS/JS, not built                                                                                     |
+| ------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Browsers      | Chrome and Firefox                        | Chromium only: needs a manifest `sandbox` page; Firefox MV3 reportedly ignores `unsafe-eval` there         |
+| Network, data | Impossible: a shader only computes pixels | Has to be locked out with the sandbox CSP                                                                  |
+| Store policy  | Shader source is data                     | User-typed JS in a sandbox is allowed, but the library could never share JS widgets (remotely hosted code) |
+| Cost          | One GL context for every tile             | A document per tile                                                                                        |
+
+The usual "custom HTML" widget was rated weak demand and "a privacy and
+security hole" (`reports/New tab widget demand.md`, row 14). A JS mode can
+still come later on Chromium, under the same kind (content has `lang`).
+
+**What people write** (`source.ts`, `fragmentFor`):
+
+- `vec4 widget(vec2 uv, float t)`: `uv` centered and aspect-corrected (y
+  -0.5..0.5, like scenes), `t` seconds; returns premultiplied color and
+  alpha. Alpha 0 shows the tile's frost, so widgets sit on the page like
+  the others.
+- Declared for them: `uResolution` (tile pixels), `uTime`, `uMouse` (x, y
+  in pixels from the bottom left; z over the tile; w pressed), `uDate`
+  (year, month 0-11, day, seconds since midnight), `uInk` (the page's ink),
+  `uColors[4]` (the wallpaper's palette through `standOut` in `stage.ts`:
+  brightened on dark wallpapers, deepened and saturated on light ones, so
+  the dark base color of a scene still shows), and `hash01`, `noise`, `fbm`.
+- Shadertoy code (`mainImage`) runs as is, opaque, with `iTime`,
+  `iResolution`, `iMouse`, `iDate`, `iFrame`.
+- `#line 1` before the code, so the driver's error lines are the user's
+  (`parseErrors` cleans the log). Up to 16,000 characters (`CODE_LIMIT`).
+- The prelude, the rules in the panel, the AI instructions (`ai-prompt.ts`)
+  and this list must change together; `source.test.ts` checks that the AI
+  instructions name every declared input.
+
+**How it runs** (`stage.ts`, `renderer.ts`):
+
+- One `CodeRenderer` per page with one WebGL2 context on an
+  OffscreenCanvas: each tile is drawn in turn and copied into the tile's 2D
+  canvas. Browsers cap live contexts at about 16, and `MAX_WIDGETS` is 24.
+  In production it runs in `code.worker.ts` (tile canvases are transferred);
+  dev draws on the main thread (Chrome kills an extension page that starts
+  a worker from the dev server, as for the backdrop).
+- Nothing exists until the first custom tile. Compiling uses
+  `KHR_parallel_shader_compile` where present; the tile fades in (0.2 s)
+  with its first frame.
+- Pace like the scene: 30 fps, 20 fps at 40% speed after a minute without
+  input (`decidePace`); stops when the tab is hidden; reduced motion draws
+  one still frame. At most 2x pixel density.
+- A broken edit keeps the last working version drawing (the panel shows the
+  error); with none, the tile shows the first error.
+- Too heavy: a GPU fence per tile tells when its last frame isn't done;
+  after 12 late frames it steps down to half, then quarter resolution, then
+  pauses with "Paused: too heavy for this computer" and a Run anyway
+  button. A lost context twice within a minute pauses every tile.
+- Content `{lang: 'glsl', code}` in `storage.local`; a `lang` from a newer
+  Tarn is kept and shows "Made with a newer Tarn". Never synced (like
+  Notes); backups and Export carry it.
+- No title on the tile: the drawing is the content. The name labels it for
+  screen readers and in edit mode's holder.
+- No sound: a new tab has none of its own, and every way to get some (mic,
+  screen-share picker, `tabCapture`) asks each time. "Visualizer" examples
+  visualize time and the mouse.
+
+**In the panel** (`TarnPanel.renderCustom`, page `custom`): the Widgets
+page ends with one "Custom widgets" row that opens it (Back returns to
+Widgets); settings search finds it ("custom", "code", "shader", the
+examples' names).
+
+- Six examples (`examples.ts`; owner: six, 2026-10-14; the first seven were
+  "not cool"): Equalizer (M), Aurora (L), Synthwave (M), Galaxy (S), Clock
+  (S, the real time), Liquid (L, a drop follows the mouse). Each is live on
+  a plain dark gray (owner: the wallpaper behind them made them hard to
+  see), in the wallpaper's colors. Each card has a + (adds it at the end; so does a
+  click) and lifts with a grip on hover: drag puts it where it lands on the
+  tab (owner: the first cards weren't clearly draggable). Added at its size,
+  named after the example, with its code open (the drag carries the code and size: `newWidgetSizeType`,
+  `droppedCode` in `drag-new.ts`; the code is stored before the widget
+  appears, `TarnBoard.dropNew(name, prepare)`).
+- Two cards under them: "Start from scratch" (`BLANK_CODE`, the smallest
+  widget with comments) and "Copy instructions for an AI"
+  (`aiInstructions()`, English on purpose, for the assistant; it answers in
+  the user's language). The card says "Copied" for a moment.
+- No search field on this page.
+- "Your custom widgets": each opens into an editor: a live preview at the
+  tile's shape, the code (Tab indents), and the errors with line numbers.
+  Saved 400 ms after typing; every open tab follows.
+- "How it works": five short rules.
+- Custom widgets are not in the plain "Add a widget" list
+  (`CUSTOM_KINDS`), nor in example setups.
+
 ## 5. Settings
 
 ### Widgets page (`TarnPanel.renderWidgets`)
@@ -558,11 +662,13 @@ Files: `tarn-calendar.ts`, `src/calendar/` (`dates.ts`, `sources.ts`,
   (`panel.widgetAbout.<kind>`), a grip and a +. Drag it onto the page to
   place it there, or click to add it at the end at its default size. The
   rows are disabled at `MAX_WIDGETS` (24).
+- **Custom widgets** below them: one row that opens their own page (see
+  Custom (`code`) above).
 - **Search** at the top filters both lists by the user's name, the kind's
   name, its description and its id.
 
 Glyphs per kind (`KIND_GLYPHS`, from `src/ui/glyphs.ts`): bookmark, note,
-checklist, timer, weather, calendar.
+checklist, timer, weather, calendar, code.
 
 ### Example setups (Settings > Advanced)
 
@@ -792,39 +898,40 @@ Settings sync between computers that may run different Tarn versions:
 
 ## 8. Files map
 
-| File                                         | What it holds                                                                                                                                                                                                                                                                          |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/widgets/registry.ts`                    | `WIDGETS`, `renderWidget`                                                                                                                                                                                                                                                              |
-| `src/settings/schema.ts`                     | `WidgetKind`, `WIDGET_KINDS`, `WIDGET_SIZE_OPTIONS`, `DEFAULT_WIDGET_SIZE`, `fitWidgetSize`, `WidgetEntry`, `MAX_WIDGETS`, `START_WIDGETS`, `normalizeWidgets`, `newWidgetId`                                                                                                          |
-| `src/settings/store.ts`                      | `saveSettings`, `replaceSettings`, `mergeWidgets` (keeps unknown kinds)                                                                                                                                                                                                                |
-| `src/settings/backup.ts`                     | Backups with every `widget.*` key                                                                                                                                                                                                                                                      |
-| `src/layout/bands.ts`                        | `layoutBands`, `columnsFor`, `SPAN`, `WIDGET_SIZES`                                                                                                                                                                                                                                    |
-| `src/widgets/geometry.ts`                    | `CELL`, `GAP`, `PITCH`, `placeTiles`, `nearestOrder`, `nearestIndex`, `moveTo`, `swap`                                                                                                                                                                                                 |
-| `src/widgets/tarn-board.ts`                  | The board: placement, FLIP, edit mode, resize, holder, drop from panel, `tarn-tiles`, `tarn-reorder`                                                                                                                                                                                   |
-| `src/widgets/data.ts`                        | Content storage, localStorage mirror, `debounce`                                                                                                                                                                                                                                       |
-| `src/widgets/start.ts`                       | Start content for `favorites-start`, `notes-start`                                                                                                                                                                                                                                     |
-| `src/widgets/samples.ts`                     | `EXAMPLES`, `buildExample`                                                                                                                                                                                                                                                             |
-| `src/widgets/drag-new.ts`                    | Drag type for adding from the panel                                                                                                                                                                                                                                                    |
-| `src/widgets/styles.ts`                      | `widgetStyles`, `sheetStyles`                                                                                                                                                                                                                                                          |
-| `src/widgets/tarn-favorites.ts`              | Bookmarks view                                                                                                                                                                                                                                                                         |
-| `src/widgets/favorites-model.ts`             | Bookmarks data and changes (pure), `fromBookmarks`                                                                                                                                                                                                                                     |
-| `src/widgets/favorites-drag.ts`              | `SiteDrag`: arranging sites by hand                                                                                                                                                                                                                                                    |
-| `src/widgets/bookmarks.ts`                   | Reading and watching the browser's bookmarks bar                                                                                                                                                                                                                                       |
-| `src/widgets/site-icon.ts`                   | Icons from Chrome's cache, light-icon test, own icons, letter tints                                                                                                                                                                                                                    |
-| `src/widgets/tarn-notes.ts`                  | Notes                                                                                                                                                                                                                                                                                  |
-| `src/widgets/tarn-tasks.ts`                  | Tasks                                                                                                                                                                                                                                                                                  |
-| `src/widgets/tarn-focus.ts`, `focus-time.ts` | Timer                                                                                                                                                                                                                                                                                  |
-| `src/widgets/tarn-weather.ts`                | Weather view and picker                                                                                                                                                                                                                                                                |
-| `src/weather/`                               | Providers, refresh rules, units, conditions, glyphs, Google key                                                                                                                                                                                                                        |
-| `src/widgets/tarn-calendar.ts`               | Calendar view                                                                                                                                                                                                                                                                          |
-| `src/calendar/`                              | Dates and week starts; event source registry                                                                                                                                                                                                                                           |
-| `src/widgets/tarn-clock.ts`                  | The clock (not a widget)                                                                                                                                                                                                                                                               |
-| `src/app/tarn-app.ts`                        | Page group, board wiring, `onReorder`, `onTiles`, drop from panel                                                                                                                                                                                                                      |
-| `src/app/side-panel.ts`                      | `watchSidePanel` (edit mode)                                                                                                                                                                                                                                                           |
-| `src/app/mirror.ts`, `tile-memory.ts`        | First-paint mirrors: layout, frost positions                                                                                                                                                                                                                                           |
-| `src/backdrop/glass.ts`                      | Frost drawn by the scene                                                                                                                                                                                                                                                               |
-| `src/panel/tarn-panel.ts`                    | Widgets page (`renderWidgets`, `widgetRow`, `widgetCard`), example setups, Weather settings                                                                                                                                                                                            |
-| Tests                                        | `layout/bands.test.ts`, `widgets/geometry.test.ts`, `widgets/favorites-model.test.ts`, `widgets/site-icon.test.ts`, `widgets/focus-time.test.ts`, `weather/weather.test.ts`, `calendar/dates.test.ts`, `settings/settings.test.ts`, `settings/protection.test.ts`, `i18n/i18n.test.ts` |
+| File                                         | What it holds                                                                                                                                                                                                                                                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/widgets/registry.ts`                    | `WIDGETS`, `renderWidget`                                                                                                                                                                                                                                                                                             |
+| `src/settings/schema.ts`                     | `WidgetKind`, `WIDGET_KINDS`, `WIDGET_SIZE_OPTIONS`, `DEFAULT_WIDGET_SIZE`, `fitWidgetSize`, `WidgetEntry`, `MAX_WIDGETS`, `START_WIDGETS`, `normalizeWidgets`, `newWidgetId`                                                                                                                                         |
+| `src/settings/store.ts`                      | `saveSettings`, `replaceSettings`, `mergeWidgets` (keeps unknown kinds)                                                                                                                                                                                                                                               |
+| `src/settings/backup.ts`                     | Backups with every `widget.*` key                                                                                                                                                                                                                                                                                     |
+| `src/layout/bands.ts`                        | `layoutBands`, `columnsFor`, `SPAN`, `WIDGET_SIZES`                                                                                                                                                                                                                                                                   |
+| `src/widgets/geometry.ts`                    | `CELL`, `GAP`, `PITCH`, `placeTiles`, `nearestOrder`, `nearestIndex`, `moveTo`, `swap`                                                                                                                                                                                                                                |
+| `src/widgets/tarn-board.ts`                  | The board: placement, FLIP, edit mode, resize, holder, drop from panel, `tarn-tiles`, `tarn-reorder`                                                                                                                                                                                                                  |
+| `src/widgets/data.ts`                        | Content storage, localStorage mirror, `debounce`                                                                                                                                                                                                                                                                      |
+| `src/widgets/start.ts`                       | Start content for `favorites-start`, `notes-start`                                                                                                                                                                                                                                                                    |
+| `src/widgets/samples.ts`                     | `EXAMPLES`, `buildExample`                                                                                                                                                                                                                                                                                            |
+| `src/widgets/drag-new.ts`                    | Drag type for adding from the panel                                                                                                                                                                                                                                                                                   |
+| `src/widgets/styles.ts`                      | `widgetStyles`, `sheetStyles`                                                                                                                                                                                                                                                                                         |
+| `src/widgets/tarn-favorites.ts`              | Bookmarks view                                                                                                                                                                                                                                                                                                        |
+| `src/widgets/favorites-model.ts`             | Bookmarks data and changes (pure), `fromBookmarks`                                                                                                                                                                                                                                                                    |
+| `src/widgets/favorites-drag.ts`              | `SiteDrag`: arranging sites by hand                                                                                                                                                                                                                                                                                   |
+| `src/widgets/bookmarks.ts`                   | Reading and watching the browser's bookmarks bar                                                                                                                                                                                                                                                                      |
+| `src/widgets/site-icon.ts`                   | Icons from Chrome's cache, light-icon test, own icons, letter tints                                                                                                                                                                                                                                                   |
+| `src/widgets/tarn-notes.ts`                  | Notes                                                                                                                                                                                                                                                                                                                 |
+| `src/widgets/tarn-tasks.ts`                  | Tasks                                                                                                                                                                                                                                                                                                                 |
+| `src/widgets/tarn-focus.ts`, `focus-time.ts` | Timer                                                                                                                                                                                                                                                                                                                 |
+| `src/widgets/tarn-weather.ts`                | Weather view and picker                                                                                                                                                                                                                                                                                               |
+| `src/weather/`                               | Providers, refresh rules, units, conditions, glyphs, Google key                                                                                                                                                                                                                                                       |
+| `src/widgets/tarn-code.ts`, `code/`          | Custom widgets: element, shader source, examples, renderer, stage, worker, AI instructions                                                                                                                                                                                                                            |
+| `src/widgets/tarn-calendar.ts`               | Calendar view                                                                                                                                                                                                                                                                                                         |
+| `src/calendar/`                              | Dates and week starts; event source registry                                                                                                                                                                                                                                                                          |
+| `src/widgets/tarn-clock.ts`                  | The clock (not a widget)                                                                                                                                                                                                                                                                                              |
+| `src/app/tarn-app.ts`                        | Page group, board wiring, `onReorder`, `onTiles`, drop from panel                                                                                                                                                                                                                                                     |
+| `src/app/side-panel.ts`                      | `watchSidePanel` (edit mode)                                                                                                                                                                                                                                                                                          |
+| `src/app/mirror.ts`, `tile-memory.ts`        | First-paint mirrors: layout, frost positions                                                                                                                                                                                                                                                                          |
+| `src/backdrop/glass.ts`                      | Frost drawn by the scene                                                                                                                                                                                                                                                                                              |
+| `src/panel/tarn-panel.ts`                    | Widgets page (`renderWidgets`, `widgetRow`, `widgetCard`), example setups, Weather settings                                                                                                                                                                                                                           |
+| Tests                                        | `layout/bands.test.ts`, `widgets/geometry.test.ts`, `widgets/favorites-model.test.ts`, `widgets/site-icon.test.ts`, `widgets/focus-time.test.ts`, `widgets/code/source.test.ts`, `weather/weather.test.ts`, `calendar/dates.test.ts`, `settings/settings.test.ts`, `settings/protection.test.ts`, `i18n/i18n.test.ts` |
 
 ## Known gaps (2026-10-14)
 

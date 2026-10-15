@@ -19,6 +19,13 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Custom widgets: draw your own with a few lines of shader code, as many as
+  you like, from Settings > Widgets > Custom widgets. Start from six live
+  examples (Equalizer, Aurora, Synthwave, Galaxy, Clock, Liquid), click or
+  drag one onto your page, edit its code and see it on your tab as you
+  type, or copy instructions for an AI chat and paste back what it writes.
+  Shadertoy code works too. They use the wallpaper's colors, pause when
+  the tab is hidden, and can't reach the internet.
 - What's new in settings: each release's notes, with a small dot after an
   update until you open it. Settings > Advanced > About also gets Rate
   Tarn (opens the store you installed from), Send feedback (a GitHub

@@ -11,6 +11,7 @@ import './tarn-notes';
 import './tarn-tasks';
 import './tarn-weather';
 import './tarn-calendar';
+import './tarn-code';
 import {t, type MessageKey} from '../i18n';
 
 /**
@@ -44,6 +45,7 @@ export const WIDGETS: Readonly<Record<WidgetKind, WidgetDefinition>> = {
   focus: {nameKey: 'widget.focus', tag: 'tarn-focus'},
   weather: {nameKey: 'widget.weather', tag: 'tarn-weather', editable: true},
   calendar: {nameKey: 'widget.calendar', tag: 'tarn-calendar'},
+  code: {nameKey: 'widget.code', tag: 'tarn-code'},
 };
 
 /**
