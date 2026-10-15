@@ -18,6 +18,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Wallpaper cards in settings say Live or Photo in their corner.
 - Custom widgets: draw your own with a few lines of shader code, as many as
   you like, from Settings > Widgets > Custom widgets. Start from six live
   examples (Equalizer, Aurora, Synthwave, Galaxy, Clock, Liquid), click or

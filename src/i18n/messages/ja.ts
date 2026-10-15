@@ -191,6 +191,8 @@ export const ja: Catalog = {
   'panel.yourPhotos': 'あなたの写真',
   'panel.live': 'ライブ',
   'panel.photo': '写真',
+  'panel.kind.live': 'ライブ',
+  'panel.kind.liveLabel': 'アニメーション壁紙',
   'panel.deletePhoto': '削除',
   'panel.deletePhotoNamed': '{name} を削除',
   'panel.photoAdded': '「あなたの写真」に追加しました',

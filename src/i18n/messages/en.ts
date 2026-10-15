@@ -228,6 +228,8 @@ export const en = {
   'panel.yourPhotos': 'Your Photos',
   'panel.live': 'Live',
   'panel.photo': 'Photo',
+  'panel.kind.live': 'Live',
+  'panel.kind.liveLabel': 'Animated wallpaper',
   'panel.deletePhoto': 'Delete',
   'panel.deletePhotoNamed': 'Delete {name}',
   'panel.photoAdded': 'Added to Your Photos',

@@ -192,6 +192,8 @@ export const tr: Catalog = {
   'panel.yourPhotos': 'Fotoğraflarınız',
   'panel.live': 'Canlı',
   'panel.photo': 'Fotoğraf',
+  'panel.kind.live': 'Canlı',
+  'panel.kind.liveLabel': 'Hareketli duvar kâğıdı',
   'panel.deletePhoto': 'Sil',
   'panel.deletePhotoNamed': '{name} fotoğrafını sil',
   'panel.photoAdded': 'Fotoğraflarınıza eklendi',

@@ -194,6 +194,8 @@ export const ptBR: Catalog = {
   'panel.yourPhotos': 'Suas fotos',
   'panel.live': 'Ao vivo',
   'panel.photo': 'Foto',
+  'panel.kind.live': 'Animado',
+  'panel.kind.liveLabel': 'Papel de parede animado',
   'panel.deletePhoto': 'Apagar',
   'panel.deletePhotoNamed': 'Apagar {name}',
   'panel.photoAdded': 'Adicionada a Suas fotos',

@@ -188,6 +188,8 @@ export const zhCN: Catalog = {
   'panel.yourPhotos': '你的照片',
   'panel.live': '动态',
   'panel.photo': '照片',
+  'panel.kind.live': '动态',
+  'panel.kind.liveLabel': '动态壁纸',
   'panel.deletePhoto': '删除',
   'panel.deletePhotoNamed': '删除 {name}',
   'panel.photoAdded': '已添加到“你的照片”',

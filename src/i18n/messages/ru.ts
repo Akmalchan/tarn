@@ -194,6 +194,8 @@ export const ru: Catalog = {
   'panel.yourPhotos': 'Ваши фото',
   'panel.live': 'Живые',
   'panel.photo': 'Фото',
+  'panel.kind.live': 'Анимация',
+  'panel.kind.liveLabel': 'Анимированные обои',
   'panel.deletePhoto': 'Удалить',
   'panel.deletePhotoNamed': 'Удалить «{name}»',
   'panel.photoAdded': 'Добавлено в «Ваши фото»',
