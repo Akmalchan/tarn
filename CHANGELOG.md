@@ -13,6 +13,13 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Custom widgets: draw your own with a few lines of shader code, as many as
+  you like. Start from seven live examples (Waves, Orbits, Lava lamp,
+  Seconds, Equalizer, Ripples, Blank), edit the code in Settings > Widgets
+  and see it on your tab as you type, or copy instructions for an AI chat
+  and paste back what it writes. Shadertoy code works too. They use the
+  wallpaper's colors, pause when the tab is hidden, and can't reach the
+  internet.
 - Lighter wallpapers for slower computers: Tarn (calmer, less shiny,
   slower), Bloom, Silk, Aurora (more natural rays) and Contour draw with a
   fraction of the work; Wave is remade with layered, twisting ribbons of

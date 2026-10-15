@@ -18,6 +18,7 @@ export const ja: Catalog = {
   'widget.focus': 'タイマー',
   'widget.weather': '天気',
   'widget.calendar': 'カレンダー',
+  'widget.code': 'カスタム',
   'board.hint': 'ドラッグして並べ替え・角をドラッグしてサイズ変更',
   'board.movable': '移動できるウィジェット',
   'board.position':
@@ -215,6 +216,7 @@ export const ja: Catalog = {
   'panel.widgetAbout.weather': '今日と、この先 1 週間',
   'panel.widgetAbout.calendar': '今月をひと目で',
   'panel.widgetAbout.focus': '好きな長さのカウントダウン',
+  'panel.widgetAbout.code': '自分で書くシェーダーコード',
   'panel.language.auto': 'ブラウザと同じ',
   'panel.language.note':
     '「ブラウザと同じ」は、Tarn が対応していればブラウザの言語に、対応していなければ英語になります。',
@@ -358,4 +360,41 @@ export const ja: Catalog = {
   'keys.help': 'ショートカットを表示',
   'keys.leave': '入力欄から出る',
   'keys.or': 'または',
+  'code.example.waves': '波',
+  'code.example.orbits': '軌道',
+  'code.example.lava': 'ラバランプ',
+  'code.example.seconds': '秒',
+  'code.example.equalizer': 'イコライザー',
+  'code.example.ripples': '波紋',
+  'code.example.blank': '空白',
+  'code.errorLine': '{line} 行目: {message}',
+  'code.missing': 'ここに描くには widget 関数を書いてください',
+  'code.heavy': '一時停止中: このコンピュータには重すぎます',
+  'code.run': 'それでも実行',
+  'code.unavailable': 'このブラウザではカスタムウィジェットを描けません',
+  'code.newer': '新しいバージョンの Tarn で作成',
+  'panel.custom': 'カスタムウィジェット',
+  'panel.custom.lead':
+    '数行のシェーダーコードで自分だけのウィジェットを描けます。例から始めて、いくつでも追加できます。',
+  'panel.custom.addExample': '{name} を追加',
+  'panel.custom.copyAi': 'AI 用の説明をコピー',
+  'panel.custom.copyAiNote':
+    'アイデアと一緒に ChatGPT、Claude、Gemini に貼り付けて、返ってきたコードをここに貼り付けます',
+  'panel.custom.copied':
+    '説明をコピーしました。最後にアイデアを書き足してください。',
+  'panel.custom.yours': 'あなたのカスタムウィジェット',
+  'panel.custom.edit': 'コードを編集',
+  'panel.custom.done': '完了',
+  'panel.custom.codeOf': '{name} のコード',
+  'panel.custom.live': '入力するとすぐにタブに反映されます。',
+  'panel.custom.how': 'しくみ',
+  'panel.custom.rule1':
+    'vec4 widget(vec2 uv, float t) を書きます。ウィジェットのピクセルごとに実行され、色と不透明度を返します。',
+  'panel.custom.rule2':
+    'uv はピクセルの位置です。(0, 0) が中央で、y は -0.5 から 0.5 まで。t は秒単位の時間です。',
+  'panel.custom.rule3':
+    'uColors[0]〜uColors[3] は壁紙の色、uInk は文字の色なので、どの壁紙にも合います。uMouse と uDate も使えます。',
+  'panel.custom.rule4': 'Shadertoy の mainImage のコードもそのまま動きます。',
+  'panel.custom.rule5':
+    '数式だけ: 画像もインターネットも使いません。重すぎるウィジェットは一時停止します。',
 };

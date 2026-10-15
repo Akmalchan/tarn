@@ -38,7 +38,9 @@
 - **Widgets.** Bookmarks (your browser's bookmarks bar from the first
   tab, then folders and your own icons), notes, tasks, a calendar, a
   timer and weather, on a calm grid you arrange while settings is open.
-  Example setups show what a page can look like.
+  Example setups show what a page can look like. Custom widgets: draw
+  your own with a few lines of shader code, from live examples or with
+  instructions to paste into an AI chat.
 - **Search box.** Under the clock, shaped like your browser's own: Enter
   searches with your browser's search engine, typed addresses and your
   bookmarks come up as you type, and voice, Google Lens and AI Mode are

@@ -39,6 +39,7 @@ import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
 import {useLanguage} from '../i18n';
 import {draggedKind} from '../widgets/drag-new';
+import {setCodeScene} from '../widgets/code/stage';
 import {darkInk, lightInk} from '../ui/ink';
 import {chordKeys, isTyping, shortcutFor, shortcutList} from './shortcuts';
 import {t} from '../i18n';
@@ -397,7 +398,11 @@ export class TarnApp extends LitElement {
   }
 
   override willUpdate(): void {
-    this.setAttribute('tone', sceneTone(sceneById(this.settings.scene)));
+    const scene = sceneById(this.settings.scene);
+    const tone = sceneTone(scene);
+    this.setAttribute('tone', tone);
+    // Custom widgets draw with the wallpaper's colors and ink.
+    setCodeScene(scene, tone);
   }
 
   private lastSearchLook = '';

@@ -22,6 +22,7 @@ import type {Scene} from '../backdrop/scenes/types';
 import type {WidgetSize} from '../layout/bands';
 import {
   CLOCK_STYLES,
+  CUSTOM_KINDS,
   DEFAULT_SETTINGS,
   DEFAULT_WIDGET_SIZE,
   MAX_WIDGETS,
@@ -82,6 +83,17 @@ import {
   faceStyles,
 } from '../widgets/clock-faces';
 import {EXAMPLES, buildExample, type Example} from '../widgets/samples';
+import '../widgets/tarn-code';
+import {debounce, loadWidgetData, saveWidgetData} from '../widgets/data';
+import {aiInstructions} from '../widgets/code/ai-prompt';
+import {
+  CODE_EXAMPLES,
+  DEFAULT_CODE,
+  type CodeExample,
+} from '../widgets/code/examples';
+import type {TileState} from '../widgets/code/renderer';
+import {normalizeCode} from '../widgets/code/source';
+import {setCodeScene} from '../widgets/code/stage';
 import {
   addWallpaper,
   deleteWallpaper,
@@ -132,6 +144,9 @@ export class TarnPanel extends LitElement {
     photos: {state: true},
     backups: {state: true},
     googleKey: {state: true},
+    codeOpen: {state: true},
+    codeDraft: {state: true},
+    codeState: {state: true},
   };
 
   static override styles = css`
@@ -759,6 +774,124 @@ export class TarnPanel extends LitElement {
       opacity: 0.6;
     }
 
+    /* Custom widgets: live examples on the current wallpaper, each in a
+       small tile like the page's, and the code editor. */
+    .code-picks {
+      --ring-gap: var(--bg);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px 10px;
+      margin-bottom: 14px;
+    }
+
+    .code-picks .meta {
+      justify-content: center;
+    }
+
+    .thumb.code-thumb {
+      position: relative;
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      border-radius: 14px;
+    }
+
+    .code-thumb tarn-code {
+      position: absolute;
+      inset: 7px;
+      width: auto;
+      height: auto;
+      overflow: hidden;
+      border-radius: 10px;
+      background: rgb(255 255 255 / 0.04);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+    }
+
+    .code-thumb tarn-code.dark {
+      --ink: rgb(244 247 251);
+      --ink-dim: rgb(244 247 251 / 0.66);
+      --chip: rgb(255 255 255 / 0.14);
+      --chip-hover: rgb(255 255 255 / 0.22);
+    }
+
+    .code-thumb tarn-code.light {
+      --ink: rgb(22 26 38);
+      --ink-dim: rgb(22 26 38 / 0.64);
+      --chip: rgb(255 255 255 / 0.45);
+      --chip-hover: rgb(255 255 255 / 0.65);
+    }
+
+    .code-editor {
+      display: grid;
+      gap: 10px;
+      padding: 4px var(--row-x) 12px;
+    }
+
+    .code-editor .thumb.code-thumb {
+      aspect-ratio: auto;
+      height: 168px;
+    }
+
+    /* The tile at its own shape, inside the preview. */
+    .code-editor .code-thumb tarn-code {
+      position: relative;
+      inset: auto;
+      width: 124px;
+      aspect-ratio: 1;
+    }
+
+    .code-editor .code-m tarn-code {
+      width: min(270px, 92%);
+      aspect-ratio: 296 / 136;
+    }
+
+    .code-editor .code-xl tarn-code {
+      width: min(270px, 92%);
+      aspect-ratio: 616 / 296;
+    }
+
+    .code-editor textarea {
+      min-height: 280px;
+      padding: 10px 12px;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+      tab-size: 2;
+      background: var(--field);
+      border-radius: 8px;
+    }
+
+    .code-status p {
+      margin: 0;
+      font-size: var(--desc);
+      line-height: var(--desc-lh);
+      color: var(--muted);
+    }
+
+    .code-status .code-error {
+      font:
+        11.5px/1.4 ui-monospace,
+        'SF Mono',
+        Menlo,
+        monospace;
+      color: #d93025;
+    }
+
+    .steps {
+      display: grid;
+      gap: 6px;
+      padding-left: 18px;
+    }
+
+    .steps code,
+    .lead code {
+      font:
+        0.95em ui-monospace,
+        'SF Mono',
+        Menlo,
+        monospace;
+    }
+
     .thumb {
       display: grid;
       place-content: center;
@@ -1109,6 +1242,14 @@ export class TarnPanel extends LitElement {
   declare backups: AutoBackupInfo[];
   /** The Google Weather API key, from storage.local (never synced). */
   declare googleKey: string;
+  /** The custom widget whose code is open in the editor, by id. */
+  declare codeOpen: string | null;
+  declare codeDraft: string;
+  /** How the open code compiles, from its preview. */
+  declare codeState: TileState;
+  private saveCode = debounce((id: string, code: string) => {
+    void saveWidgetData(id, {lang: 'glsl', code});
+  }, 400);
   /** Object URLs of the photos' thumbnails, by id. */
   private photoUrls = new Map<string, string>();
 
@@ -1131,6 +1272,9 @@ export class TarnPanel extends LitElement {
     this.photos = [];
     this.backups = [];
     this.googleKey = '';
+    this.codeOpen = null;
+    this.codeDraft = '';
+    this.codeState = {state: 'ok'};
     // Re-renders in the new words when the language changes.
     new LocaleController(this);
   }
@@ -1502,8 +1646,16 @@ export class TarnPanel extends LitElement {
     const placed = widgets
       .map((widget, index) => ({widget, index}))
       .filter(({widget}) => matches(widget.kind, widget.name));
-    const kinds = WIDGET_KINDS.filter(kind => matches(kind));
-    if (query && !placed.length && !kinds.length) {
+    const kinds = WIDGET_KINDS.filter(
+      kind => !CUSTOM_KINDS.includes(kind) && matches(kind),
+    );
+    const custom =
+      !query ||
+      [t('panel.custom'), t('panel.custom.lead'), 'code shader glsl']
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+    if (query && !placed.length && !kinds.length && !custom) {
       return html`<p class="none">
         ${t('panel.noWidgets', {query: this.query.trim()})}
       </p>`;
@@ -1540,6 +1692,145 @@ export class TarnPanel extends LitElement {
                   : nothing
               }
             </section>`
+          : nothing
+      }
+      ${custom ? this.renderCustom(full) : nothing}
+    `;
+  }
+
+  /**
+   * Custom widgets: the user's own shaders (docs/widgets.md, "Custom").
+   * Examples to start from, live; instructions to copy for an AI chat; an
+   * editor for each custom widget on the tab; the rules, short.
+   */
+  private renderCustom(full: boolean) {
+    const {scene} = this.settings;
+    const art = this.art(scene);
+    setCodeScene(sceneById(scene), art.tone);
+    const yours = this.settings.widgets.filter(w => w.kind === 'code');
+    return html`<section data-target="custom">
+        <h2>${t('panel.custom')}</h2>
+        <p class="lead">${t('panel.custom.lead')}</p>
+        <div class="code-picks">
+          ${CODE_EXAMPLES.map(
+            example =>
+              html`<button
+                class="pick"
+                ?disabled=${full}
+                title=${t('panel.custom.addExample', {name: t(example.name)})}
+                @click=${() => void this.addCustom(example)}
+              >
+                <span
+                  class="thumb code-thumb"
+                  style="background: ${art.background}"
+                >
+                  <tarn-code
+                    class=${art.tone}
+                    .code=${example.code}
+                    .heading=${t(example.name)}
+                  ></tarn-code>
+                </span>
+                <span class="meta"
+                  ><span class="label">${t(example.name)}</span></span
+                >
+              </button>`,
+          )}
+        </div>
+        <div class="group">
+          <button class="row" @click=${this.copyAi}>
+            ${icon('sparkle')}
+            <span class="txt"
+              >${t('panel.custom.copyAi')}
+              <span class="sub">${t('panel.custom.copyAiNote')}</span></span
+            >
+          </button>
+        </div>
+      </section>
+      ${
+        yours.length
+          ? html`<section data-target="custom-yours">
+              <h2>${t('panel.custom.yours')}</h2>
+              <div class="group">
+                ${yours.map(widget => this.customRow(widget, art))}
+              </div>
+            </section>`
+          : nothing
+      }
+      <section>
+        <h2>${t('panel.custom.how')}</h2>
+        <ol class="note steps">
+          <li>${t('panel.custom.rule1')}</li>
+          <li>${t('panel.custom.rule2')}</li>
+          <li>${t('panel.custom.rule3')}</li>
+          <li>${t('panel.custom.rule4')}</li>
+          <li>${t('panel.custom.rule5')}</li>
+        </ol>
+      </section>`;
+  }
+
+  /** One of the user's custom widgets; opens into its code. */
+  private customRow(widget: WidgetEntry, art: Art) {
+    const name = widget.name ?? t('widget.code');
+    const open = this.codeOpen === widget.id;
+    const state = this.codeState;
+    return html`
+      <button
+        class="row"
+        aria-expanded=${open}
+        @click=${() => void this.toggleCode(widget.id)}
+      >
+        ${icon('code')}
+        <span class="txt">${name}</span>
+        <span class="value"
+          >${open ? t('panel.custom.done') : t('panel.custom.edit')}</span
+        >
+      </button>
+      ${
+        open
+          ? html`<div class="code-editor">
+              <span
+                class="thumb code-thumb code-${widget.size}"
+                style="background: ${art.background}"
+              >
+                <tarn-code
+                  class=${art.tone}
+                  .code=${this.codeDraft}
+                  .heading=${name}
+                  @code-state=${(event: CustomEvent<TileState>) =>
+                    (this.codeState = event.detail)}
+                ></tarn-code>
+              </span>
+              <textarea
+                spellcheck="false"
+                autocapitalize="off"
+                aria-label=${t('panel.custom.codeOf', {name})}
+                .value=${this.codeDraft}
+                @input=${(event: Event) => this.onCodeInput(widget.id, event)}
+                @keydown=${this.onCodeKey}
+                @blur=${this.saveCode.flush}
+              ></textarea>
+              <div class="code-status" role="status">
+                ${
+                  state.state === 'error'
+                    ? state.errors.slice(0, 3).map(
+                        error =>
+                          html`<p class="code-error">
+                            ${
+                              error.line
+                                ? t('code.errorLine', {
+                                    line: error.line,
+                                    message: error.message,
+                                  })
+                                : error.message
+                            }
+                          </p>`,
+                      )
+                    : state.state === 'missing'
+                      ? html`<p class="code-error">${t('code.missing')}</p>`
+                      : html`<p>${t('panel.custom.live')}</p>`
+                }
+              </div>
+            </div>`
           : nothing
       }
     `;
@@ -2262,6 +2553,56 @@ export class TarnPanel extends LitElement {
     this.showToast(t('panel.widgets.added', {name: t(KIND_NAMES[kind])}));
   }
 
+  /** A custom widget from an example: its code first, then the widget. */
+  private async addCustom(example: CodeExample): Promise<void> {
+    const id = newWidgetId('code');
+    await saveWidgetData(id, {lang: 'glsl', code: example.code});
+    const name = example.id === 'blank' ? undefined : t(example.name);
+    const widget: WidgetEntry = name
+      ? {id, kind: 'code', size: example.size, name}
+      : {id, kind: 'code', size: example.size};
+    this.applyPatch({widgets: [...this.settings.widgets, widget]});
+    this.showToast(t('panel.widgets.added', {name: name ?? t('widget.code')}));
+    await this.toggleCode(id);
+  }
+
+  private async toggleCode(id: string): Promise<void> {
+    this.saveCode.flush();
+    if (this.codeOpen === id) {
+      this.codeOpen = null;
+      return;
+    }
+    const content = await loadWidgetData(id, raw =>
+      normalizeCode(raw, DEFAULT_CODE),
+    );
+    this.codeDraft = content.code;
+    this.codeState = {state: 'ok'};
+    this.codeOpen = id;
+  }
+
+  private onCodeInput(id: string, event: Event): void {
+    this.codeDraft = (event.target as HTMLTextAreaElement).value;
+    this.saveCode(id, this.codeDraft);
+  }
+
+  /** Tab indents two spaces instead of leaving the field. */
+  private onCodeKey = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab' || event.shiftKey || event.metaKey) return;
+    event.preventDefault();
+    const area = event.target as HTMLTextAreaElement;
+    area.setRangeText('  ', area.selectionStart, area.selectionEnd, 'end');
+    area.dispatchEvent(new Event('input'));
+  };
+
+  private copyAi = async () => {
+    try {
+      await navigator.clipboard.writeText(aiInstructions());
+      this.showToast(t('panel.custom.copied'));
+    } catch {
+      this.showToast(t('panel.about.cantCopy'));
+    }
+  };
+
   /** Dragged onto the page instead of clicked: the page adds it where it lands. */
   private dragWidget(kind: WidgetKind, event: DragEvent): void {
     if (!event.dataTransfer) return;
@@ -2896,6 +3237,7 @@ const KIND_NAMES: Record<WidgetKind, MessageKey> = {
   weather: 'widget.weather',
   focus: 'widget.focus',
   calendar: 'widget.calendar',
+  code: 'widget.code',
 };
 
 const KIND_NOTES: Record<WidgetKind, MessageKey> = {
@@ -2905,6 +3247,7 @@ const KIND_NOTES: Record<WidgetKind, MessageKey> = {
   weather: 'panel.widgetAbout.weather',
   focus: 'panel.widgetAbout.focus',
   calendar: 'panel.widgetAbout.calendar',
+  code: 'panel.widgetAbout.code',
 };
 
 const PHOTO_ERRORS: Record<WallpaperErrorCode, MessageKey> = {
@@ -2921,6 +3264,7 @@ const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
   weather: 'weather',
   focus: 'timer',
   calendar: 'calendar',
+  code: 'code',
 };
 
 const CLOCK_COLOR_NAMES: Record<ClockColor, MessageKey> = {

@@ -18,6 +18,7 @@ export const zhCN: Catalog = {
   'widget.focus': '计时器',
   'widget.weather': '天气',
   'widget.calendar': '日历',
+  'widget.code': '自定义',
   'board.hint': '拖动以重新排列 · 拖动边角以调整大小',
   'board.movable': '可移动的小组件',
   'board.position':
@@ -210,6 +211,7 @@ export const zhCN: Catalog = {
   'panel.widgetAbout.weather': '今天和未来一周',
   'panel.widgetAbout.calendar': '本月一目了然',
   'panel.widgetAbout.focus': '任意时长的倒计时',
+  'panel.widgetAbout.code': '你自己的着色器代码',
   'panel.language.auto': '与浏览器相同',
   'panel.language.note':
     '“与浏览器相同”会在 Tarn 支持时使用浏览器的语言，否则使用英语。',
@@ -348,4 +350,40 @@ export const zhCN: Catalog = {
   'keys.help': '显示快捷键',
   'keys.leave': '离开文本框',
   'keys.or': '或',
+  'code.example.waves': '波浪',
+  'code.example.orbits': '轨道',
+  'code.example.lava': '熔岩灯',
+  'code.example.seconds': '秒',
+  'code.example.equalizer': '均衡器',
+  'code.example.ripples': '涟漪',
+  'code.example.blank': '空白',
+  'code.errorLine': '第 {line} 行：{message}',
+  'code.missing': '写一个 widget 函数就能在这里绘制',
+  'code.heavy': '已暂停：对这台电脑来说太耗资源',
+  'code.run': '仍然运行',
+  'code.unavailable': '此浏览器无法绘制自定义小组件',
+  'code.newer': '由更新版本的 Tarn 创建',
+  'panel.custom': '自定义小组件',
+  'panel.custom.lead':
+    '用几行着色器代码画出你自己的小组件。从示例开始，想加多少都行。',
+  'panel.custom.addExample': '添加{name}',
+  'panel.custom.copyAi': '复制给 AI 的说明',
+  'panel.custom.copyAiNote':
+    '把它和你的想法一起粘贴到 ChatGPT、Claude 或 Gemini，再把得到的代码粘贴到这里',
+  'panel.custom.copied': '说明已复制。在末尾写下你的想法。',
+  'panel.custom.yours': '你的自定义小组件',
+  'panel.custom.edit': '编辑代码',
+  'panel.custom.done': '完成',
+  'panel.custom.codeOf': '{name}的代码',
+  'panel.custom.live': '输入时，标签页上会实时显示更改。',
+  'panel.custom.how': '工作原理',
+  'panel.custom.rule1':
+    '编写 vec4 widget(vec2 uv, float t)。它会为小组件的每个像素运行，返回颜色和不透明度。',
+  'panel.custom.rule2':
+    'uv 是像素的位置：(0, 0) 是中心，y 从 -0.5 到 0.5。t 是以秒为单位的时间。',
+  'panel.custom.rule3':
+    'uColors[0] 到 uColors[3] 是壁纸的颜色，uInk 是文字颜色，所以小组件和任何壁纸都搭。也可以用 uMouse 和 uDate。',
+  'panel.custom.rule4': '带 mainImage 的 Shadertoy 代码可以直接运行。',
+  'panel.custom.rule5':
+    '只有数学：没有图片，也不联网。对电脑来说太耗资源的小组件会暂停。',
 };

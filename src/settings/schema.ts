@@ -70,7 +70,7 @@ export const CLOCK_STYLES: readonly ClockStyle[] = [
 ];
 
 export type WidgetKind =
-  'favorites' | 'notes' | 'tasks' | 'focus' | 'weather' | 'calendar';
+  'favorites' | 'notes' | 'tasks' | 'focus' | 'weather' | 'calendar' | 'code';
 export const WIDGET_KINDS: readonly WidgetKind[] = [
   'favorites',
   'notes',
@@ -78,7 +78,15 @@ export const WIDGET_KINDS: readonly WidgetKind[] = [
   'focus',
   'weather',
   'calendar',
+  'code',
 ];
+
+/**
+ * Kinds that come with code of their own (custom widgets): added from the
+ * panel's Custom widgets section, never from the plain Add list or an
+ * example setup.
+ */
+export const CUSTOM_KINDS: readonly WidgetKind[] = ['code'];
 
 /** The sizes each widget offers: only those its content looks right at. */
 export const WIDGET_SIZE_OPTIONS: Readonly<
@@ -90,6 +98,7 @@ export const WIDGET_SIZE_OPTIONS: Readonly<
   focus: ['s', 'm'],
   weather: ['s', 'm', 'l'],
   calendar: ['s', 'm', 'l'],
+  code: ['s', 'm', 'l', 'xl'],
 };
 
 /** Size when first added. */
@@ -100,6 +109,7 @@ export const DEFAULT_WIDGET_SIZE: Readonly<Record<WidgetKind, WidgetSize>> = {
   focus: 's',
   weather: 'm',
   calendar: 'l',
+  code: 'm',
 };
 
 /** `size` if the widget offers it, otherwise the nearest size it does. */

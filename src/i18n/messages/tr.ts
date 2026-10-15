@@ -18,6 +18,7 @@ export const tr: Catalog = {
   'widget.focus': 'Zamanlayıcı',
   'widget.weather': 'Hava durumu',
   'widget.calendar': 'Takvim',
+  'widget.code': 'Özel',
   'board.hint':
     'Yeniden sıralamak için sürükleyin · boyutlandırmak için bir köşeyi sürükleyin',
   'board.movable': 'taşınabilir widget',
@@ -216,6 +217,7 @@ export const tr: Catalog = {
   'panel.widgetAbout.weather': 'Bugün ve önümüzdeki hafta',
   'panel.widgetAbout.calendar': 'Bu ay tek bakışta',
   'panel.widgetAbout.focus': 'İstediğin uzunlukta bir geri sayım',
+  'panel.widgetAbout.code': 'Kendi gölgelendirici (shader) kodun',
   'panel.language.auto': 'Tarayıcıyla aynı',
   'panel.language.note':
     '“Tarayıcıyla aynı”, Tarn destekliyorsa tarayıcınızın dilini, desteklemiyorsa İngilizceyi kullanır.',
@@ -360,4 +362,40 @@ export const tr: Catalog = {
   'keys.help': 'Kısayolları göster',
   'keys.leave': 'Metin alanından çık',
   'keys.or': 'veya',
+  'code.example.waves': 'Dalgalar',
+  'code.example.orbits': 'Yörüngeler',
+  'code.example.lava': 'Lav lambası',
+  'code.example.seconds': 'Saniyeler',
+  'code.example.equalizer': 'Ekolayzer',
+  'code.example.ripples': 'Halkalar',
+  'code.example.blank': 'Boş',
+  'code.errorLine': 'Satır {line}: {message}',
+  'code.missing': 'Burada bir şey çizmek için bir widget fonksiyonu yaz',
+  'code.heavy': 'Duraklatıldı: bu bilgisayar için fazla ağır',
+  'code.run': 'Yine de çalıştır',
+  'code.unavailable': 'Bu tarayıcı özel widgetları çizemiyor',
+  'code.newer': 'Daha yeni bir Tarn ile yapıldı',
+  'panel.custom': 'Özel widgetlar',
+  'panel.custom.lead':
+    'Birkaç satır shader koduyla kendi widgetını çiz. Bir örnekle başla, istediğin kadar ekle.',
+  'panel.custom.addExample': '{name} ekle',
+  'panel.custom.copyAi': 'Yapay zekâ için talimatları kopyala',
+  'panel.custom.copyAiNote':
+    'Fikrinle birlikte ChatGPT, Claude ya da Gemini’ye yapıştır, sonra verdiği kodu buraya yapıştır',
+  'panel.custom.copied': 'Talimatlar kopyalandı. Fikrini sona ekle.',
+  'panel.custom.yours': 'Özel widgetların',
+  'panel.custom.edit': 'Kodu düzenle',
+  'panel.custom.done': 'Bitti',
+  'panel.custom.codeOf': '{name} kodu',
+  'panel.custom.live': 'Değişiklikler sen yazarken sekmende görünür.',
+  'panel.custom.how': 'Nasıl çalışır',
+  'panel.custom.rule1':
+    'vec4 widget(vec2 uv, float t) yaz. Widgetın her pikseli için çalışır ve bir renk ile ne kadar opak olduğunu döndürür.',
+  'panel.custom.rule2':
+    'uv pikselin yeridir: (0, 0) ortadır, y -0.5’ten 0.5’e gider. t saniye cinsinden zamandır.',
+  'panel.custom.rule3':
+    'uColors[0]–uColors[3] duvar kâğıdının renkleri, uInk yazı rengidir; böylece widget her duvar kâğıdına uyar. uMouse ve uDate de var.',
+  'panel.custom.rule4': 'mainImage içeren Shadertoy kodu olduğu gibi çalışır.',
+  'panel.custom.rule5':
+    'Sadece matematik: resim yok, internet yok. Bilgisayar için fazla ağır bir widget duraklar.',
 };

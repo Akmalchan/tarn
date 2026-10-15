@@ -18,6 +18,7 @@ export const de: Catalog = {
   'widget.focus': 'Timer',
   'widget.weather': 'Wetter',
   'widget.calendar': 'Kalender',
+  'widget.code': 'Eigenes',
   'board.hint':
     'Zum Anordnen ziehen · an einer Ecke ziehen, um die Größe zu ändern',
   'board.movable': 'verschiebbares Widget',
@@ -219,6 +220,7 @@ export const de: Catalog = {
   'panel.widgetAbout.weather': 'Heute und die Woche',
   'panel.widgetAbout.calendar': 'Dieser Monat auf einen Blick',
   'panel.widgetAbout.focus': 'Ein Countdown in beliebiger Länge',
+  'panel.widgetAbout.code': 'Dein eigener Shader-Code',
   'panel.language.auto': 'Wie der Browser',
   'panel.language.note':
     '„Wie der Browser“ folgt der Sprache deines Browsers, wenn Tarn sie unterstützt, sonst Englisch.',
@@ -364,4 +366,40 @@ export const de: Catalog = {
   'keys.help': 'Tastenkürzel zeigen',
   'keys.leave': 'Textfeld verlassen',
   'keys.or': 'oder',
+  'code.example.waves': 'Wellen',
+  'code.example.orbits': 'Umlaufbahnen',
+  'code.example.lava': 'Lavalampe',
+  'code.example.seconds': 'Sekunden',
+  'code.example.equalizer': 'Equalizer',
+  'code.example.ripples': 'Kreise',
+  'code.example.blank': 'Leer',
+  'code.errorLine': 'Zeile {line}: {message}',
+  'code.missing': 'Schreib eine widget-Funktion, um hier zu zeichnen',
+  'code.heavy': 'Pausiert: zu aufwendig für diesen Computer',
+  'code.run': 'Trotzdem starten',
+  'code.unavailable': 'Dieser Browser kann keine eigenen Widgets zeichnen',
+  'code.newer': 'Mit einer neueren Tarn-Version erstellt',
+  'panel.custom': 'Eigene Widgets',
+  'panel.custom.lead':
+    'Zeichne dein eigenes Widget mit ein paar Zeilen Shader-Code. Fang mit einem Beispiel an und füge so viele hinzu, wie du willst.',
+  'panel.custom.addExample': '{name} hinzufügen',
+  'panel.custom.copyAi': 'Anleitung für eine KI kopieren',
+  'panel.custom.copyAiNote':
+    'Füg sie mit deiner Idee in ChatGPT, Claude oder Gemini ein und kopier den Code dann hierher',
+  'panel.custom.copied': 'Anleitung kopiert. Schreib deine Idee ans Ende.',
+  'panel.custom.yours': 'Deine eigenen Widgets',
+  'panel.custom.edit': 'Code bearbeiten',
+  'panel.custom.done': 'Fertig',
+  'panel.custom.codeOf': 'Code von {name}',
+  'panel.custom.live': 'Änderungen erscheinen beim Tippen in deinem Tab.',
+  'panel.custom.how': 'So funktioniert es',
+  'panel.custom.rule1':
+    'Schreib vec4 widget(vec2 uv, float t). Sie läuft für jedes Pixel des Widgets und gibt eine Farbe und ihre Deckkraft zurück.',
+  'panel.custom.rule2':
+    'uv ist die Position des Pixels: (0, 0) ist die Mitte, y reicht von -0.5 bis 0.5. t ist die Zeit in Sekunden.',
+  'panel.custom.rule3':
+    'uColors[0] bis uColors[3] sind die Farben des Hintergrunds, uInk die Textfarbe – so passt das Widget zu jedem Hintergrund. Auch uMouse und uDate gibt es.',
+  'panel.custom.rule4': 'Shadertoy-Code mit mainImage läuft unverändert.',
+  'panel.custom.rule5':
+    'Nur Mathematik: keine Bilder, kein Internet. Ein Widget, das zu aufwendig für den Computer ist, pausiert.',
 };

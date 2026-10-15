@@ -18,6 +18,7 @@ export const ko: Catalog = {
   'widget.focus': '타이머',
   'widget.weather': '날씨',
   'widget.calendar': '캘린더',
+  'widget.code': '사용자 지정',
   'board.hint': '드래그해서 순서 바꾸기 · 모서리를 드래그해서 크기 조절',
   'board.movable': '이동 가능한 위젯',
   'board.position':
@@ -214,6 +215,7 @@ export const ko: Catalog = {
   'panel.widgetAbout.weather': '오늘과 앞으로 일주일',
   'panel.widgetAbout.calendar': '이번 달을 한눈에',
   'panel.widgetAbout.focus': '원하는 길이의 카운트다운',
+  'panel.widgetAbout.code': '직접 쓰는 셰이더 코드',
   'panel.language.auto': '브라우저와 같게',
   'panel.language.note':
     '‘브라우저와 같게’는 Tarn이 지원하면 브라우저 언어를, 아니면 영어를 사용해요.',
@@ -355,4 +357,40 @@ export const ko: Catalog = {
   'keys.help': '단축키 보기',
   'keys.leave': '입력란에서 나가기',
   'keys.or': '또는',
+  'code.example.waves': '물결',
+  'code.example.orbits': '궤도',
+  'code.example.lava': '라바 램프',
+  'code.example.seconds': '초',
+  'code.example.equalizer': '이퀄라이저',
+  'code.example.ripples': '파문',
+  'code.example.blank': '빈 위젯',
+  'code.errorLine': '{line}번째 줄: {message}',
+  'code.missing': '여기에 그리려면 widget 함수를 작성하세요',
+  'code.heavy': '일시 정지됨: 이 컴퓨터에 너무 무겁습니다',
+  'code.run': '그래도 실행',
+  'code.unavailable': '이 브라우저에서는 사용자 지정 위젯을 그릴 수 없습니다',
+  'code.newer': '최신 버전의 Tarn으로 만들었습니다',
+  'panel.custom': '사용자 지정 위젯',
+  'panel.custom.lead':
+    '셰이더 코드 몇 줄로 나만의 위젯을 그려 보세요. 예제로 시작해서 원하는 만큼 추가할 수 있습니다.',
+  'panel.custom.addExample': '{name} 추가',
+  'panel.custom.copyAi': 'AI용 안내 복사',
+  'panel.custom.copyAiNote':
+    '아이디어와 함께 ChatGPT, Claude, Gemini에 붙여 넣고, 받은 코드를 여기에 붙여 넣으세요',
+  'panel.custom.copied': '안내를 복사했습니다. 끝에 아이디어를 적어 주세요.',
+  'panel.custom.yours': '내 사용자 지정 위젯',
+  'panel.custom.edit': '코드 편집',
+  'panel.custom.done': '완료',
+  'panel.custom.codeOf': '{name} 코드',
+  'panel.custom.live': '입력하는 대로 탭에 바로 반영됩니다.',
+  'panel.custom.how': '작동 방식',
+  'panel.custom.rule1':
+    'vec4 widget(vec2 uv, float t)를 작성하세요. 위젯의 모든 픽셀마다 실행되어 색과 불투명도를 돌려줍니다.',
+  'panel.custom.rule2':
+    'uv는 픽셀의 위치입니다. (0, 0)이 가운데이고 y는 -0.5에서 0.5까지입니다. t는 초 단위 시간입니다.',
+  'panel.custom.rule3':
+    'uColors[0]부터 uColors[3]은 배경화면의 색, uInk는 글자 색이라 어떤 배경화면에도 어울립니다. uMouse와 uDate도 있습니다.',
+  'panel.custom.rule4': 'mainImage가 있는 Shadertoy 코드도 그대로 작동합니다.',
+  'panel.custom.rule5':
+    '수학만 씁니다: 이미지도 인터넷도 없습니다. 컴퓨터에 너무 무거운 위젯은 일시 정지됩니다.',
 };

@@ -18,6 +18,7 @@ export const ru: Catalog = {
   'widget.focus': 'Таймер',
   'widget.weather': 'Погода',
   'widget.calendar': 'Календарь',
+  'widget.code': 'Свой',
   'board.hint':
     'Перетащите, чтобы переставить · потяните за угол, чтобы изменить размер',
   'board.movable': 'перемещаемый виджет',
@@ -218,6 +219,7 @@ export const ru: Catalog = {
   'panel.widgetAbout.weather': 'Сегодня и на неделю вперёд',
   'panel.widgetAbout.calendar': 'Весь месяц с одного взгляда',
   'panel.widgetAbout.focus': 'Обратный отсчёт любой длины',
+  'panel.widgetAbout.code': 'Ваш собственный код шейдера',
   'panel.language.auto': 'Как в браузере',
   'panel.language.note':
     '«Как в браузере» следует языку браузера, если Tarn его поддерживает, а иначе — английскому.',
@@ -362,4 +364,40 @@ export const ru: Catalog = {
   'keys.help': 'Показать сочетания',
   'keys.leave': 'Выйти из текстового поля',
   'keys.or': 'или',
+  'code.example.waves': 'Волны',
+  'code.example.orbits': 'Орбиты',
+  'code.example.lava': 'Лава-лампа',
+  'code.example.seconds': 'Секунды',
+  'code.example.equalizer': 'Эквалайзер',
+  'code.example.ripples': 'Круги',
+  'code.example.blank': 'Пустой',
+  'code.errorLine': 'Строка {line}: {message}',
+  'code.missing': 'Напишите функцию widget, чтобы здесь что-то появилось',
+  'code.heavy': 'Пауза: слишком тяжело для этого компьютера',
+  'code.run': 'Всё равно запустить',
+  'code.unavailable': 'Этот браузер не может рисовать свои виджеты',
+  'code.newer': 'Создано в более новой версии Tarn',
+  'panel.custom': 'Свои виджеты',
+  'panel.custom.lead':
+    'Нарисуйте свой виджет несколькими строками кода шейдера. Начните с примера и добавляйте сколько угодно.',
+  'panel.custom.addExample': 'Добавить: {name}',
+  'panel.custom.copyAi': 'Скопировать инструкцию для ИИ',
+  'panel.custom.copyAiNote':
+    'Вставьте её в ChatGPT, Claude или Gemini вместе со своей идеей, а затем вставьте сюда полученный код',
+  'panel.custom.copied': 'Инструкция скопирована. Допишите свою идею в конце.',
+  'panel.custom.yours': 'Ваши виджеты',
+  'panel.custom.edit': 'Изменить код',
+  'panel.custom.done': 'Готово',
+  'panel.custom.codeOf': 'Код: {name}',
+  'panel.custom.live': 'Изменения видны во вкладке прямо во время ввода.',
+  'panel.custom.how': 'Как это работает',
+  'panel.custom.rule1':
+    'Напишите vec4 widget(vec2 uv, float t). Она выполняется для каждого пикселя виджета и возвращает цвет и его непрозрачность.',
+  'panel.custom.rule2':
+    'uv — положение пикселя: (0, 0) — центр, y идёт от -0.5 до 0.5. t — время в секундах.',
+  'panel.custom.rule3':
+    'uColors[0]–uColors[3] — цвета обоев, uInk — цвет текста, так виджет подходит к любым обоям. Есть и uMouse, и uDate.',
+  'panel.custom.rule4': 'Код из Shadertoy с mainImage работает как есть.',
+  'panel.custom.rule5':
+    'Только математика: без картинок и интернета. Слишком тяжёлый для компьютера виджет ставится на паузу.',
 };
