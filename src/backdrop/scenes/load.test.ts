@@ -15,7 +15,7 @@ describe('scene load', () => {
   it('reads photos as still and spreads the scenes out', () => {
     expect(loadLevel('photo:abc')).toBe('still');
     expect(loadLevel('comet')).toBe('light');
-    expect(loadLevel('koi')).toBe('medium');
+    expect(loadLevel('wave')).toBe('medium');
     expect(loadLevel('ember')).toBe('heavy');
   });
 });

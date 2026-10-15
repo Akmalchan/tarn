@@ -325,7 +325,7 @@ Which to use:
 Soft scenes look the same at a fraction of the pixels; detailed ones need
 real pixels. Current values: Contour `min(devicePixelRatio, 1.5)` (lines are
 sized in pixels with `fwidth`; at 2 they look the same and cost ~75 MB
-more GPU memory on a 2x screen, #51); 1 for Wave, Sakura, Comet, Koi, Window;
+more GPU memory on a 2x screen, #51); 1 for Comet; 0.75 for Wave;
 0.75 Ember; 0.5 Tarn, Aurora, Lumen; 0.4 Silk; 0.35 Bloom. Photos also
 use `min(devicePixelRatio, 2)`.
 
@@ -515,12 +515,9 @@ removed them (people typed numbers and the wallpaper changed).
 | 4   | `wave`    | Wave    | Three twisting ribbons of light at three depths (far dim, middle sharp, near out of focus), each a translucent sheet with bright rims and fine strands with light running along them, over a lit swell in deep blue; sparkles and soft motes; the top and middle stay calm.                                                                                                                    | dark  | 0.35  | 0.75                   | `noiseFast`                                                                                    |
 | 5   | `aurora`  | Aurora  | Northern lights: two parallel arcs that take turns being lit, folding ribbons whose edge-on folds glow brighter, thin streaky rays bunching there, teal rising to violet; a night sky with slowly twinkling stars.                                                                                                                                                                             | dark  | 0.25  | 0.4                    | `noiseFast` (5 fetches per pixel)                                                              |
 | 6   | `silk`    | Silk    | Slow folds of pale satin: a warped sine height field, lit from the upper left; ice-blue shadows, faintly warm highlights. Slope computed analytically (one evaluation).                                                                                                                                                                                                                        | light | 0.2   | 0.33                   | `noiseFast`                                                                                    |
-| 7   | `sakura`  | Sakura  | Cherry blossoms: a canopy out of focus overhead, a branch in focus from the top right with five-petal blossoms (notched tips, pink hearts, stamens) and buds, swaying; soft sun rays; petals falling in three depths.                                                                                                                                                                          | light | 0.5   | 1                      | `fbmFast`, `hash01`                                                                            |
-| 8   | `comet`   | Comet   | Twilight over a mountain lake: indigo to a warm afterglow, the Milky Way and twinkling stars, a comet with an ion and a dust tail, shooting stars, a plane's blinking light, drifting pink-lit clouds; a rugged range lit warm along its crests, a dark forested shore with a few villages' lights, all mirrored in still water with slow ripples and the lights' long shimmering reflections. | dark  | 0.2   | 1                      | `noise` (ridged), `fbmFast`, `noiseFast`, `hash01`                                             |
-| 9   | `koi`     | Koi     | A koi pond from above: stones in the silt, caustics, six koi (kohaku, sanke, ogon, showa) at different depths with wet sheen, eyes and rayed translucent fins, shadows below, ripples that bend everything under the surface, glossy mottled lily pads and a lotus.                                                                                                                            | dark  | 0.5   | 1                      | `noiseFast`, `noise`, `fbmFast`, `hash01`                                                      |
-| 10  | `window`  | Window  | Rain on a window at night: a city as layered bokeh (warm and cool, brighter rims, drifting slowly), beads of three sizes and running drops that wipe trails; every drop a lens showing the lights sharper, flipped and shrunk.                                                                                                                                                                 | dark  | 0.6   | 1                      | `fbmFast`, `hash01`                                                                            |
-| 11  | `lumen`   | Lumen   | Light through haze: shafts from an opening above that sway, widen and dim on their own, haze rolling through, pulses running down the beams, dust in three depths glinting only in the light.                                                                                                                                                                                                  | dark  | 0.4   | 0.5                    | `fbmFast`, `noiseFast`, `hash01`                                                               |
-| 12  | `contour` | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper.                                                                                                                                                                                                             | light | 0.12  | screen density (≤ 1.5) | its own float-hash gradient noise (C2, no integer math); finest octave a B-spline texture read |
+| 7   | `comet`   | Comet   | Twilight over a mountain lake: indigo to a warm afterglow, the Milky Way and twinkling stars, a comet with an ion and a dust tail, shooting stars, a plane's blinking light, drifting pink-lit clouds; a rugged range lit warm along its crests, a dark forested shore with a few villages' lights, all mirrored in still water with slow ripples and the lights' long shimmering reflections. | dark  | 0.2   | 1                      | `noise` (ridged), `fbmFast`, `noiseFast`, `hash01`                                             |
+| 8   | `lumen`   | Lumen   | Light through haze: shafts from an opening above that sway, widen and dim on their own, haze rolling through, pulses running down the beams, dust in three depths glinting only in the light.                                                                                                                                                                                                  | dark  | 0.4   | 0.5                    | `fbmFast`, `noiseFast`, `hash01`                                                               |
+| 9   | `contour` | Contour | A topographic map whose land slowly reshapes: hairline contours with every fifth bolder, faint relief shading (light from the upper left), cool valleys and warm heights on paper.                                                                                                                                                                                                             | light | 0.12  | screen density (≤ 1.5) | its own float-hash gradient noise (C2, no integer math); finest octave a B-spline texture read |
 
 ### Data
 
@@ -532,10 +529,7 @@ removed them (people typed numbers and the wallpaper changed).
 | `wave`    | `#071230` | `#050d24` `#173f8f` `#4f8dff` `#d6e7ff` | 12                   |
 | `aurora`  | `#03070d` | `#02050b` `#08141f` `#3ed6a6` `#8d7ce0` | 100                  |
 | `silk`    | `#e2eaf0` | `#9ab4c8` `#dce6ee` `#fcfdfe` `#efb497` | 40                   |
-| `sakura`  | `#f4e4ea` | `#dfeaf6` `#fbe3ea` `#f2a7bc` `#fff6f2` | 20                   |
 | `comet`   | `#0b0f2c` | `#070b26` `#3a2a6e` `#f09a78` `#bfe6ff` | 30                   |
-| `koi`     | `#0f302f` | `#0b2b2b` `#1e4a44` `#e8542a` `#4f8a3c` | 150                  |
-| `window`  | `#070c14` | `#04060c` `#141c33` `#ffae5c` `#ff4f6a` | 40                   |
 | `lumen`   | `#05080d` | `#030509` `#0c1622` `#ffd9a1` `#7fb8c9` | 20                   |
 | `contour` | `#f1eee7` | `#f4f1ea` `#dfe7ec` `#3d5468` `#e9b99c` | 20                   |
 
@@ -560,10 +554,7 @@ gauge level is computed from the `load.ts` values.
 | Wave    | 6.4-6.7%        | 10.3-10.7%             | 6.5 / 10.5           | 17.0 | medium |
 | Aurora  | 4.1-5.6%        | 7.7-10.3%              | 4.8 / 9.0            | 13.8 | light  |
 | Silk    | 4.4-5.3%        | 9.1-10.4%              | 4.8 / 9.8            | 14.6 | light  |
-| Sakura  | 6.5%            | 9.1%                   | 6.5 / 9.1            | 15.6 | medium |
 | Comet   | 4.1%            | 8.7%                   | 4.1 / 8.7            | 12.8 | light  |
-| Koi     | 6.8%            | 9.4%                   | 6.8 / 9.4            | 16.2 | medium |
-| Window  | 7.5%            | 9.2%                   | 7.5 / 9.2            | 16.7 | medium |
 | Lumen   | 6.2%            | 10.0%                  | 6.2 / 10.0           | 16.2 | medium |
 | Contour | 5.1%            | 10.2%                  | 4.7 / 8.7            | 13.4 | light  |
 
@@ -609,12 +600,15 @@ a similar background instead of the default:
 
 | Stored id   | Becomes   |
 | ----------- | --------- |
-| `rain`      | `window`  |
+| `rain`      | `comet`   |
 | `nebula`    | `comet`   |
 | `dunes`     | `contour` |
 | `mist`      | `contour` |
-| `sora`      | `sakura`  |
+| `sora`      | `aurora`  |
 | `fireflies` | `comet`   |
+| `sakura`    | `bloom`   |
+| `koi`       | `tarn`    |
+| `window`    | `comet`   |
 
 Any other unknown id becomes the default (`tarn`).
 
@@ -676,6 +670,9 @@ From the owner, in their words where it matters.
   enough", Koi "very low quality", Window "looks weird", Comet's bottom
   "low quality", Sakura "kinda good". All five were reworked. Number-key
   scene switching was removed the same day.
+
+Later on 2026-10-14 the owner removed Sakura, Koi and Window ("they are
+bad"), leaving nine scenes; their ids map to Bloom, Tarn and Comet.
 
 ### Rejected scenes
 
@@ -791,11 +788,11 @@ Not built yet:
   draw their land at 1/8 size into a texture and read it with a smooth
   B-spline at full size; the frame would still sit at the pixel-count
   floor.
-- **Sakura, Koi, Window and Comet on weak GPUs**: the heaviest shaders
-  now (0.27-0.46 ms on the M4 bench).
+- **Comet on weak GPUs**: the heaviest shader now (0.27 ms on the M4
+  bench).
 - **A battery saver.**
 - **Light/dark twins** that follow the system theme (BRAND.md: light
-  first). Bloom, Silk, Sakura and Contour are the light scenes so far.
+  first). Bloom, Silk and Contour are the light scenes so far.
 - **Video backgrounds**, following the photo path: original in
   IndexedDB, ease in on open, ghost on reload, never block first paint on
   async storage.

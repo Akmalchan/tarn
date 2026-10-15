@@ -76,7 +76,7 @@ tracking.
 
 LIVING BACKGROUNDS
 • Twelve original scenes drawn on your graphics chip: Tarn, Ember, Bloom,
-  Wave, Aurora, Silk, Sakura, Comet, Koi, Window, Lumen and Contour.
+  Wave, Aurora, Silk, Comet, Lumen and Contour.
 • Or your own photos.
 • Light on your computer: it pauses when the tab is hidden, slows down
   when you're away, and holds a still frame if you prefer reduced motion.

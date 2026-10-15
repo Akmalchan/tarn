@@ -24,10 +24,7 @@ const MOMENTS = {
   wave: 12,
   aurora: 100,
   silk: 40,
-  sakura: 20,
   comet: 30,
-  koi: 150,
-  window: 40,
   lumen: 20,
   contour: 20,
 };

@@ -66,12 +66,10 @@ follow [Semantic Versioning](https://semver.org/).
 - Favorites are now Bookmarks, with folders, drag to arrange and your own
   icons; Focus timer is now Timer.
 
-- Six new backgrounds: Sakura (a blossom branch over falling petals),
-  Comet (twilight over a mountain lake), Koi (a pond from above),
-  Window (rain on glass over a city in bokeh), Lumen (light through haze)
-  and Contour (a living topographic map, drawn at full screen sharpness).
-  They replace Mist, Dunes, Rain and Nebula; whoever picked one gets the
-  nearest new one. Silk is brighter.
+- Three new backgrounds: Comet (twilight over a mountain lake), Lumen
+  (light through haze) and Contour (a living topographic map, drawn at
+  full screen sharpness). They replace Mist, Dunes, Rain and Nebula;
+  whoever picked one gets the nearest new one. Silk is brighter.
 - A first look: a new install starts with the clock, Favorites, Notes,
   Weather and Focus, with a few examples to try.
 - Calendar widget: today (small), this week (medium) or the month with
