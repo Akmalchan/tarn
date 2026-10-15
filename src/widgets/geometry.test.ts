@@ -6,6 +6,7 @@
 import {describe, expect, it} from 'vitest';
 import type {LayoutItem, WidgetSize} from '../layout/bands';
 import {
+  GAP,
   PITCH,
   moveTo,
   nearestIndex,
@@ -24,8 +25,8 @@ describe('placeTiles', () => {
     expect(tiles[0]).toMatchObject({x: 0, y: 0});
     expect(tiles[1]).toMatchObject({x: 2 * PITCH, y: 0});
     expect(tiles[2]).toMatchObject({x: 2 * PITCH, y: PITCH});
-    expect(width).toBe(3 * PITCH - 24);
-    expect(height).toBe(2 * PITCH - 24);
+    expect(width).toBe(3 * PITCH - GAP);
+    expect(height).toBe(2 * PITCH - GAP);
   });
 });
 
