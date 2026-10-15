@@ -237,8 +237,10 @@ ask for.
   on a still of Silk), `promo-marquee-1400.png` (the lockup on Silk) and
   `screenshot-1…5-*.png`. The screenshots are the real built extension in
   headless Chrome for Testing at 2x, scaled to 1280 × 800, with sample
-  content: Comet (removed 2026-10-14; reshoot this one) with the start widgets, Silk with a planner, Aurora with no
-  widgets, Bloom with the settings panel beside it, Wave in Japanese.
+  content: Night sky with the start widgets, Silk with a planner, Clouds
+  with no widgets, Bloom with the settings panel beside it, Wave in
+  Japanese. Reshot on 2026-10-14 after Comet, Koi and Sakura were removed;
+  reshoot when a pictured scene or the panel changes.
   No video yet.
 
 - Lockup (store, README): mark + wordmark side by side, wordmark ink height
