@@ -27,6 +27,14 @@ const MOMENTS = {
   comet: 30,
   lumen: 20,
   contour: 20,
+  clouds: 30,
+  topology: 15,
+  canopy: 35,
+  convergence: 10,
+  ribbons: 20,
+  fringe: 120,
+  nightsky: 40,
+  matrix: 45,
 };
 /** Twice a ~160x100 tile, for sharp thumbnails on 2x screens. */
 const WIDTH = 320;

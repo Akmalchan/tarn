@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Ember's film grain is fine and alive again: it no longer slows and
+  freezes when the page goes calm.
+- The load gauge on each wallpaper now reflects how hard the scene works
+  the graphics chip, measured, so light and heavy scenes read apart.
 - Tarn's code is now under the PolyForm Shield License 1.0.0: free to use,
   read, fork and contribute to, but not to ship as a competing product.
   Code published before 14 October 2026 stays Apache 2.0.
@@ -18,6 +22,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Eight new live wallpapers: Clouds (light, flying over a sea of clouds),
+  Topology, Canopy, Convergence, Ribbons, Fringe, Night Sky and Matrix.
 - Wallpaper cards in settings say Live or Photo in their corner.
 - Custom widgets: draw your own with a few lines of shader code, as many as
   you like, from Settings > Widgets > Custom widgets. Start from six live

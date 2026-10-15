@@ -67,6 +67,14 @@ const ember: Scene = {
   speed: 0.6,
   resolution: 0.75,
   fragment: /* glsl */ `
+// Film grain hash: float math only (no integer ops), white and uncorrelated
+// for pixel coordinates and frame numbers in the few-thousands range.
+float grainHash(vec3 p) {
+  p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+
 vec3 scene(vec2 uv, float t) {
   const float A = 0.35;
   vec2 p = mat2(cos(A), -sin(A), sin(A), cos(A)) * uv;
@@ -81,8 +89,16 @@ vec3 scene(vec2 uv, float t) {
   col = mix(col, uColors[3], smoothstep(0.55, 1.0, shape));
   col = mix(uColors[0], col, smoothstep(0.0, 0.3, shape));
 
-  float grain = hash01(gl_FragCoord.xy + floor(uTime * 24.0) * 31.0) - 0.5;
-  col += grain * mix(0.04, 0.12, shape);
+  // A new grain field every rendered frame, whatever the pace: t advances
+  // at least 0.012 per frame (calm, 20 fps), so t * 120 always moves on.
+  // Kept below 4096 so the hash stays precise on long-lived tabs.
+  float frame = mod(floor(t * 120.0), 4096.0);
+  float a = grainHash(vec3(gl_FragCoord.xy, frame));
+  float b = grainHash(vec3(gl_FragCoord.xy, frame + 4096.0));
+  // a + b: a soft, film-like (triangular) spread instead of flat digital
+  // noise; a - b is independent of it and adds a faint warm/cool dye tint.
+  float amp = mix(0.04, 0.12, shape);
+  col += amp * (0.707 * (a + b - 1.0) + 0.16 * (a - b) * vec3(1.0, -0.3, -1.0));
   return col;
 }
 `,
@@ -739,6 +755,775 @@ vec3 scene(vec2 uv, float t) {
 `,
 };
 
+const clouds: Scene = {
+  id: 'clouds',
+  name: 'Clouds',
+  colors: ['#08507a', '#8fc0da', '#7685b0', '#e2e6ef'],
+  base: '#b9c2d6',
+  speed: 0.35,
+  resolution: 0.33,
+  fragment: /* glsl */ `
+// Clouds: skimming over a sea of soft cumulus under a clear sky.
+// The deck is a stack of camera-facing slices (volumetric billboards)
+// that drift toward the viewer and recycle at the back. Each slice is a
+// 2D noise field minus a height ramp, so its iso-contour makes round,
+// bumpy puff tops; near slices are big and blurry, far ones small and
+// crisp. Light falls from above: a slice is bright where it thins out
+// just above (one extra fetch), and lower and thinner parts show the
+// periwinkle shade. Composited front to back with an early exit.
+
+const float HZ = 0.19;    // horizon height on screen
+const int N = 9;          // slices
+const float DZ = 0.42;    // slice spacing (world units)
+const float FREQ = 2.4;   // noise cells per world unit
+const float WRAP = 32.0;  // noise texture period, in cells
+
+vec3 scene(vec2 uv, float t) {
+  float ry = uv.y - HZ;
+  vec3 haze = mix(uColors[3], uColors[1], 0.12);
+
+  float g = clamp(ry / 0.33, 0.0, 1.0);
+  vec3 bg = ry > 0.0
+    ? mix(uColors[1], uColors[0], pow(g, 0.6))
+    : mix(haze, uColors[2], clamp(-ry * 1.6, 0.0, 1.0));
+  float camZ = 0.25 * t / DZ;               // in slices
+  if (ry > 0.0) {
+    // Faint high wisps: a soft layer far above, seen in perspective.
+    vec2 w = vec2(uv.x, 1.0) / (ry + 0.3);
+    w.y += mod(camZ * 0.15, WRAP);
+    float m = noiseFast(w * 1.4 + vec2(5.0, 0.0))
+      + 0.5 * noiseFast(w * 3.1 + vec2(mod(0.03 * t, WRAP), 9.0));
+    bg = mix(bg, haze, smoothstep(0.05, 0.65, m) * 0.18 * smoothstep(0.02, 0.15, ry));
+    // The distant deck's bumpy edge, where no slice reaches.
+    if (ry < 0.03) {
+      float edge = 0.014 * (noiseFast(vec2(uv.x * 9.0 + mod(0.009 * t, WRAP), 17.0)) + 0.55);
+      bg = mix(bg, mix(haze, uColors[2], 0.15), smoothstep(edge + 0.004, edge - 0.004, ry));
+    }
+  }
+  bg = mix(bg, haze, exp(-abs(ry) * 45.0) * 0.55);
+
+  float base = floor(camZ);
+  float frac = camZ - base;
+  float camX = mod(0.09 * t, WRAP);         // in noise cells
+  vec2 evolve = mod(vec2(0.05, 0.07) * t, WRAP);
+  float far = float(N) * DZ;
+
+  vec3 col = vec3(0.0);
+  float T = 1.0;
+  for (int k = 0; k < N; k++) {
+    float fk = float(k);
+    float z = (fk + 1.0 - frac) * DZ;
+    float wy = ry * z;                       // world height (camera at 0)
+    float ramp = (-0.03 - wy) * 2.2 - max(wy, 0.0) * (2.0 + 3.0 / z);
+    if (ramp < -1.1) continue;               // no cloud this high
+    float idx = mod(base + fk + 1.0, 64.0);
+    vec2 q = vec2(uv.x * z, wy) * FREQ + vec2(camX, 0.0) + idx * vec2(7.31, 3.77);
+    float n = noiseFast(q) + 0.5 * noiseFast(q * 2.1 + vec2(0.0, evolve.x));
+    if (n + ramp < -0.3) continue;           // the fine octave can't reach
+    n += (0.14 + 0.14 * smoothstep(1.2, 3.0, z)) * noiseFast(q * 4.3 - vec2(evolve.y, 0.0));
+    float D = n + ramp;
+    if (D <= 0.0) continue;
+    float fade = smoothstep(0.0, 0.5, z) * smoothstep(far, far - 1.2, z);
+    float a = (1.0 - exp(-D * 4.0)) * fade;
+    float up = noiseFast(q + vec2(0.0, 0.25));
+    float sun = clamp((n - up) * 1.8 + 0.5, 0.0, 1.0);
+    float lit = sun * (0.15 + 0.85 * smoothstep(-0.5, 0.0, wy)) * smoothstep(-0.45, 0.35, n);
+    vec3 c = mix(uColors[2], uColors[3], 0.12 + 0.88 * lit);
+    c = mix(c, haze, (1.0 - exp(-z * 0.35)) * 0.7);
+    col += T * a * c;
+    T *= 1.0 - a;
+    if (T < 0.02) break;
+  }
+  return col + T * bg;
+}
+`,
+};
+
+const topology: Scene = {
+  id: 'topology',
+  name: 'Topology',
+  colors: ['#002222', '#89964e', '#c9d48a', '#5c7a4c'],
+  base: '#002222',
+  speed: 0.15,
+  resolution: 1,
+  fragment: /* glsl */ `
+// Topology: fine silk threads streaming along a slowly drifting flow.
+// Threads are level lines of a smooth stream function, so they follow the
+// flow and never cross within a layer. A monotonic warp across the flow
+// bunches them into bright bundles with dark gaps between. Two layers at
+// slightly different angles read as loose fibres laid over each other.
+
+float stream(vec2 p, float t) {
+  vec2 q = p * vec2(0.38, 0.9);
+  float w = 1.3 * noise(q * 0.6 + vec2(0.04 * t, 3.7));
+  float n1 = noise(q + vec2(-0.1 * t, 0.02 * t) + w);
+  return p.y + 0.42 * n1;
+}
+
+// The prelude's gradient noise with its analytic gradient: (value, d/dx, d/dy).
+vec3 noiseGrad(vec2 p) {
+  ivec2 i = ivec2(floor(p));
+  vec2 f = fract(p);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  vec2 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+  vec2 ga = gradient(i);
+  vec2 gb = gradient(i + ivec2(1, 0));
+  vec2 gc = gradient(i + ivec2(0, 1));
+  vec2 gd = gradient(i + ivec2(1, 1));
+  float a = dot(ga, f);
+  float b = dot(gb, f - vec2(1.0, 0.0));
+  float c = dot(gc, f - vec2(0.0, 1.0));
+  float d = dot(gd, f - vec2(1.0, 1.0));
+  float k3 = a - b - c + d;
+  vec2 g = ga + u.x * (gb - ga) + u.y * (gc - ga) + u.x * u.y * (ga - gb - gc + gd)
+         + du * vec2(b - a + k3 * u.y, c - a + k3 * u.x);
+  return vec3(a + (b - a) * u.x + (c - a) * u.y + k3 * u.x * u.y, g);
+}
+
+// Threads crowd where this warp is steep and part where it is flat. The
+// noise is sampled rotated against its lattice, so bundles are unevenly
+// spaced, and drifts along the flow. Returns (warped s, crowding).
+vec2 bunch(float s, float k, float x, float t, float o) {
+  float u = s * k + o;
+  vec3 n = noiseGrad(vec2(0.8 * u + 0.2 * x - 0.05 * t, 0.6 * u - 0.25 * x + 0.04 * t));
+  return vec2(s + (0.7 / k) * n.x, 1.0 + 0.7 * dot(n.yz, vec2(0.8, 0.6)));
+}
+
+// Hairlines on the integers of b.x * n. Each thread has its own brightness,
+// which shimmers slowly along it; crowded threads glow more, and threads
+// closer than ~2 px fade to their mean to avoid moire.
+float strands(vec2 b, float n, float gs, float px, float x, float t, float seed) {
+  float f = b.x * n;
+  float crowd = max(b.y, 0.05);
+  float w = gs * n * crowd;  // threads per pixel across the flow
+  float id = floor(f + 0.5);
+  float h = fract(id * 0.6180339 + seed);
+  float h2 = fract(id * 0.7548777 + seed);
+  float level = (0.25 + 0.75 * h) * crowd * crowd;
+  level *= 0.65 + 0.35 * sin(x * (1.5 + 3.0 * h2) - t * (0.4 + 0.4 * h) + 6.2832 * h2);
+  float d = abs(f - id) / w;
+  float line = clamp(px * 0.55 + 0.5 - d, 0.0, 1.0);
+  return mix(line, 0.7 * px * w, smoothstep(0.3, 0.6, w)) * level;
+}
+
+vec3 scene(vec2 uv, float t) {
+  float s = stream(uv, t);
+  float gs = length(vec2(dFdx(s), dFdy(s)));  // smooth: varies over many pixels
+  float px = max(uResolution.y / 900.0, 1.0);
+  float a = strands(bunch(s, 14.0, uv.x, t, 0.0), 220.0, gs, px, uv.x, t, 0.0);
+  float b = strands(bunch(s + 0.013, 9.0, uv.x, t, 17.0), 150.0, gs, px, uv.x, t, 0.37);
+  // The far layer in a cooler, dimmer thread; where both crowd, a pale glow.
+  vec3 col = mix(uColors[0], uColors[3], clamp(b, 0.0, 1.0));
+  col = mix(col, uColors[1], clamp(a, 0.0, 1.0));
+  col += uColors[2] * max(a + 0.6 * b - 0.9, 0.0) * 0.4;
+  // A touch darker behind the clock and widgets.
+  col *= 1.0 - 0.14 * exp(-dot(uv * vec2(1.4, 2.6), uv * vec2(1.4, 2.6)));
+  return col;
+}
+`,
+};
+
+const canopy: Scene = {
+  id: 'canopy',
+  name: 'Canopy',
+  colors: ['#141618', '#4b7059', '#72b866', '#e6f682'],
+  base: '#141618',
+  speed: 1,
+  resolution: 1,
+  fragment: /* glsl */ `
+// Canopy: a conifer canopy drawn as a lattice of lit points, seen from a
+// slow glide above it. Points sit on fixed screen columns (so a crown is
+// always a few points wide) and on world depth rows that drift towards the
+// viewer. Per pixel: a short march on the hills finds where the view ray
+// meets the canopy; then the depth rows from there are tested front to
+// back, one point each.
+
+const float CAM_Y = 1.0;      // camera height above the ground
+const float HORIZON = 0.2;    // horizon height in uv
+const float DZ = 0.03;        // depth spacing of lattice rows
+const float DOT_GAP = 0.0095; // screen spacing of point columns (uv)
+const float ROW_GAP = 0.019;  // target screen spacing of rows (uv)
+const float CROWN_H = 0.03;   // crown height scale
+const float CROWN_W = 4.5;    // crown width in columns
+const float SHELL = 0.015;    // how far below the surface the ray may see
+const float STACK_DY = 0.011; // world spacing of points in a near stack
+
+float hills(vec2 p) {
+  return 0.15 + 0.14 * noiseFast(p * vec2(0.45, 0.35) + vec2(3.1, 7.7));
+}
+
+// Crowns live in lattice space: a crown is always a few columns wide on
+// screen and about as tall as a row gap, near or far.
+float crownAmp(float zc) {
+  return CROWN_H * pow(zc, 0.75);
+}
+
+vec3 scene(vec2 uv, float t) {
+  vec3 bg = uColors[0];
+  float px = 1.0 / uResolution.y;
+  float d = HORIZON - uv.y;
+  vec3 sky = bg * (1.0 + 0.2 * exp(-abs(d) * 9.0));
+  if (d < 0.004) return sky;
+
+  // Points live on fixed screen columns.
+  float sx = (floor(uv.x / DOT_GAP) + 0.5) * DOT_GAP;
+  float ex = uv.x - sx;
+  float rMax = DOT_GAP * 0.3;
+  if (abs(ex) > 1.2 * rMax + px) return sky;
+
+  float camZ = t * 0.07;
+  float camX = sin(t * 0.021) * 1.6;
+  float camRow = camZ / DZ;
+
+  // March on the hills alone (plus the crowns' headroom) to bracket where
+  // the ray enters the canopy: three coarse steps, then four halvings.
+  float zA = (CAM_Y - 0.4) / d;
+  float zB = min(CAM_Y / d, 60.0);
+  float span = (zB - zA) / 3.0;
+  float zs = zA;
+  float hLo = hills(vec2(sx * zA + camX, zA + camZ));
+  float hHi = hLo;
+  for (int i = 0; i < 3; i++) {
+    float zn = zs + span;
+    hHi = hills(vec2(sx * zn + camX, zn + camZ));
+    if (CAM_Y - d * zn < hHi + 0.6 * crownAmp(zn)) break;
+    zs = zn;
+    hLo = hHi;
+  }
+  for (int i = 0; i < 4; i++) {
+    span *= 0.5;
+    float zn = zs + span;
+    float hn = hills(vec2(sx * zn + camX, zn + camZ));
+    if (CAM_Y - d * zn >= hn + 0.6 * crownAmp(zn)) {
+      zs = zn;
+      hLo = hn;
+    } else {
+      hHi = hn;
+    }
+  }
+  // The hills change slowly: over the few rows walked below, a straight
+  // line through the bracket is close enough and saves a fetch per row.
+  float hSlope = (hHi - hLo) / span;
+
+  // Light coming through: slow drifting patches over the canopy, looked up
+  // once per pixel at a depth set by the screen height (smooth, so a point
+  // is lit evenly). The middle, behind the clock, stays calmer.
+  float zl = (CAM_Y - 0.2) / d;
+  vec2 pl = vec2(sx * zl + camX, zl + camZ);
+  float light = noiseFast(pl * vec2(1.3, 0.9) + vec2(t * 0.06, -t * 0.035));
+  light = smoothstep(0.0, 0.42, light);
+  light *= 0.3 + 0.7 * smoothstep(0.05, 0.45, length(uv * vec2(0.75, 1.6)));
+  light *= 0.6 + 0.4 * smoothstep(1.3, 2.6, zl);  // patches at the camera are huge
+  // Distant points cool slightly towards blue-grey.
+  vec3 dim = mix(uColors[1], uColors[1].rbg, 0.5 * smoothstep(3.0, 14.0, zl));
+  vec3 tint = mix(dim, uColors[2], smoothstep(0.0, 0.5, light));
+  tint = mix(tint, uColors[3], smoothstep(0.4, 1.0, light));
+  tint *= 0.8 + 0.5 * light;
+  float rLight = 0.85 + 0.35 * light;
+
+  // Row stride keeps rows about one row gap apart on screen; rows about to
+  // be dropped fade out first. It depends on the screen height only, so it
+  // is continuous across the picture.
+  float zm = (CAM_Y - 0.15) / d;
+  float lod = log2(max(ROW_GAP * zm * zm / (CAM_Y * DZ), 1.0));
+  float stride = exp2(floor(lod));
+  float fadeOdd = 1.0 - fract(lod);
+  // Rows are counted in floats: an int row counter stepped in the loop
+  // header made this loop several times slower under ANGLE.
+  float j0 = ceil((zs / DZ + camRow) / stride) - 1.0;
+
+  vec3 col = vec3(0.0);
+  float alpha = 0.0;
+  // One row of lag: a row is drawn once the next row's height is known,
+  // so points on slopes seen edge-on (rows crowding together on screen)
+  // fade instead of piling up into bars.
+  float prevSy = -1.0, prevZ = 1.0, prevW = 0.0;
+  for (int n = 0; n < 12; n++) {
+    float jj = j0 + float(n);  // row index in units of the stride
+    float zc = (jj * stride - camRow) * DZ;
+    float cx = (sx + camX / zc) / (DOT_GAP * CROWN_W);
+    float crown = crownAmp(zc) * noiseFast(vec2(cx, jj * stride * DZ * 4.0) + vec2(11.0, 2.0));
+    float h = hLo + hSlope * (zc - zs) + crown;
+    float sy = HORIZON - (CAM_Y - h) / zc;
+    bool hidden = CAM_Y - d * zc < h - SHELL || zc > zB;
+    if (n > 0) {
+      float gap = hidden ? ROW_GAP : sy - prevSy;
+      // Near rows hang a short stack of points under each crown top.
+      float stackY = STACK_DY / prevZ;
+      float nLev = 1.0 + floor(2.0 * (1.0 - smoothstep(1.6, 3.2, prevZ)) + 0.5);
+      float k = clamp(floor((prevSy - uv.y) / stackY + 0.5), 0.0, nLev - 1.0);
+      float dist = length(vec2(ex, uv.y - (prevSy - k * stackY)));
+      float r = rMax * clamp(pow(1.4 / prevZ, 0.4), 0.35, 1.0) * rLight * (1.0 - 0.18 * k);
+      float rr = max(r, 0.7 * px);
+      float cover = smoothstep(rr + 0.6 * px, rr - 0.6 * px, dist);
+      cover *= (r * r) / (rr * rr) * prevW * smoothstep(0.9, 2.1, gap / r);
+      vec3 c = mix(bg, tint * (1.0 - 0.25 * k), exp(-prevZ * 0.05));
+      col += (1.0 - alpha) * cover * c;
+      alpha += (1.0 - alpha) * cover;
+    }
+    if (hidden) break;
+    prevSy = sy;
+    prevZ = zc;
+    prevW = fract(jj * 0.5) > 0.25 ? fadeOdd : 1.0;
+  }
+  return sky * (1.0 - alpha) + col;
+}
+`,
+};
+
+const convergence: Scene = {
+  id: 'convergence',
+  name: 'Convergence',
+  colors: ['#020104', '#2030ff', '#d070ff', '#d43408'],
+  base: '#050309',
+  speed: 1.4,
+  resolution: 0.35,
+  fragment: /* glsl */ `
+// Convergence: three soft streams of light cross the screen in a rotated,
+// slowly flowing field. Each stream is split like light through a prism
+// edge: blue leading, magenta where they overlap, ember trailing.
+vec3 scene(vec2 uv, float t) {
+  // Rotate so streams climb from bottom-left to top-right (~33 deg).
+  const vec2 R = vec2(0.839, 0.545);
+  vec2 p = vec2(R.x * uv.x + R.y * uv.y, R.x * uv.y - R.y * uv.x);
+
+  // Wave field: one main S-curve plus a slower swell that also depends on
+  // p.y, so each stream bends a little differently and the field breathes.
+  const float k = 5.6;
+  float ph = k * p.x + 0.21 * t;
+  float a1 = 0.085 + 0.018 * sin(0.09 * t + 1.6 * p.y);
+  float ph2 = 2.3 * p.x - 1.7 * p.y - 0.12 * t;
+  float w = a1 * sin(ph) + 0.035 * sin(ph2);
+  float dw = a1 * k * cos(ph) + 0.08 * cos(ph2);
+
+  // Signed distance across the nearest stream, in screen units. The
+  // streams drift downward; whole steps of the drift are kept apart so v
+  // stays small and exact on long-lived tabs.
+  const float S = 0.52; // spacing between streams
+  float drift = 0.03 / S * t;
+  float steps = floor(drift);
+  float v = p.y - w + (drift - steps) * S;
+  float cell = floor(v / S + 0.5);
+  float d = (v - cell * S) * inversesqrt(1.0 + dw * dw);
+  cell += steps; // stable id per stream, for its brightness
+
+  // Prism split: the same soft-shouldered stream, shifted up for the blue
+  // copy and down for the ember copy; they overlap as magenta in the core.
+  vec2 e = vec2(d - 0.022, d + 0.02) * 17.0;
+  e *= e;
+  vec2 lobe = exp(-e * e); // flat-topped: x = blue, y = ember
+  float halo = exp(-d * d * 60.0);
+
+  // Brightness drifts along each stream; the centre stays calmer for the
+  // clock.
+  float along = 0.72 + 0.28 * sin(1.2 * p.x - 0.15 * t + 2.3 * cell);
+  float calm = 0.62 + 0.38 * smoothstep(0.05, 0.5, length(uv * vec2(0.75, 1.0)));
+  float g = along * calm;
+
+  vec3 col = uColors[0] + uColors[1] * halo * 0.06 * calm;
+  // Where the copies overlap the light runs hot, towards pink-white.
+  float hot = lobe.x * lobe.y;
+  col += (uColors[1] * lobe.x + uColors[3] * lobe.y + uColors[2] * hot * 0.15) * g;
+  return col;
+}
+`,
+};
+
+const ribbons: Scene = {
+  id: 'ribbons',
+  name: 'Ribbons',
+  colors: ['#0b1622', '#24588f', '#3aae9f', '#e9876b'],
+  base: '#0b1622',
+  speed: 0.25,
+  resolution: 0.75,
+  fragment: /* glsl */ `
+// Ribbons: flat translucent vector ribbons that twist and drift across a
+// deep field, over a bundle of fine dashed strands. Analytic curves (sums
+// of sines with exact slopes), edges anti-aliased in pixels. No noise, no
+// textures.
+
+const int RIBBONS = 7;
+
+vec3 scene(vec2 uv, float t) {
+  float px = 1.0 / uResolution.y;
+  // Field: the base, lifted toward a soft glow left of centre, darker edges.
+  vec2 q = uv - vec2(-0.15, -0.05);
+  float glow = exp(-2.2 * dot(q, q));
+  vec3 col = uColors[0] * (0.75 + 0.45 * glow) + uColors[1] * 0.07 * glow;
+
+  // Strand bundle: parallel hairlines around one curve whose spacing swells
+  // and pinches along x; one curve evaluation draws every line.
+  {
+    float x = uv.x;
+    float a = 0.33 * t;
+    float g = -0.23 + 0.2 * x + 0.07 * sin(2.1 * x + a) + 0.03 * sin(4.7 * x - 1.4 * a + 1.7);
+    float sp = 0.011 * (1.0 + 0.5 * sin(2.9 * x + 0.8 * a + 0.6));
+    float v = (uv.y - g) / sp;
+    if (abs(v) < 12.0) {
+      float dg = 0.2 + 0.147 * cos(2.1 * x + a) + 0.141 * cos(4.7 * x - 1.4 * a + 1.7);
+      float idx = floor(v + 0.5);
+      float d = abs(v - idx) * sp * inversesqrt(1.0 + dg * dg);
+      float line = 1.0 - smoothstep(0.3 * px, 1.3 * px, d);
+      float env = 1.0 - smoothstep(3.0, 10.0, abs(idx + 2.0 * sin(1.3 * x + 0.5 * a)));
+      float h = fract(idx * 0.618 + 0.3);
+      // Dashes slide along; a third of the strands are solid.
+      // Dash length and gap vary per strand: long dashes to fine dots.
+      float h2 = fract(idx * 0.381 + 0.17);
+      float f = 4.0 + 22.0 * h2 * h2;
+      float gap = 0.25 + 0.4 * h2;
+      float u = fract(x * f - a * (0.25 + 0.5 * h) + h * 7.0);
+      // Anti-aliased dash ends, measured in pixels along x.
+      float dash = h < 0.33 ? 1.0
+        : clamp((0.5 - 0.5 * gap - abs(u - 0.5 - 0.5 * gap)) / (f * px) + 0.5, 0.0, 1.0);
+      vec3 sc = h < 0.33 ? uColors[2] : h < 0.66 ? uColors[1] : uColors[3];
+      col = mix(col, sc, line * env * dash * 0.6);
+    }
+  }
+
+  // Ribbons, back to front.
+  for (int i = 0; i < RIBBONS; i++) {
+    float fi = float(i);
+    float k1 = 1.3 + 0.29 * fi;
+    float k2 = 3.1 - 0.23 * fi;
+    float a1 = 0.13 + 0.05 * sin(fi * 2.1);
+    float a2 = 0.035;
+    float tilt = 0.22 * sin(fi * 1.7 + 0.5);
+    float c = -0.07 + 0.11 * sin(fi * 2.4 + 0.9);
+    // Cheap reject: rows this ribbon can never reach.
+    if (abs(uv.y - c - tilt * uv.x) > a1 + a2 + 0.03) continue;
+    float p1 = fi * 1.93 + t * (0.21 + 0.035 * fi);
+    float p2 = fi * 4.11 - t * (0.15 + 0.03 * mod(fi, 3.0));
+    float yc = c + tilt * uv.x + a1 * sin(k1 * uv.x + p1) + a2 * sin(k2 * uv.x + p2);
+    float dy = tilt + a1 * k1 * cos(k1 * uv.x + p1) + a2 * k2 * cos(k2 * uv.x + p2);
+    float d = abs(uv.y - yc) * inversesqrt(1.0 + dy * dy);
+    // Twist: width follows |sin|; the face shown flips at the thin point.
+    float tw = sin(2.2 * uv.x + fi * 2.4 + t * (0.19 + 0.02 * fi));
+    float hw = (0.002 + 0.015 * abs(tw)) * (0.85 + 0.3 * sin(fi * 3.3));
+    float m = 1.0 - smoothstep(hw - 0.6 * px, hw + 0.6 * px, d);
+    if (m > 0.0) {
+      // Colour flows slowly along each ribbon, blue to teal.
+      float flow = 0.5 + 0.5 * sin(1.6 * uv.x - 0.35 * t + fi * 1.7);
+      vec3 rc = i == 2 || i == 5 ? uColors[3] * (0.72 + 0.28 * flow)
+        : mix(uColors[1], uColors[2], flow * flow);
+      rc *= tw > 0.0 ? 1.0 : 0.78;
+      col = mix(col, rc, m * 0.55);
+    }
+  }
+  return col;
+}
+`,
+};
+
+const fringe: Scene = {
+  id: 'fringe',
+  name: 'Fringe',
+  colors: ['#0a0a0c', '#ff2a10', '#1aff60', '#1040ff'],
+  base: '#0a0a0c',
+  speed: 1,
+  resolution: 0.4,
+  fragment: /* glsl */ `
+// One glowing sine band whose colour channels part towards the edges of
+// the screen, as a lens does. uColors: 0 background, 1/2/3 the three
+// channels (outer-top, middle, outer-bottom); 1+2+3 should sum near white.
+vec3 scene(vec2 uv, float t) {
+  float x = uv.x;
+  float x2 = x * x;
+  // The band: a travelling sine on a gentle smile, swinging wider towards
+  // the edges so its crests stay below the clock in the middle.
+  float a1 = (0.085 + 0.012 * sin(t * 0.21)) * (1.0 + 0.9 * x2);
+  float p1 = 2.1 * x + t * 0.23 - 1.57;
+  float p2 = 4.3 * x - t * 0.17 + 1.3;
+  float s1 = sin(p1), s2 = sin(p2);
+  float f = -0.23 + 0.2 * x2 + a1 * s1 + 0.03 * s2;
+  float fp = 0.4 * x + a1 * 2.1 * cos(p1) + 0.03 * 4.3 * cos(p2)
+           + 0.153 * x * s1;
+  float inv = inversesqrt(1.0 + fp * fp);
+
+  // Chromatic aberration: the outer channels slide apart across the band,
+  // little in the middle of the screen and more towards its edges, never
+  // so far that the middle channel shows on its own.
+  float r2 = dot(uv, uv);
+  float e = 0.005 + 0.034 * r2 * (0.85 + 0.15 * sin(t * 0.37));
+  vec3 d = (uv.y - f) * inv + vec3(-e, 0.0, e);
+  vec3 d2 = d * d;
+
+  // Soft core plus a wide halo.
+  const float W = 0.03 * 0.03;
+  vec3 core = W / (W + d2);
+  core *= core;
+  vec3 halo = 0.03 / (0.03 + abs(d) * 3.0);
+  vec3 I = 2.6 * core + 0.65 * halo;
+
+  vec3 light = I.x * uColors[1] + I.y * uColors[2] + I.z * uColors[3];
+  vec3 col = 1.0 - exp(-light);
+  vec3 bg = uColors[0] * (1.0 - 0.35 * r2);
+  return bg + col * (1.0 - bg);
+}
+`,
+};
+
+const nightSky: Scene = {
+  id: 'nightsky',
+  name: 'Night Sky',
+  colors: ['#070318', '#0a0912', '#58887a', '#8274a8'],
+  base: '#08041a',
+  speed: 0.25,
+  resolution: 1,
+  fragment: /* glsl */ `
+// Night Sky: a deep sky with a soft, slowly drifting Milky Way, stars in
+// four layers that twinkle, and now and then a shooting star.
+
+// Three random numbers in 0..1 for a cell, float math only (weak GPUs are
+// slow at integer hashing). Cells stay within a few thousand, where this
+// shows no visible pattern.
+vec3 rnd3(vec2 c) {
+  vec3 p = fract(vec3(c.xyx) * vec3(0.1179, 0.1471, 0.1033));
+  p += dot(p, p.yzx + 27.13);
+  return fract(vec3(p.x + p.y, p.y + p.z, p.z + p.x) * p.zxy);
+}
+
+// Sine-like wave from two parabolas, period 1 (cheaper than sin).
+float wave1(float p) {
+  float q = fract(p) * 2.0 - 1.0;
+  return 4.0 * q * (abs(q) - 1.0);
+}
+
+// One layer of stars: a cell of scale per unit of uv holds at most one
+// star, a round point well inside the cell, so only the cell under the
+// pixel matters. chance may vary across the sky (the Milky Way is
+// denser); stars near the threshold fade instead of popping as it drifts.
+// px is uv per pixel, size the star's radius in pixels.
+float stars(vec2 uv, float scale, float chance, float size, float px,
+            float twinkle, float t) {
+  vec2 g = uv * scale;
+  vec2 cell = floor(g);
+  vec3 r = rnd3(cell);
+  float there = clamp((chance - r.z) * 16.0, 0.0, 1.0);
+  if (there <= 0.0) return 0.0;
+  float k = fract(r.z * 71.3);             // 0..1, brightness and phase
+  vec2 o = g - cell - 0.2 - 0.6 * r.xy;    // star sits in the middle 60%
+  float d = length(o) / (scale * px);      // distance in pixels
+  float s = size * (0.6 + 0.6 * k);
+  float e = max(1.0 - d * d / (3.0 * s * s), 0.0);  // round, bell-like
+  float tw = 1.0 - twinkle
+    + twinkle * (0.5 + 0.5 * wave1(t * (0.25 + 0.35 * fract(k * 7.31)) + k * 13.7));
+  return e * e * (0.25 + 0.75 * k * k) * tw * there;
+}
+
+// A shooting star in one lane: time is cut into slots of period; some
+// slots hold a meteor that lives a fraction of it. Away from the centre.
+float meteor(vec2 uv, float t, float period, float lane, float px) {
+  float slot = floor(t / period);
+  vec3 r = rnd3(vec2(slot, lane));
+  if (r.z > 0.7) return 0.0;
+  float life = 0.1;                        // fraction of the slot
+  float age = (fract(t / period) - 0.3 * r.z) / life;
+  if (age < 0.0 || age > 1.0) return 0.0;
+  // Start in the upper sky or at the sides, heading down and outward.
+  vec3 q = rnd3(vec2(lane, slot) + 17.0);
+  vec2 start = vec2((q.x - 0.5) * 1.6, 0.05 + 0.4 * q.y);
+  if (abs(start.x) < 0.3) start.y = 0.32 + 0.12 * q.y;
+  float ang = -0.6 - 1.0 * q.z;             // radians, mostly downward
+  vec2 dir = vec2(cos(ang), sin(ang));
+  if (start.x < 0.0) dir.x = -dir.x;
+  float len = 0.06 + 0.06 * r.x;
+  vec2 head = start + dir * (0.2 + 0.15 * r.y) * age;
+  vec2 rel = uv - head;
+  float along = -dot(rel, dir);             // behind the head is positive
+  if (along < -0.01 || along > len) return 0.0;
+  float across = abs(dot(rel, vec2(-dir.y, dir.x))) / px;
+  float tail = 1.0 - along / len;
+  float fade = smoothstep(0.0, 0.15, age) * (1.0 - smoothstep(0.6, 1.0, age));
+  return exp(-across * across / 0.7) * tail * tail * fade
+    * smoothstep(-0.01, 0.0, along);
+}
+
+vec3 scene(vec2 uv, float t) {
+  float px = 1.0 / uResolution.y;
+  float tt = t * 4.0;
+
+  // Sky: deep indigo, a touch lighter in the middle, darker at the corners.
+  float v = dot(uv, uv);
+  vec3 col = uColors[0] * (1.15 - 0.4 * v);
+
+  // The Milky Way: a soft band rising to the right through the middle.
+  const float C = 0.876, S = 0.482;        // cos, sin of ~28.8 degrees
+  vec2 b = vec2(C * uv.x + S * uv.y, -S * uv.x + C * uv.y + 0.045);
+  // A soft glow around the band, so its edges fade into the sky.
+  col += uColors[1] * exp(-b.y * b.y * 12.0);
+  float dens = 0.0;
+  float s = 0.0;
+  if (abs(b.y) < 0.62) {
+    float w = 0.2 + 0.04 * noiseFast(vec2(b.x * 2.1, 3.1));
+    float band = exp(-b.y * b.y / (w * w));
+    // Two octaves of drifting cloud give it soft masses.
+    vec2 q = vec2(b.x * 2.6 + 0.006 * tt, b.y * 4.5) + 9.0;
+    float cloud = 0.62 * noiseFast(q) + 0.3 * noiseFast(OCTAVE * q + 3.7);
+    dens = band * clamp(0.8 + 1.5 * cloud, 0.0, 1.4);
+    // Violet in the middle of the sky, grey-teal towards the ends.
+    float mid = exp(-b.x * b.x * 5.0);
+    vec3 tint = mix(uColors[2], uColors[3], smoothstep(0.15, 0.85, mid + 0.25 * cloud));
+    col += tint * dens * 0.34;
+    // Dust: countless faint stars that only live in the band.
+    if (dens > 0.02) s = stars(uv, 420.0, 0.5 * dens, 0.55, px, 0.0, tt) * 0.5 * dens;
+  }
+
+  // Stars, from faint to a few bright ones.
+  s += stars(uv, 190.0, 0.18 + 0.25 * dens, 0.6, px, 0.5, tt) * 0.55;
+  s += stars(uv, 75.0, 0.22, 0.75, px, 0.7, tt) * 0.9;
+  s += stars(uv, 26.0, 0.16, 0.95, px, 0.6, tt) * 1.4;
+  vec3 starTint = vec3(0.9, 0.93, 1.0);
+  col += starTint * s;
+
+  float m = meteor(uv, tt, 7.0, 1.0, px) + meteor(uv, tt + 3.1, 11.0, 2.0, px);
+  col += vec3(0.85, 0.9, 1.0) * m;
+  return col;
+}
+`,
+};
+
+const matrix: Scene = {
+  id: 'matrix',
+  name: 'Matrix',
+  colors: ['#010805', '#0a4d22', '#2ee86f', '#dcffe8'],
+  base: '#020a06',
+  speed: 1,
+  resolution: 1,
+  fragment: /* glsl */ `
+// Matrix: digital rain in three depth layers. Each pixel looks up one cell
+// per layer: the cell's column decides its falling drops (analytic trails,
+// no feedback), and the cell's glyph is drawn from strokes on a 2x3
+// lattice chosen by a hash (horizontals, verticals, a few diagonals), so it
+// reads as an invented script of katakana-like signs.
+
+uint mixBits(uint x) {
+  x ^= x >> 16u;
+  x *= 0x7feb352du;
+  x ^= x >> 15u;
+  x *= 0x846ca68bu;
+  x ^= x >> 16u;
+  return x;
+}
+
+float bitOn(uint m, int i) {
+  return float((m >> uint(i)) & 1u);
+}
+
+// Distance in pixels from q to the segment a-b.
+float segment(vec2 q, vec2 a, vec2 b) {
+  vec2 ab = b - a;
+  float h = clamp(dot(q - a, ab) / dot(ab, ab), 0.0, 1.0);
+  return length(q - a - ab * h);
+}
+
+// Ink of a glyph at g (0..1 inside the glyph box, y down), box size in px.
+float glyph(vec2 g, vec2 size, uint h, float halfW) {
+  uint h2 = mixBits(h);
+  uint h3 = mixBits(h2);
+  uint hv = h & (h2 | h3 | mixBits(h ^ h3)); // ~44% of strokes on
+  uint hd = h2 & h3 & mixBits(h3); // 12.5% of diagonals on
+
+  vec2 c = clamp(g, 0.0, 1.0);
+  vec2 out_ = (g - c) * size; // outside the box, distance grows
+
+  // Nearest horizontal stroke: rows at y = 0, 1/3, 2/3, 1; two halves.
+  float r = floor(c.y * 3.0 + 0.5);
+  int hc = int(min(floor(c.x * 2.0), 1.0));
+  float dH = length(vec2(out_.x, (g.y - r / 3.0) * size.y));
+  float onH = bitOn(hv, int(r) * 2 + hc);
+
+  // Nearest vertical stroke: columns at x = 0, 1/2, 1; three spans.
+  float k = floor(c.x * 2.0 + 0.5);
+  int vs = int(min(floor(c.y * 3.0), 2.0));
+  float dV = length(vec2((g.x - k * 0.5) * size.x, out_.y));
+  float onV = bitOn(hv, 8 + int(k) * 3 + vs);
+
+  // One diagonal per box, either way.
+  int bx = hc;
+  int by = vs;
+  int bi = bx * 3 + by;
+  vec2 box = size / vec2(2.0, 3.0);
+  vec2 q = (g - vec2(float(bx) * 0.5, float(by) / 3.0)) * size;
+  float flip = bitOn(h3, bi);
+  vec2 a = vec2(box.x * flip, 0.0);
+  vec2 b = vec2(box.x * (1.0 - flip), box.y);
+  float dD = segment(q, a, b);
+  float onD = bitOn(hd, 17 + bi);
+
+  float d = min(min(mix(1e3, dH, onH), mix(1e3, dV, onV)), mix(1e3, dD, onD));
+  return clamp(halfW + 0.5 - d, 0.0, 1.0);
+}
+
+// One layer of rain. n: cells per screen height. Returns its color.
+vec3 rain(vec2 uv, float t, float n, float seed, float speedScale, float halfW, uint gap) {
+  float cellAspect = 0.62;
+  vec2 p = vec2(uv.x / cellAspect, -uv.y) * n + vec2(seed * 37.0, 0.0);
+  vec2 cell = floor(p);
+  vec2 f = p - cell;
+  float px = uResolution.y / n; // cell height in pixels
+
+  uint ch = hash(uvec2(ivec2(int(cell.x), int(seed * 101.0))));
+  // Integer speed in eighths of a cell per second, integer track length:
+  // the head position is exact at any clock value.
+  uint sp = 20u + (ch & 63u); // 2.5..10.4 cells/s, before speedScale
+  uint track = gap + ((ch >> 6u) & 127u); // cells between drops
+  float trail = 8.0 + float((ch >> 12u) & 31u) * 0.75; // trail length
+  float v = float(sp) / 8.0 * speedScale;
+  float L = float(track);
+  // speedScale is k/8 with k small, so this stays integer.
+  uint num = sp * uint(speedScale * 8.0 + 0.5); // speed in 64ths
+  uint ti = uint(max(t, 0.0));
+  float head = float((ti * num + (ch >> 18u)) % (64u * track)) / 64.0
+    + fract(t) * v;
+
+  float row = cell.y + n * 0.5; // 0 at the top of the screen
+  float d = mod(head - row, L); // cells behind the head
+  // A second, shorter drop half a track behind in some columns.
+  float d2 = mod(head - row + L * 0.5, L);
+  float b1 = d < trail ? 1.0 - d / trail : 0.0;
+  float b2 = ((ch >> 24u) & 1u) == 1u && d2 < trail * 0.6 ? 1.0 - d2 / (trail * 0.6) : 0.0;
+  float bright = max(b1, b2);
+  float headOn = max(step(d, 1.0) * step(0.0, d), step(d2, 1.0) * (b2 > 0.0 ? 1.0 : 0.0));
+  if (bright <= 0.0) return vec3(0.0);
+
+  // Glyph change: most cells hold a sign for seconds, some flicker.
+  uint cid = uint(int(cell.x) * 977 + int(cell.y) * 131 + int(seed * 7.0));
+  float cr = float(mixBits(cid) & 255u) / 255.0;
+  float rate = 0.25 + 3.5 * cr * cr * cr;
+  uint gi = uint(floor(t * rate + cr * 13.0));
+  uint gh = hash(uvec2(cid, gi));
+
+  vec2 g = (f - vec2(0.17, 0.13)) / vec2(0.66, 0.74);
+  vec2 size = vec2(0.66 * cellAspect, 0.74) * px;
+  float ink = glyph(g, size, gh, halfW);
+  // A faint glow filling the cell, so trails read as light, not print.
+  // A soft band along the column (no cell edges), so trails read as light.
+  float band = 1.0 - abs(f.x - 0.5) * 2.0;
+  float glow = 0.09 * band * band;
+  // Trails run from bright green at the head to deep green at the tail.
+  // The few cells right behind the head are still hot, toward white.
+  vec3 trailCol = mix(uColors[1], uColors[2], bright) * (bright * bright)
+    + uColors[3] * (0.3 * smoothstep(0.82, 1.0, bright));
+  vec3 c = trailCol * (ink + glow);
+  vec3 h = uColors[3] * ink * 1.1 + uColors[2] * glow * 3.0;
+  return mix(c, h, headOn);
+}
+
+vec3 scene(vec2 uv, float t) {
+  vec3 col = uColors[0] * (1.0 - 0.4 * dot(uv, uv));
+
+  // Calm the middle a little, behind the clock and widgets.
+  float centre = 1.0 - 0.5 * exp(-(uv.x * uv.x * 2.2 + uv.y * uv.y * 5.0));
+
+  vec3 far = rain(uv, t, 78.0, 3.0, 0.5, 0.45, 60u);
+  vec3 mid = rain(uv, t, 52.0, 1.0, 0.75, 0.6, 40u);
+  vec3 near = rain(uv, t, 34.0, 2.0, 1.0, 0.8, 30u);
+  col += (far * 0.45 + mid * 0.7 + near) * centre;
+  return col;
+}
+`,
+};
+
 export const SCENES: readonly Scene[] = [
   tarn,
   ember,
@@ -749,6 +1534,14 @@ export const SCENES: readonly Scene[] = [
   comet,
   lumen,
   contour,
+  clouds,
+  topology,
+  canopy,
+  convergence,
+  ribbons,
+  fringe,
+  nightSky,
+  matrix,
 ];
 
 export const DEFAULT_SCENE_ID = tarn.id;

@@ -3,38 +3,49 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
-// How much each scene asks of the computer, measured (not guessed): % of
-// one CPU core for the page and for the GPU process, M4, headed Chrome,
-// active pace (docs/wallpapers.md, "Measured cost"). Settings
-// shows it as a small gauge on each wallpaper. Add a row with every new
-// scene, and update it when a scene changes.
+// How much each scene asks of the computer, measured (not guessed): the
+// scene's own drawing work, in ms per frame on the GPU at 1920x1200 CSS
+// pixels times its resolution, on an Apple M4 (headless Chrome for
+// Testing, ANGLE Metal, median of 7 interleaved rounds; docs/wallpapers.md,
+// "Measured cost"). That is what separates the scenes: the CPU cost of
+// showing 30 frames a second is the same for all of them, and a slow GPU
+// (a Raspberry Pi is about 30-60x slower) feels exactly this number.
+// Settings shows it as a small gauge on each wallpaper. Add a row with
+// every new scene, and re-measure when a scene changes.
 
-interface Load {
-  readonly page: number;
-  readonly gpu: number;
-}
-
-export const SCENE_LOAD: Readonly<Record<string, Load>> = {
-  tarn: {page: 5.0, gpu: 9.8},
-  ember: {page: 8.1, gpu: 11.1},
-  bloom: {page: 5.0, gpu: 10.0},
-  wave: {page: 6.5, gpu: 10.5},
-  aurora: {page: 4.8, gpu: 9.0},
-  silk: {page: 4.8, gpu: 9.8},
-  comet: {page: 4.1, gpu: 8.7},
-  lumen: {page: 6.2, gpu: 10.0},
-  contour: {page: 4.7, gpu: 8.7},
+/** GPU ms per frame, by scene id. */
+export const SCENE_LOAD: Readonly<Record<string, number>> = {
+  tarn: 0.012,
+  ember: 0.036,
+  bloom: 0.007,
+  wave: 0.049,
+  aurora: 0.013,
+  silk: 0.011,
+  comet: 0.267,
+  lumen: 0.034,
+  contour: 0.163,
+  clouds: 0.013,
+  topology: 0.097,
+  canopy: 0.077,
+  convergence: 0.012,
+  ribbons: 0.056,
+  fringe: 0.012,
+  nightsky: 0.084,
+  matrix: 0.086,
 };
 
 /** A still photo costs nothing once drawn; scenes are light to heavier. */
 export type LoadLevel = 'still' | 'light' | 'medium' | 'heavy';
 
-/** The gauge's reading for a wallpaper: its measured page plus GPU cost. */
+/** Under this, a scene is light; at or over HEAVY_MS, heavy. */
+const LIGHT_MS = 0.03;
+const HEAVY_MS = 0.12;
+
+/** The gauge's reading for a wallpaper, from its measured GPU work. */
 export function loadLevel(id: string): LoadLevel {
   if (id.startsWith('photo:')) return 'still';
-  const load = SCENE_LOAD[id];
-  if (!load) return 'medium';
-  const total = load.page + load.gpu;
-  if (total < 15) return 'light';
-  return total <= 17 ? 'medium' : 'heavy';
+  const ms = SCENE_LOAD[id];
+  if (ms === undefined) return 'medium';
+  if (ms < LIGHT_MS) return 'light';
+  return ms < HEAVY_MS ? 'medium' : 'heavy';
 }
