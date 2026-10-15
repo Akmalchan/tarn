@@ -79,6 +79,7 @@ example content until the user edits it.
   whose settings came through sync (`src/app/first-run.ts`). Rejected:
   a white welcome toast (loudest thing on the page), a dot on the gear
   (says where, not what). Mockups: `docs/design/first-run-hints-plan.md`.
+  The dev build (`npm run dev`) shows it on every new tab, for review.
 - Edit affordances (name holders, resize grips, remove badges, the drag
   hint) exist only in edit mode, which is "the settings panel is open".
 
