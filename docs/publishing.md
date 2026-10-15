@@ -66,55 +66,36 @@ New Tab", "Living New Tab", "New Tab, Still Water", "Quiet New Tab").
 
 ### Description
 
-Paste as is: the store shows plain text and keeps the line breaks.
+Paste as is: the store shows plain text and keeps every line break, so each paragraph and bullet is one line here.
 
 ```text
-Tarn turns every new tab into a calm, living page: a slow, hand-made
-background that moves like still water, a clock, a search box, and the
-few things you open every day. Nothing else. No accounts, no ads, no
-tracking.
+Tarn turns every new tab into a calm, living page: a slow, hand-made background that moves like still water, a clock, a search box, and the few things you open every day. Nothing else. No accounts, no ads, no tracking.
 
 LIVING BACKGROUNDS
-• Sixteen original scenes drawn on your graphics chip, from calm water,
-  clouds and northern lights to a night sky and digital rain.
+• Sixteen original scenes drawn on your graphics chip, from calm water, clouds and northern lights to a night sky and digital rain.
 • Or your own photos.
-• Light on your computer: it pauses when the tab is hidden, slows down
-  when you're away, and holds a still frame if you prefer reduced motion.
+• Light on your computer: it pauses when the tab is hidden, slows down when you're away, and holds a still frame if you prefer reduced motion.
 
 CLOCK AND SEARCH
-• Thirteen clock faces, from Classic to Flip, LCD, Neon and Analog, or no
-  clock at all.
-• A search box shaped like your browser's own. It searches with your
-  browser's search engine and suggests your bookmarks. Voice, Google Lens
-  and AI Mode are one switch each.
+• Thirteen clock faces, from Classic to Flip, LCD, Neon and Analog, or no clock at all.
+• A search box shaped like your browser's own. It searches with your browser's search engine and suggests your bookmarks. Voice, Google Lens and AI Mode are one switch each.
 
 WIDGETS
-• Bookmarks (starts with your bookmarks bar), notes, tasks, a calendar, a
-  timer and weather, on a tidy grid you arrange yourself.
-• Custom widgets: draw your own with a few lines of shader code, with a
-  live preview and examples. Shadertoy code works as is.
+• Bookmarks (starts with your bookmarks bar), notes, tasks, a calendar, a timer and weather, on a tidy grid you arrange yourself.
+• Custom widgets: draw your own with a few lines of shader code, with a live preview and examples. Shadertoy code works as is.
 • Keyboard shortcuts: Ctrl+K or / to search, Alt + 1-9 to open a bookmark.
 
 YOURS
-• Ten languages: English, Español, Português (Brasil), Français, Deutsch,
-  Русский, 日本語, 简体中文, 한국어, Türkçe.
-• Settings sync through your browser's own account, if you use one.
-  Automatic backups before every update, plus export and import.
-• One click on the toolbar button turns Tarn off and gives you your
-  browser's page back. If another new-tab extension is in the way, Tarn
-  can switch it off for you.
+• Ten languages: English, Español, Português (Brasil), Français, Deutsch, Русский, 日本語, 简体中文, 한국어, Türkçe.
+• Settings sync through your browser's own account, if you use one. Automatic backups before every update, plus export and import.
+• One click on the toolbar button turns Tarn off and gives you your browser's page back. If another new-tab extension is in the way, Tarn can switch it off for you.
 
 PRIVATE BY DESIGN
-Tarn has no server, no account and no tracking. It goes online only when
-you use something that needs it: searches go to your browser's own search
-engine when you press Enter; voice, Google Lens and AI Mode go to Google
-only when you press them; and a Weather widget asks Open-Meteo for its
-place's forecast, at most every 30 minutes.
+Tarn has no server, no account and no tracking. It goes online only when you use something that needs it: searches go to your browser's own search engine when you press Enter; voice, Google Lens and AI Mode go to Google only when you press them; and a Weather widget asks Open-Meteo for its place's forecast, at most every 30 minutes.
 
 The source code is public: https://github.com/Akmalchan/tarn
 
-Works with Google Chrome™, Microsoft Edge, Brave, Arc, Opera, Vivaldi and
-Firefox.
+Works with Google Chrome™, Microsoft Edge, Brave, Arc, Opera, Vivaldi and Firefox.
 ```
 
 ## Privacy practices tab
