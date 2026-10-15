@@ -356,6 +356,13 @@ How:
    (signed distance, `uRadius`), with a one-pixel anti-aliased edge;
    `uStrength` follows the widgets' fade.
 
+**After the settle** (2026-10-14), the frost is sent once more at the
+final scale, and again on the canvas's transform `transitionend`. On a
+slow machine the settle ran behind the clock; clearing the transition
+snapped the scene to 1x after the frost was last sent at an in-between
+scale, so the frost stayed shrunk toward the center, a second frame inside
+each tile (a friend's Windows PC).
+
 **While the page scrolls** (2026-10-14), the tiles and the search box
 switch to CSS glass (`glass='css'`) and the scene's frost turns off. The
 compositor moves tiles at the display rate, while the frost was drawn at

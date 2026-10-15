@@ -361,10 +361,25 @@ export class TarnBackdrop extends LitElement {
     canvas.style.transition = '';
     this.style.transition = '';
     this.setAttribute('ready', '');
+    // On a slow or busy machine the settle runs behind the clock, and
+    // clearing the transition above snaps the scene to its final size after
+    // the frost was last sent at an in-between scale: the frost then stayed
+    // shrunk toward the center, offset from the tiles (seen on Windows).
+    // Send it once more at the final scale.
+    this.sendTiles();
   }
 
   /** Keeps the frost exactly behind the widgets while the scene settles. */
   private followSettle(duration: number): void {
+    // Also when the settle actually ends, however late that is (opacity
+    // ends earlier and is ignored).
+    const canvas = this.renderRoot.querySelector('canvas');
+    const onEnd = (event: TransitionEvent) => {
+      if (event.propertyName !== 'transform') return;
+      canvas?.removeEventListener('transitionend', onEnd);
+      this.sendTiles();
+    };
+    canvas?.addEventListener('transitionend', onEnd);
     const end = performance.now() + duration + 50;
     const step = () => {
       this.sendTiles();

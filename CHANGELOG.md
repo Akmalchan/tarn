@@ -164,6 +164,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- On slower computers the widgets' frosted glass could stay slightly
+  smaller than the widgets after a new tab opened, showing a second frame
+  inside each one.
 - Widgets' frosted glass no longer lags and jumps behind them while a
   page with many widgets scrolls.
 - The search box shrinks with a narrow window instead of running off it.
