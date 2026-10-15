@@ -15,7 +15,7 @@ Chrome Web Store developer dashboard > Settings. Decided with the owner on
 
 | Field                  | Answer                                                                                                                                                                                          |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Publisher display name | **Tarn** (shown under the title, so it reads "Tarn: Modern New Tab, offered by Tarn")                                                                                                           |
+| Publisher display name | **Tarn Labs** (owner, 2026-10-14; shown as "Tarn: Modern New Tab · Tarn Labs"). Rejected: "Icarus Labs" (taken; a falling myth), "Adeptus Administratum" (Games Workshop trademark)             |
 | Contact email          | An address the owner reads; it is public on the listing and must be verified before publishing                                                                                                  |
 | Trader status          | **Non-trader** (owner, 2026-10-14). Tarn is free and sells nothing, so no address or phone goes public. Switch to trader before Tarn+ or anything else takes money; then both must be published |
 | Address                | Only required for traders; leave it                                                                                                                                                             |
@@ -91,6 +91,8 @@ CLOCK AND SEARCH
 WIDGETS
 • Bookmarks (starts with your bookmarks bar), notes, tasks, a calendar, a
   timer and weather, on a tidy grid you arrange yourself.
+• Custom widgets: draw your own with a few lines of shader code, with a
+  live preview and examples. Shadertoy code works as is.
 • Keyboard shortcuts: Ctrl+K or / to search, Alt + 1-9 to open a bookmark.
 
 YOURS
