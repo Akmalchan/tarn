@@ -18,10 +18,11 @@
 
 ## Features
 
-- **Living backgrounds.** Twelve hand-written WebGL2 shaders: Tarn,
-  Ember, Bloom, Wave, Aurora, Silk, Comet, Lumen and
-  Contour. Hover one in settings to watch it move, with a gauge for how
-  much it asks of your computer. Or use your own photos.
+- **Living backgrounds.** Seventeen hand-written WebGL2 shaders: Tarn,
+  Ember, Bloom, Wave, Aurora, Silk, Comet, Lumen, Contour, Clouds,
+  Topology, Canopy, Convergence, Ribbons, Fringe, Night Sky and Matrix.
+  Each shows a gauge for how much it asks of your computer. Or use your
+  own photos.
 - **Clock faces.** Thirteen of them, from Classic to Flip, LCD, Neon,
   Analog and two gothic ones, or no clock at all.
 - **Light on your machine.** Renders off the main thread at reduced
