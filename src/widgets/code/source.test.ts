@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it} from 'vitest';
-import {CODE_EXAMPLES, DEFAULT_CODE} from './examples';
+import {BLANK_CODE, CODE_EXAMPLES, DEFAULT_CODE} from './examples';
 import {aiInstructions} from './ai-prompt';
 import {
   CODE_LIMIT,
@@ -115,7 +115,10 @@ describe('examples', () => {
       expect(hasEntry(example.code), example.id).toBe(true);
       expect(example.code.length).toBeLessThan(CODE_LIMIT);
     }
-    expect(DEFAULT_CODE).toBe(CODE_EXAMPLES[0]!.code);
+    // Six, the owner's number; "Start from scratch" is not one of them.
+    expect(CODE_EXAMPLES).toHaveLength(6);
+    expect(hasEntry(BLANK_CODE)).toBe(true);
+    expect(DEFAULT_CODE).toBe(BLANK_CODE);
   });
 
   it('the AI instructions name every input Tarn declares', () => {

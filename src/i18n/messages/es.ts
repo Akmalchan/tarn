@@ -361,13 +361,12 @@ export const es: Catalog = {
   'keys.help': 'Ver atajos',
   'keys.leave': 'Salir de un campo de texto',
   'keys.or': 'o',
-  'code.example.waves': 'Ondas',
-  'code.example.orbits': 'Órbitas',
-  'code.example.lava': 'Lámpara de lava',
-  'code.example.seconds': 'Segundos',
   'code.example.equalizer': 'Ecualizador',
-  'code.example.ripples': 'Ondulaciones',
-  'code.example.blank': 'En blanco',
+  'code.example.aurora': 'Aurora',
+  'code.example.synthwave': 'Synthwave',
+  'code.example.galaxy': 'Galaxia',
+  'code.example.clock': 'Reloj',
+  'code.example.liquid': 'Líquido',
   'code.errorLine': 'Línea {line}: {message}',
   'code.missing': 'Escribe una función widget para dibujar aquí',
   'code.heavy': 'En pausa: demasiado pesado para este ordenador',
@@ -376,7 +375,12 @@ export const es: Catalog = {
   'code.newer': 'Hecho con un Tarn más reciente',
   'panel.custom': 'Widgets personalizados',
   'panel.custom.lead':
-    'Dibuja tu propio widget con unas líneas de código de shader. Empieza con un ejemplo y añade todos los que quieras.',
+    'Dibuja tu propio widget con unas líneas de código de shader. Haz clic en un ejemplo o arrástralo a tu página, y añade todos los que quieras.',
+  'panel.custom.about':
+    'Programa los tuyos: visualizadores, animaciones, relojes',
+  'panel.custom.scratch': 'Empezar desde cero',
+  'panel.custom.scratchNote':
+    'Un widget en blanco, con comentarios que lo explican',
   'panel.custom.addExample': 'Añadir {name}',
   'panel.custom.copyAi': 'Copiar instrucciones para una IA',
   'panel.custom.copyAiNote':

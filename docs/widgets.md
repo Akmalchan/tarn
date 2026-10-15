@@ -553,9 +553,10 @@ Files: `tarn-code.ts`, `src/widgets/code/` (`source.ts`, `examples.ts`,
 
 The user's own shader, drawn edge to edge in its tile: a visualizer, an
 animation, a clock of their own. Any number of them. Decided with the owner
-on 2026-10-14: shaders, not HTML/JS, and the editor sits at the bottom of
-the panel's Widgets page with a short tutorial, examples and a button that
-copies instructions for an AI chat.
+on 2026-10-14: shaders, not HTML/JS; a page of their own in the panel
+(Widgets > Custom widgets), out of the plain widget list (owner: "i dont
+want it to be as part of widgets"), with a short tutorial, six examples
+and a button that copies instructions for an AI chat.
 
 **Why shaders, not HTML/CSS/JS** (researched 2026-10-14):
 
@@ -619,13 +620,20 @@ still come later on Chromium, under the same kind (content has `lang`).
   screen-share picker, `tabCapture`) asks each time. "Visualizer" examples
   visualize time and the mouse.
 
-**In the panel** (`TarnPanel.renderCustom`), at the bottom of the Widgets
-page and found by search ("custom", "code", "shader"):
+**In the panel** (`TarnPanel.renderCustom`, page `custom`): the Widgets
+page ends with one "Custom widgets" row that opens it (Back returns to
+Widgets); settings search finds it ("custom", "code", "shader", the
+examples' names).
 
-- The examples (`examples.ts`: Waves, Orbits, Lava lamp, Seconds,
-  Equalizer, Ripples, Blank), each live in a small tile on the current
-  wallpaper. A click adds one at its size, named after the example (Blank
-  gets no name), and opens its code.
+- Six examples (`examples.ts`; owner: six, 2026-10-14; the first seven were
+  "not cool"): Equalizer (M), Aurora (L), Synthwave (M), Galaxy (S), Clock
+  (S, the real time), Liquid (L, a drop follows the mouse). Each is live in
+  a small tile on the current wallpaper. Click adds one at its size, named
+  after the example, and opens its code; drag puts it where it lands on the
+  tab (the drag carries the code and size: `newWidgetSizeType`,
+  `droppedCode` in `drag-new.ts`; the code is stored before the widget
+  appears, `TarnBoard.dropNew(name, prepare)`).
+- "Start from scratch": `BLANK_CODE`, the smallest widget with comments.
 - "Copy instructions for an AI": `aiInstructions()` (English on purpose,
   for the assistant; it answers in the user's language).
 - "Your custom widgets": each opens into an editor: a live preview at the
@@ -650,8 +658,8 @@ page and found by search ("custom", "code", "shader"):
   (`panel.widgetAbout.<kind>`), a grip and a +. Drag it onto the page to
   place it there, or click to add it at the end at its default size. The
   rows are disabled at `MAX_WIDGETS` (24).
-- **Custom widgets** below them: examples, the AI instructions, an editor
-  per custom widget and the rules (see Custom (`code`) above).
+- **Custom widgets** below them: one row that opens their own page (see
+  Custom (`code`) above).
 - **Search** at the top filters both lists by the user's name, the kind's
   name, its description and its id.
 

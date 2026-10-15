@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {CODE_EXAMPLES} from './examples';
+import {BLANK_CODE} from './examples';
 import {CODE_LIMIT} from './source';
 
 /**
@@ -14,7 +14,7 @@ import {CODE_LIMIT} from './source';
  * docs/widgets.md ("Custom").
  */
 export function aiInstructions(): string {
-  const example = CODE_EXAMPLES.find(e => e.id === 'waves')!.code.trim();
+  const example = BLANK_CODE.trim();
   return `You are writing a custom widget for Tarn, a new tab page. A custom widget is a GLSL ES 3.00 fragment shader that fills one rounded tile on the page.
 
 Write exactly this function:

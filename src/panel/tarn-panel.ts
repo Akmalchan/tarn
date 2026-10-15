@@ -8,7 +8,7 @@ import {keyed} from 'lit/directives/keyed.js';
 import {browser} from 'wxt/browser';
 import {mirrorSettings} from '../app/mirror';
 import {CUSTOM_TAB_ICON_KEY} from '../app/first-paint';
-import {newWidgetType} from '../widgets/drag-new';
+import {newWidgetSizeType, newWidgetType} from '../widgets/drag-new';
 import {answerPanelPresence} from '../app/side-panel';
 import {
   DEFAULT_SCENE_ID,
@@ -87,6 +87,7 @@ import '../widgets/tarn-code';
 import {debounce, loadWidgetData, saveWidgetData} from '../widgets/data';
 import {aiInstructions} from '../widgets/code/ai-prompt';
 import {
+  BLANK_CODE,
   CODE_EXAMPLES,
   DEFAULT_CODE,
   type CodeExample,
@@ -118,7 +119,9 @@ type Page =
   | 'widgets'
   | 'search'
   | 'language'
-  | 'advanced';
+  | 'advanced'
+  /** Custom widgets, opened from Widgets. */
+  | 'custom';
 
 /**
  * Home shows three choices per picker, then a "Show All" tile that opens
@@ -784,6 +787,10 @@ export class TarnPanel extends LitElement {
       margin-bottom: 14px;
     }
 
+    .code-picks .pick.dragging {
+      opacity: 0.4;
+    }
+
     .code-picks .meta {
       justify-content: center;
     }
@@ -1335,6 +1342,7 @@ export class TarnPanel extends LitElement {
             search: () => this.renderSearch(),
             language: () => this.renderLanguage(),
             advanced: () => this.renderAdvanced(),
+            custom: () => this.renderCustom(),
           }[this.page]();
     return html`
       ${faceFilters}
@@ -1346,8 +1354,8 @@ export class TarnPanel extends LitElement {
               this.page === 'home'
                 ? nothing
                 : html`<div class="bar">
-                    <button class="back" @click=${() => this.go('home')}>
-                      ${glyph('back')}${t('common.settings')}
+                    <button class="back" @click=${() => this.go(this.backTo())}>
+                      ${glyph('back')}${t(PAGE_TITLES[this.backTo()])}
                     </button>
                     <h1>${t(PAGE_TITLES[this.page])}</h1>
                   </div>`
@@ -1651,7 +1659,7 @@ export class TarnPanel extends LitElement {
     );
     const custom =
       !query ||
-      [t('panel.custom'), t('panel.custom.lead'), 'code shader glsl']
+      [t('panel.custom'), t('panel.custom.about'), 'code shader glsl']
         .join(' ')
         .toLowerCase()
         .includes(query);
@@ -1694,7 +1702,22 @@ export class TarnPanel extends LitElement {
             </section>`
           : nothing
       }
-      ${custom ? this.renderCustom(full) : nothing}
+      ${
+        custom
+          ? html`<section data-target="custom-link">
+              <div class="group">
+                <button class="row" @click=${() => this.go('custom')}>
+                  ${icon('code')}
+                  <span class="txt"
+                    >${t('panel.custom')}
+                    <span class="sub">${t('panel.custom.about')}</span></span
+                  >
+                  ${chevron()}
+                </button>
+              </div>
+            </section>`
+          : nothing
+      }
     `;
   }
 
@@ -1703,13 +1726,13 @@ export class TarnPanel extends LitElement {
    * Examples to start from, live; instructions to copy for an AI chat; an
    * editor for each custom widget on the tab; the rules, short.
    */
-  private renderCustom(full: boolean) {
+  private renderCustom() {
     const {scene} = this.settings;
+    const full = this.settings.widgets.length >= MAX_WIDGETS;
     const art = this.art(scene);
     setCodeScene(sceneById(scene), art.tone);
     const yours = this.settings.widgets.filter(w => w.kind === 'code');
     return html`<section data-target="custom">
-        <h2>${t('panel.custom')}</h2>
         <p class="lead">${t('panel.custom.lead')}</p>
         <div class="code-picks">
           ${CODE_EXAMPLES.map(
@@ -1717,8 +1740,15 @@ export class TarnPanel extends LitElement {
               html`<button
                 class="pick"
                 ?disabled=${full}
+                draggable=${full ? 'false' : 'true'}
                 title=${t('panel.custom.addExample', {name: t(example.name)})}
                 @click=${() => void this.addCustom(example)}
+                @dragstart=${(event: DragEvent) =>
+                  this.dragCustom(example, event)}
+                @dragend=${(event: DragEvent) =>
+                  (event.currentTarget as HTMLElement).classList.remove(
+                    'dragging',
+                  )}
               >
                 <span
                   class="thumb code-thumb"
@@ -1737,6 +1767,17 @@ export class TarnPanel extends LitElement {
           )}
         </div>
         <div class="group">
+          <button
+            class="row"
+            ?disabled=${full}
+            @click=${() => void this.addCustom(null)}
+          >
+            ${icon('plus')}
+            <span class="txt"
+              >${t('panel.custom.scratch')}
+              <span class="sub">${t('panel.custom.scratchNote')}</span></span
+            >
+          </button>
           <button class="row" @click=${this.copyAi}>
             ${icon('sparkle')}
             <span class="txt"
@@ -2504,8 +2545,14 @@ export class TarnPanel extends LitElement {
 
   // Navigation and search ---------------------------------------------------
 
+  /** Where Back goes: Custom widgets opens from Widgets, the rest from home. */
+  private backTo(): Page {
+    return this.page === 'custom' ? 'widgets' : 'home';
+  }
+
   private go(page: Page, target = ''): void {
-    this.direction = page === 'home' ? 'backward' : 'forward';
+    this.direction =
+      page === 'home' || page === this.backTo() ? 'backward' : 'forward';
     if (page === this.page) this.direction = '';
     this.page = page;
     this.query = '';
@@ -2554,16 +2601,32 @@ export class TarnPanel extends LitElement {
   }
 
   /** A custom widget from an example: its code first, then the widget. */
-  private async addCustom(example: CodeExample): Promise<void> {
+  private async addCustom(example: CodeExample | null): Promise<void> {
     const id = newWidgetId('code');
-    await saveWidgetData(id, {lang: 'glsl', code: example.code});
-    const name = example.id === 'blank' ? undefined : t(example.name);
+    await saveWidgetData(id, {
+      lang: 'glsl',
+      code: example?.code ?? BLANK_CODE,
+    });
+    const name = example ? t(example.name) : undefined;
+    const size = example?.size ?? DEFAULT_WIDGET_SIZE.code;
     const widget: WidgetEntry = name
-      ? {id, kind: 'code', size: example.size, name}
-      : {id, kind: 'code', size: example.size};
+      ? {id, kind: 'code', size, name}
+      : {id, kind: 'code', size};
     this.applyPatch({widgets: [...this.settings.widgets, widget]});
     this.showToast(t('panel.widgets.added', {name: name ?? t('widget.code')}));
     await this.toggleCode(id);
+  }
+
+  /** An example dragged onto the page: it lands there, with its code. */
+  private dragCustom(example: CodeExample, event: DragEvent): void {
+    if (!event.dataTransfer) return;
+    (event.currentTarget as HTMLElement).classList.add('dragging');
+    event.dataTransfer.setData(
+      newWidgetType('code'),
+      JSON.stringify({code: example.code, name: t(example.name)}),
+    );
+    event.dataTransfer.setData(newWidgetSizeType(example.size), example.size);
+    event.dataTransfer.effectAllowed = 'copy';
   }
 
   private async toggleCode(id: string): Promise<void> {
@@ -3015,6 +3078,7 @@ const PAGE_TITLES: Record<Page, MessageKey> = {
   search: 'panel.page.search',
   language: 'panel.page.language',
   advanced: 'panel.page.advanced',
+  custom: 'panel.custom',
 };
 
 /** The browser's short name for the tab icon choice ("Edge"), or "Browser". */
@@ -3348,6 +3412,15 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     glyph: 'widgets',
     words:
       'bookmarks favorites sites folders notes tasks timer focus weather calendar add remove size',
+  },
+  {
+    label: 'panel.custom',
+    where: 'panel.page.widgets',
+    page: 'custom',
+    target: 'custom',
+    glyph: 'code',
+    words:
+      'custom code shader glsl shadertoy visualizer animation equalizer aurora synthwave galaxy clock liquid ai',
   },
   {
     label: 'panel.page.search',

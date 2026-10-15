@@ -366,13 +366,12 @@ export const de: Catalog = {
   'keys.help': 'Tastenkürzel zeigen',
   'keys.leave': 'Textfeld verlassen',
   'keys.or': 'oder',
-  'code.example.waves': 'Wellen',
-  'code.example.orbits': 'Umlaufbahnen',
-  'code.example.lava': 'Lavalampe',
-  'code.example.seconds': 'Sekunden',
   'code.example.equalizer': 'Equalizer',
-  'code.example.ripples': 'Kreise',
-  'code.example.blank': 'Leer',
+  'code.example.aurora': 'Polarlicht',
+  'code.example.synthwave': 'Synthwave',
+  'code.example.galaxy': 'Galaxie',
+  'code.example.clock': 'Uhr',
+  'code.example.liquid': 'Flüssig',
   'code.errorLine': 'Zeile {line}: {message}',
   'code.missing': 'Schreib eine widget-Funktion, um hier zu zeichnen',
   'code.heavy': 'Pausiert: zu aufwendig für diesen Computer',
@@ -381,7 +380,12 @@ export const de: Catalog = {
   'code.newer': 'Mit einer neueren Tarn-Version erstellt',
   'panel.custom': 'Eigene Widgets',
   'panel.custom.lead':
-    'Zeichne dein eigenes Widget mit ein paar Zeilen Shader-Code. Fang mit einem Beispiel an und füge so viele hinzu, wie du willst.',
+    'Zeichne dein eigenes Widget mit ein paar Zeilen Shader-Code. Klick auf ein Beispiel oder zieh es auf deine Seite, und füge so viele hinzu, wie du willst.',
+  'panel.custom.about':
+    'Programmier deine eigenen: Visualizer, Animationen, Uhren',
+  'panel.custom.scratch': 'Bei null anfangen',
+  'panel.custom.scratchNote':
+    'Ein leeres Widget mit Kommentaren, die es erklären',
   'panel.custom.addExample': '{name} hinzufügen',
   'panel.custom.copyAi': 'Anleitung für eine KI kopieren',
   'panel.custom.copyAiNote':

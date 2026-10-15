@@ -401,13 +401,12 @@ export const en = {
   'keys.or': 'or',
 
   // Custom widgets (the panel's Custom widgets section and the tile)
-  'code.example.waves': 'Waves',
-  'code.example.orbits': 'Orbits',
-  'code.example.lava': 'Lava lamp',
-  'code.example.seconds': 'Seconds',
   'code.example.equalizer': 'Equalizer',
-  'code.example.ripples': 'Ripples',
-  'code.example.blank': 'Blank',
+  'code.example.aurora': 'Aurora',
+  'code.example.synthwave': 'Synthwave',
+  'code.example.galaxy': 'Galaxy',
+  'code.example.clock': 'Clock',
+  'code.example.liquid': 'Liquid',
   'code.errorLine': 'Line {line}: {message}',
   'code.missing': 'Write a widget function to draw here',
   'code.heavy': 'Paused: too heavy for this computer',
@@ -416,7 +415,10 @@ export const en = {
   'code.newer': 'Made with a newer Tarn',
   'panel.custom': 'Custom widgets',
   'panel.custom.lead':
-    'Draw your own widget with a few lines of shader code. Start from an example, and add as many as you like.',
+    'Draw your own widget with a few lines of shader code. Click an example or drag it onto your page, and add as many as you like.',
+  'panel.custom.about': 'Code your own: visualizers, animations, clocks',
+  'panel.custom.scratch': 'Start from scratch',
+  'panel.custom.scratchNote': 'A blank widget, with comments that explain it',
   'panel.custom.addExample': 'Add {name}',
   'panel.custom.copyAi': 'Copy instructions for an AI',
   'panel.custom.copyAiNote':
