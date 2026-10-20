@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn: モダンな新しいタブ",
+    "description": "The store title: Tarn, then a translated tagline. Keep \"Tarn\" as is."
+  },
+  "extShortName": {
+    "message": "設定",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "すべてのタブに、静かで澄んだはじまりを。",
+    "description": "Store and extension-page description."
+  }
+}

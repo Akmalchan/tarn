@@ -1,0 +1,422 @@
+/**
+ * Copyright 2026 The Tarn Authors
+ * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
+ */
+
+import {DEFAULT_SCENE_ID, SCENES} from '../backdrop/scenes';
+import {isPhotoId} from '../wallpapers/store';
+import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
+import {LANGUAGE_SETTINGS, type LanguageSetting} from '../i18n/languages';
+
+export {LANGUAGE_SETTINGS, type LanguageSetting} from '../i18n/languages';
+import {migrateSettings} from './migrate';
+
+/**
+ * The icon in the tab. 'chrome' shows the browser's own new-tab icon;
+ * 'none' shows nothing, which never changes even mid-reload (see
+ * first-paint.ts); 'custom' shows the user's own image, kept on this
+ * computer (a computer without it shows the browser's icon).
+ */
+import {APPEARANCES, type Appearance} from '../ui/appearance';
+
+export type TabIcon = 'chrome' | 'none' | 'custom';
+export const TAB_ICONS: readonly TabIcon[] = ['chrome', 'none', 'custom'];
+
+/**
+ * The clock above the widgets, picked by face. 'center' is the classic thin
+ * clock with the date (its id predates the other faces, so stored settings
+ * keep working); 'none' hides it.
+ */
+export type ClockStyle =
+  | 'center'
+  | 'bold'
+  | 'minimal'
+  | 'serif'
+  | 'stacked'
+  | 'outline'
+  | 'pixel'
+  | 'glass'
+  | 'rounded'
+  | 'flip'
+  | 'lcd'
+  | 'neon'
+  | 'fraktur'
+  | 'gotisch'
+  | 'analog'
+  | 'none';
+/**
+ * The clock's color: 'auto' follows the wallpaper (light digits on dark
+ * scenes, dark ones on light scenes); 'light' and 'dark' fix it; 'custom'
+ * uses `clockHex` (behind an arrow in settings, owner 2026-10-14).
+ */
+export type ClockColor = 'auto' | 'light' | 'dark' | 'custom';
+export const CLOCK_COLORS: readonly ClockColor[] = [
+  'auto',
+  'light',
+  'dark',
+  'custom',
+];
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/** In the order settings shows them. */
+export const CLOCK_STYLES: readonly ClockStyle[] = [
+  'center',
+  'glass',
+  'bold',
+  'rounded',
+  'minimal',
+  'serif',
+  'stacked',
+  'outline',
+  'pixel',
+  'flip',
+  'lcd',
+  'neon',
+  'fraktur',
+  'gotisch',
+  'analog',
+  'none',
+];
+
+export type WidgetKind =
+  'favorites' | 'notes' | 'tasks' | 'focus' | 'weather' | 'calendar' | 'code';
+export const WIDGET_KINDS: readonly WidgetKind[] = [
+  'favorites',
+  'notes',
+  'tasks',
+  'focus',
+  'weather',
+  'calendar',
+  'code',
+];
+
+/**
+ * Kinds that come with code of their own (custom widgets): added from the
+ * panel's Custom widgets section, never from the plain Add list or an
+ * example setup.
+ */
+export const CUSTOM_KINDS: readonly WidgetKind[] = ['code'];
+
+/** The sizes each widget offers: only those its content looks right at. */
+export const WIDGET_SIZE_OPTIONS: Readonly<
+  Record<WidgetKind, readonly WidgetSize[]>
+> = {
+  favorites: ['s', 'm', 'l', 'xl'],
+  notes: ['m', 'l', 'xl'],
+  tasks: ['m', 'l', 'xl'],
+  focus: ['s', 'm'],
+  weather: ['s', 'm', 'l'],
+  calendar: ['s', 'm', 'l'],
+  code: ['s', 'm', 'l', 'xl'],
+};
+
+/** Size when first added. */
+export const DEFAULT_WIDGET_SIZE: Readonly<Record<WidgetKind, WidgetSize>> = {
+  favorites: 'l',
+  notes: 'm',
+  tasks: 'm',
+  focus: 's',
+  weather: 'm',
+  calendar: 'l',
+  code: 'm',
+};
+
+/** `size` if the widget offers it, otherwise the nearest size it does. */
+export function fitWidgetSize(kind: WidgetKind, size: WidgetSize): WidgetSize {
+  const options = WIDGET_SIZE_OPTIONS[kind];
+  if (options.includes(size)) return size;
+  const rank = WIDGET_SIZES.indexOf(size);
+  return options.reduce((best, option) =>
+    Math.abs(WIDGET_SIZES.indexOf(option) - rank) <
+    Math.abs(WIDGET_SIZES.indexOf(best) - rank)
+      ? option
+      : best,
+  );
+}
+
+/** The fields of a widget entry this version knows; others are kept as-is. */
+export const WIDGET_ENTRY_FIELDS: readonly string[] = [
+  'id',
+  'kind',
+  'size',
+  'name',
+];
+
+/** A widget id as stored: lowercase letters, digits and dashes. */
+export const WIDGET_ID = /^[a-z0-9-]{1,40}$/;
+
+/** One widget on the page. Its content lives in local storage by `id`. */
+export interface WidgetEntry {
+  readonly id: string;
+  readonly kind: WidgetKind;
+  readonly size: WidgetSize;
+  /** The user's name for it ("Project A"); the kind's name when unset. */
+  readonly name?: string;
+}
+
+/** More than a page needs; keeps a corrupted list from growing forever. */
+export const MAX_WIDGETS = 24;
+
+/**
+ * Where forecasts come from. 'google' needs the user's own API key, kept on
+ * this computer only (weather/config.ts), never synced.
+ */
+export type WeatherProvider = 'open-meteo' | 'google';
+export const WEATHER_PROVIDERS: readonly WeatherProvider[] = [
+  'open-meteo',
+  'google',
+];
+
+/** 'auto' follows the language: °F where that's usual, °C elsewhere. */
+export type WeatherUnits = 'auto' | 'celsius' | 'fahrenheit';
+export const WEATHER_UNITS: readonly WeatherUnits[] = [
+  'auto',
+  'celsius',
+  'fahrenheit',
+];
+
+export interface WeatherSettings {
+  readonly provider: WeatherProvider;
+  readonly units: WeatherUnits;
+}
+
+/**
+ * Where "Ask AI" in the search box sends a question; 'off' hides it.
+ * Each opens the service's own site with the question; Tarn has no AI.
+ */
+export type SearchAi = 'off' | 'google' | 'chatgpt' | 'claude' | 'perplexity';
+export const SEARCH_AIS: readonly SearchAi[] = [
+  'off',
+  'google',
+  'chatgpt',
+  'claude',
+  'perplexity',
+];
+
+/**
+ * The search box under the clock, shaped like the browser's own. Searches
+ * go to the browser's default engine; the buttons only open Google's
+ * voice search, Google Lens, or the chosen AI when pressed.
+ */
+/**
+ * The search box's look: 'auto' follows the computer's light or dark mode
+ * like the browser's own box; 'glass' is frosted like the widgets.
+ */
+export type SearchStyle = 'auto' | 'light' | 'dark' | 'glass';
+export const SEARCH_STYLES: readonly SearchStyle[] = [
+  'auto',
+  'light',
+  'dark',
+  'glass',
+];
+
+export interface SearchSettings {
+  readonly show: boolean;
+  readonly style: SearchStyle;
+  readonly voice: boolean;
+  readonly lens: boolean;
+  readonly ai: SearchAi;
+}
+
+/** Everything the user can change. Small and serializable; synced across devices. */
+export interface Settings {
+  /** Whether new tabs show Tarn, or hand off to the browser's own page. */
+  readonly enabled: boolean;
+  readonly scene: string;
+  readonly tabIcon: TabIcon;
+  readonly clock: ClockStyle;
+  readonly clockColor: ClockColor;
+  /** The custom color, `#rrggbb`; kept when another color is picked. */
+  readonly clockHex: string;
+  /** Single-key shortcuts on the new tab (app/shortcuts.ts). */
+  readonly shortcuts: boolean;
+  /** In the user's order. Empty by default: a calm page is the default. */
+  readonly widgets: readonly WidgetEntry[];
+  readonly weather: WeatherSettings;
+  readonly search: SearchSettings;
+  /** 'auto' follows the browser's languages. */
+  readonly language: LanguageSetting;
+  /** Light or dark menus, sheets and settings; 'auto' follows the system. */
+  readonly appearance: Appearance;
+}
+
+/**
+ * What a brand-new install shows under the clock: Bookmarks (the browser's
+ * bookmarks bar, or examples), Notes, Weather and Timer, in one clean
+ * band. Their first content comes from widgets/start.ts until the user
+ * edits it.
+ */
+export const START_WIDGETS: readonly WidgetEntry[] = [
+  {id: 'favorites-start', kind: 'favorites', size: 'l'},
+  {id: 'notes-start', kind: 'notes', size: 'm'},
+  {id: 'weather-start', kind: 'weather', size: 's'},
+  {id: 'focus-start', kind: 'focus', size: 's'},
+];
+
+export const DEFAULT_SETTINGS: Settings = {
+  enabled: true,
+  scene: DEFAULT_SCENE_ID,
+  tabIcon: 'chrome',
+  appearance: 'auto',
+  clock: 'center',
+  clockColor: 'auto',
+  clockHex: '#a8c7fa',
+  shortcuts: true,
+  widgets: START_WIDGETS,
+  weather: {provider: 'open-meteo', units: 'auto'},
+  search: {show: true, style: 'auto', voice: true, lens: true, ai: 'off'},
+  language: 'auto',
+};
+
+/**
+ * Scenes that were replaced or removed (2026-10-14), and the nearest of
+ * today's, so
+ * whoever picked one keeps a similar background instead of the default.
+ */
+const REPLACED_SCENES: Readonly<Record<string, string>> = {
+  rain: 'nightsky',
+  nebula: 'nightsky',
+  dunes: 'contour',
+  mist: 'contour',
+  sora: 'aurora',
+  fireflies: 'nightsky',
+  sakura: 'bloom',
+  koi: 'tarn',
+  window: 'nightsky',
+  comet: 'nightsky',
+};
+
+/**
+ * Turns whatever is in storage (missing, old, hand-edited) into valid
+ * settings. Unknown values fall back to defaults instead of throwing.
+ */
+export function normalizeSettings(raw: unknown): Settings {
+  const value = migrateSettings(raw);
+  // A user's photo (`photo:<id>`) is kept even if this device doesn't have
+  // it; the background falls back to the default scene at render time.
+  const wanted =
+    typeof value.scene === 'string' &&
+    Object.hasOwn(REPLACED_SCENES, value.scene)
+      ? REPLACED_SCENES[value.scene]
+      : value.scene;
+  const scene =
+    typeof wanted === 'string' &&
+    (SCENES.some(s => s.id === wanted) || isPhotoId(wanted))
+      ? wanted
+      : DEFAULT_SETTINGS.scene;
+  const enabled =
+    typeof value.enabled === 'boolean'
+      ? value.enabled
+      : DEFAULT_SETTINGS.enabled;
+  const appearance = APPEARANCES.includes(value.appearance as Appearance)
+    ? (value.appearance as Appearance)
+    : DEFAULT_SETTINGS.appearance;
+  const tabIcon = TAB_ICONS.includes(value.tabIcon as TabIcon)
+    ? (value.tabIcon as TabIcon)
+    : DEFAULT_SETTINGS.tabIcon;
+  const clock = CLOCK_STYLES.includes(value.clock as ClockStyle)
+    ? (value.clock as ClockStyle)
+    : DEFAULT_SETTINGS.clock;
+  const clockColor = CLOCK_COLORS.includes(value.clockColor as ClockColor)
+    ? (value.clockColor as ClockColor)
+    : DEFAULT_SETTINGS.clockColor;
+  return {
+    enabled,
+    scene,
+    tabIcon,
+    appearance,
+    clock,
+    clockColor,
+    clockHex:
+      typeof value.clockHex === 'string' && HEX.test(value.clockHex)
+        ? value.clockHex.toLowerCase()
+        : DEFAULT_SETTINGS.clockHex,
+    shortcuts:
+      typeof value.shortcuts === 'boolean'
+        ? value.shortcuts
+        : DEFAULT_SETTINGS.shortcuts,
+    // No widget list stored (a new install, until the widgets are first
+    // changed): the start setup. An empty list is the user's own "none".
+    widgets:
+      'widgets' in value ? normalizeWidgets(value.widgets) : [...START_WIDGETS],
+    weather: normalizeWeather(value.weather),
+    search: normalizeSearch(value.search),
+    language: LANGUAGE_SETTINGS.includes(value.language as LanguageSetting)
+      ? (value.language as LanguageSetting)
+      : DEFAULT_SETTINGS.language,
+  };
+}
+
+function normalizeSearch(raw: unknown): SearchSettings {
+  const value = isRecord(raw) ? raw : {};
+  const fallback = DEFAULT_SETTINGS.search;
+  const flag = (key: 'show' | 'voice' | 'lens') =>
+    typeof value[key] === 'boolean' ? (value[key] as boolean) : fallback[key];
+  return {
+    show: flag('show'),
+    style: SEARCH_STYLES.includes(value.style as SearchStyle)
+      ? (value.style as SearchStyle)
+      : fallback.style,
+    voice: flag('voice'),
+    lens: flag('lens'),
+    ai: SEARCH_AIS.includes(value.ai as SearchAi)
+      ? (value.ai as SearchAi)
+      : fallback.ai,
+  };
+}
+
+function normalizeWeather(raw: unknown): WeatherSettings {
+  const value = isRecord(raw) ? raw : {};
+  const fallback = DEFAULT_SETTINGS.weather;
+  return {
+    provider: WEATHER_PROVIDERS.includes(value.provider as WeatherProvider)
+      ? (value.provider as WeatherProvider)
+      : fallback.provider,
+    units: WEATHER_UNITS.includes(value.units as WeatherUnits)
+      ? (value.units as WeatherUnits)
+      : fallback.units,
+  };
+}
+
+/** Keeps valid entries in order; drops broken ones and duplicate ids. */
+function normalizeWidgets(raw: unknown): WidgetEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const widgets: WidgetEntry[] = [];
+  for (const item of raw) {
+    if (!isRecord(item)) continue;
+    const {id, kind, size, name} = item;
+    if (
+      typeof id !== 'string' ||
+      !WIDGET_ID.test(id) ||
+      seen.has(id) ||
+      !WIDGET_KINDS.includes(kind as WidgetKind)
+    ) {
+      continue;
+    }
+    seen.add(id);
+    const label = typeof name === 'string' ? name.trim().slice(0, 40) : '';
+    widgets.push({
+      id,
+      kind: kind as WidgetKind,
+      size: fitWidgetSize(
+        kind as WidgetKind,
+        WIDGET_SIZES.includes(size as WidgetSize)
+          ? (size as WidgetSize)
+          : DEFAULT_WIDGET_SIZE[kind as WidgetKind],
+      ),
+      ...(label ? {name: label} : {}),
+    });
+    if (widgets.length === MAX_WIDGETS) break;
+  }
+  return widgets;
+}
+
+/** A new widget's id: its kind plus a short random suffix. */
+export function newWidgetId(kind: WidgetKind): string {
+  return `${kind}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

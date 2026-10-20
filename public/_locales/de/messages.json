@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn: Moderner neuer Tab",
+    "description": "The store title: Tarn, then a translated tagline. Keep \"Tarn\" as is."
+  },
+  "extShortName": {
+    "message": "Einstellungen",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "Ein ruhiger, klarer Start für jeden Tab.",
+    "description": "Store and extension-page description."
+  }
+}

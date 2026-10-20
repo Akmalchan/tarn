@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn: Современная новая вкладка",
+    "description": "The store title: Tarn, then a translated tagline. Keep \"Tarn\" as is."
+  },
+  "extShortName": {
+    "message": "Настройки",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "Спокойное и ясное начало каждой вкладки.",
+    "description": "Store and extension-page description."
+  }
+}

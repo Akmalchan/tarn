@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>New Tab</title>
+    <!-- Chrome's own new-tab icon, served by Chrome (favicon permission). -->
+    <link
+      rel="icon"
+      href="/_favicon/?pageUrl=chrome%3A%2F%2Fnew-tab-page%2F&amp;size=32"
+    />
+    <script src="/first-paint.js"></script>
+    <!-- Render-blocking: the first frame holds the clock and widgets. -->
+    <script type="module" blocking="render" src="./main.ts"></script>
+  </head>
+  <body>
+    <tarn-app></tarn-app>
+  </body>
+</html>

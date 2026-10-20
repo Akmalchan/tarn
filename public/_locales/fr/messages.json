@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn : Nouvel onglet moderne",
+    "description": "The store title: Tarn, then a translated tagline. Keep \"Tarn\" as is."
+  },
+  "extShortName": {
+    "message": "Réglages",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "Un départ calme et clair pour chaque onglet.",
+    "description": "Store and extension-page description."
+  }
+}

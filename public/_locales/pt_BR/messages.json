@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Tarn: Nova guia moderna",
+    "description": "The store title: Tarn, then a translated tagline. Keep \"Tarn\" as is."
+  },
+  "extShortName": {
+    "message": "Ajustes",
+    "description": "Title of the side panel, which holds Tarn's settings. 12 characters at most."
+  },
+  "extDescription": {
+    "message": "Um começo calmo e claro para cada aba.",
+    "description": "Store and extension-page description."
+  }
+}
