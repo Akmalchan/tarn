@@ -8,3 +8,6 @@
 // The app itself hands off to the browser's page when Tarn is switched off.
 import '../../styles/global.css';
 import '../../app/tarn-app';
+import {localizeTitle} from '../../i18n';
+
+localizeTitle('page.newTab');

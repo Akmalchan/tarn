@@ -8,12 +8,15 @@ import {keyed} from 'lit/directives/keyed.js';
 import {loadWidgetData, peekWidgetData, watchWidgetData} from './data';
 import {widgetStyles} from './styles';
 import {DEFAULT_CODE} from './code/examples';
+import {forgetHeavy, isHeavy, markHeavy} from './code/heavy';
 import type {TileState} from './code/renderer';
 import {normalizeCode, type CodeContent} from './code/source';
 import {codeStage} from './code/stage';
 import {LocaleController, t} from '../i18n';
 
 const normalize = (raw: unknown) => normalizeCode(raw, DEFAULT_CODE);
+/** The editor's preview compiles once typing pauses, not on every key. */
+const PREVIEW_DELAY_MS = 350;
 
 /**
  * A custom widget: the user's own shader, drawn edge to edge in its tile
@@ -107,6 +110,9 @@ export class TarnCode extends LitElement {
   private tileId: string | null = null;
   private attached: HTMLCanvasElement | null = null;
   private sentCode: string | null = null;
+  /** The latest code seen, sent now or after PREVIEW_DELAY_MS. */
+  private queuedCode: string | null = null;
+  private codeTimer = 0;
   private unwatch: () => void = () => {};
   private resize = new ResizeObserver(() => this.sendSize());
   private mouse: StageMouse | null = null;
@@ -149,9 +155,10 @@ export class TarnCode extends LitElement {
     this.unwatch();
     this.resize.disconnect();
     cancelAnimationFrame(this.mouseFrame);
+    clearTimeout(this.codeTimer);
     if (this.tileId) codeStage().remove(this.tileId);
     this.tileId = null;
-    this.sentCode = null;
+    this.sentCode = this.queuedCode = null;
     this.drawn = false;
   }
 
@@ -213,10 +220,14 @@ export class TarnCode extends LitElement {
     if (canvas && canvas !== this.attached && this.isConnected) {
       if (this.tileId) codeStage().remove(this.tileId);
       this.attached = canvas;
-      this.sentCode = null;
+      clearTimeout(this.codeTimer);
+      this.sentCode = this.queuedCode = null;
       this.tileId = codeStage().add(canvas, {
         onState: state => {
           this.tileState = state;
+          if (state.state === 'heavy' && this.stored && this.sentCode) {
+            markHeavy(this.widgetId, this.sentCode);
+          }
           // The panel's editor shows what's wrong under the code.
           this.dispatchEvent(new CustomEvent('code-state', {detail: state}));
         },
@@ -226,11 +237,36 @@ export class TarnCode extends LitElement {
       this.resize.observe(canvas);
       this.sendSize();
     }
+    this.queueCode();
+  }
+
+  /** Shows the stored code, not code given to it (the panel's). */
+  private get stored(): boolean {
+    return this.code === undefined && !!this.widgetId;
+  }
+
+  private queueCode(): void {
     const code = this.code ?? this.content.code;
-    if (this.tileId && code !== this.sentCode) {
-      this.sentCode = code;
-      codeStage().send({type: 'code', id: this.tileId, code});
+    if (!this.tileId || code === this.queuedCode) return;
+    this.queuedCode = code;
+    clearTimeout(this.codeTimer);
+    if (code === this.sentCode) return;
+    if (this.code !== undefined && this.sentCode !== null) {
+      this.codeTimer = window.setTimeout(
+        () => this.sendCode(code),
+        PREVIEW_DELAY_MS,
+      );
+    } else {
+      this.sendCode(code);
     }
+  }
+
+  private sendCode(code: string): void {
+    if (!this.tileId) return;
+    this.sentCode = code;
+    // Too heavy here before: paused at once, not run again to find out.
+    const paused = this.stored && isHeavy(this.widgetId, code);
+    codeStage().send({type: 'code', id: this.tileId, code, paused});
   }
 
   private sendSize(): void {
@@ -276,6 +312,7 @@ export class TarnCode extends LitElement {
   }
 
   private runAnyway = () => {
+    if (this.stored) forgetHeavy(this.widgetId);
     if (this.tileId) codeStage().send({type: 'run', id: this.tileId});
   };
 }

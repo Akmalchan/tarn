@@ -34,6 +34,7 @@ export class TarnTakeover extends LitElement {
     selected: {state: true},
     busy: {state: true},
     denied: {state: true},
+    showAll: {state: true},
   };
 
   static override styles = css`
@@ -135,6 +136,22 @@ export class TarnTakeover extends LitElement {
       transition: opacity 150ms ease;
     }
 
+    /* "Show all extensions": a quiet disclosure, not a second action. */
+    button.more {
+      width: auto;
+      margin: -8px 0 16px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-dim);
+      background: none;
+      border-radius: 8px;
+    }
+
+    button.more:hover {
+      background: var(--chip);
+    }
+
     button:disabled {
       opacity: 0.45;
       cursor: default;
@@ -156,6 +173,7 @@ export class TarnTakeover extends LitElement {
   declare selected: Set<string>;
   declare busy: boolean;
   declare denied: boolean;
+  declare showAll: boolean;
 
   constructor() {
     super();
@@ -170,6 +188,7 @@ export class TarnTakeover extends LitElement {
     this.selected = new Set();
     this.busy = false;
     this.denied = false;
+    this.showAll = false;
   }
 
   override connectedCallback(): void {
@@ -218,41 +237,59 @@ export class TarnTakeover extends LitElement {
         <button @click=${this.openNewTab}>${t('takeover.openNewTab')}</button>
       `;
     }
+    const likely = this.rivals.filter(r => r.likelyNewTab);
+    const others = this.rivals.filter(r => !r.likelyNewTab);
+    const shown = this.showAll ? [...likely, ...others] : likely;
     return html`
-      <h1>${t('takeover.chooseTitle')}</h1>
-      <p>${t('takeover.chooseBody')}</p>
-      <ul>
-        ${this.rivals.map(
-          rival => html`
-            <li>
-              <label>
-                <input
-                  type="checkbox"
-                  .checked=${this.selected.has(rival.id)}
-                  @change=${() => this.toggle(rival.id)}
-                />
-                ${
-                  rival.iconUrl
-                    ? html`<img src=${rival.iconUrl} alt="" />`
-                    : nothing
-                }
-                <span class="name">${rival.name}</span>
-                ${
-                  rival.likelyNewTab
-                    ? html`<span class="tag">${t('takeover.newTabTag')}</span>`
-                    : nothing
-                }
-              </label>
-            </li>
-          `,
-        )}
-      </ul>
+      <h1>
+        ${t(likely.length ? 'takeover.chooseTitle' : 'takeover.noneTitle')}
+      </h1>
+      <p>${t(likely.length ? 'takeover.chooseBody' : 'takeover.noneBody')}</p>
+      ${
+        shown.length
+          ? html`<ul>
+              ${shown.map(rival => this.renderRival(rival))}
+            </ul>`
+          : nothing
+      }
+      ${
+        others.length
+          ? html`<button
+              class="more"
+              aria-expanded=${this.showAll}
+              @click=${this.toggleShowAll}
+            >
+              ${t(this.showAll ? 'takeover.showNewTabs' : 'takeover.showAll')}
+            </button>`
+          : nothing
+      }
       <button
         ?disabled=${this.busy || !this.selected.size}
         @click=${this.takeOver}
       >
         ${t('takeover.switchOff')}
       </button>
+    `;
+  }
+
+  private renderRival(rival: Rival) {
+    return html`
+      <li>
+        <label>
+          <input
+            type="checkbox"
+            .checked=${this.selected.has(rival.id)}
+            @change=${() => this.toggle(rival.id)}
+          />
+          ${rival.iconUrl ? html`<img src=${rival.iconUrl} alt="" />` : nothing}
+          <span class="name">${rival.name}</span>
+          ${
+            rival.likelyNewTab
+              ? html`<span class="tag">${t('takeover.newTabTag')}</span>`
+              : nothing
+          }
+        </label>
+      </li>
     `;
   }
 
@@ -276,6 +313,18 @@ export class TarnTakeover extends LitElement {
     );
     this.step = 'choose';
   }
+
+  /** Hiding the others also unticks them, so nothing hidden is switched off. */
+  private toggleShowAll = () => {
+    this.showAll = !this.showAll;
+    if (!this.showAll) {
+      this.selected = new Set(
+        [...this.selected].filter(
+          id => this.rivals.find(r => r.id === id)?.likelyNewTab,
+        ),
+      );
+    }
+  };
 
   private toggle(id: string): void {
     const next = new Set(this.selected);

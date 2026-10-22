@@ -1,8 +1,9 @@
 // Copyright 2026 The Tarn Authors
 // SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
 
-// Renders every scene's settings thumbnail into public/scenes/<id>.webp,
-// using the real shaders. Run after adding or changing a scene:
+// Renders every scene's settings thumbnail into public/scenes/<id>.webp and
+// its full-screen still into public/stills/<id>.webp, using the real
+// shaders. Run after adding or changing a scene:
 //
 //   CHROME=/path/to/chrome node scripts/scene-previews.mjs
 //
@@ -16,7 +17,7 @@ import {fileURLToPath} from 'node:url';
 import {build} from 'vite';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-/** The moment (seconds of animation clock) each thumbnail shows. */
+/** The moment (seconds of animation clock) each thumbnail and still shows. */
 const MOMENTS = {
   tarn: 5,
   ember: 3,
@@ -39,6 +40,32 @@ const MOMENTS = {
 const WIDTH = 320;
 const HEIGHT = 200;
 const QUALITY = 0.8;
+/**
+ * The full-screen still per scene: width (16:10, shown with `cover`) and
+ * WebP quality, picked by look per byte (docs/wallpapers.md, "Thumbnails
+ * and stills"). Soft scenes look the same small, as their live versions
+ * also render at a fraction of the screen. Fine lines need pixels, and at
+ * 1920 a lower quality looks sharper than 1600 at 0.8 for the same bytes;
+ * faint stars and glyphs (Night Sky, Matrix) vanish below 0.8.
+ */
+const STILLS = {
+  tarn: [1280, 0.8],
+  ember: [1600, 0.8],
+  bloom: [1280, 0.8],
+  wave: [1600, 0.8],
+  aurora: [1280, 0.8],
+  silk: [1280, 0.8],
+  lumen: [1280, 0.8],
+  contour: [1920, 0.6],
+  clouds: [1280, 0.8],
+  topology: [1920, 0.6],
+  canopy: [1920, 0.6],
+  convergence: [1280, 0.8],
+  ribbons: [1600, 0.8],
+  fringe: [1280, 0.8],
+  nightsky: [1920, 0.8],
+  matrix: [1920, 0.8],
+};
 
 const chrome = process.env.CHROME;
 if (!chrome) throw new Error('Set CHROME to a Chrome or Chromium binary.');
@@ -70,6 +97,8 @@ const browser = spawn(chrome, [
   '--headless=new',
   `--remote-debugging-port=${port}`,
   `--user-data-dir=${profile}`,
+  // macOS: drive frames from a timer, so it works with the display off.
+  '--disable-features=CADisplayLinkInGpu,CADisplayLinkInBrowser',
   'about:blank',
 ]);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -106,25 +135,77 @@ const evaluate = expression =>
     );
   });
 
+/** Renders one frame and writes it; returns its size in bytes. */
+async function render(name, clock, width, height, quality, file) {
+  const url = await evaluate(
+    `previewScene(${JSON.stringify(name)}, ${clock}, ${width}, ${height}, ${quality})`,
+  );
+  const bytes = Buffer.from(url.split(',')[1], 'base64');
+  writeFileSync(file, bytes);
+  console.log(`${file}  ${(bytes.length / 1024).toFixed(1)} KB`);
+  return bytes.length;
+}
+
 try {
   await evaluate(code);
   const ids = process.argv.slice(2).length
     ? process.argv.slice(2)
     : Object.keys(MOMENTS);
-  mkdirSync(join(root, 'public/scenes'), {recursive: true});
+  const out = process.env.OUT ?? tmpdir();
+  // Candidate still widths to compare, at STILL_QUALITY (default 0.8):
+  // `STILLS=1280,1920 STILL_QUALITY=0.6 ... id@seconds`.
+  const quality = Number(process.env.STILL_QUALITY ?? 0.8);
+  const candidates = (process.env.STILLS ?? '')
+    .split(',')
+    .filter(Boolean)
+    .map(Number);
+  for (const dir of ['public/scenes', 'public/stills']) {
+    mkdirSync(join(root, dir), {recursive: true});
+  }
+  let total = 0;
   for (const id of ids) {
     const [name, moment] = id.split('@');
     const clock = Number(moment ?? MOMENTS[name] ?? 20);
-    const url = await evaluate(
-      `previewScene(${JSON.stringify(name)}, ${clock}, ${WIDTH}, ${HEIGHT}, ${QUALITY})`,
+    if (moment) {
+      await render(
+        name,
+        clock,
+        WIDTH,
+        HEIGHT,
+        QUALITY,
+        join(out, `${id}.webp`),
+      );
+      for (const w of candidates) {
+        await render(
+          name,
+          clock,
+          w,
+          (w * 10) / 16,
+          quality,
+          join(out, `${id}-${w}.webp`),
+        );
+      }
+      continue;
+    }
+    await render(
+      name,
+      clock,
+      WIDTH,
+      HEIGHT,
+      QUALITY,
+      join(root, 'public/scenes', `${name}.webp`),
     );
-    const bytes = Buffer.from(url.split(',')[1], 'base64');
-    const file = moment
-      ? join(process.env.OUT ?? tmpdir(), `${name}@${moment}.webp`)
-      : join(root, 'public/scenes', `${name}.webp`);
-    writeFileSync(file, bytes);
-    console.log(`${file}  ${(bytes.length / 1024).toFixed(1)} KB`);
+    const [w, q] = STILLS[name] ?? [1280, 0.8];
+    total += await render(
+      name,
+      clock,
+      w,
+      (w * 10) / 16,
+      q,
+      join(root, 'public/stills', `${name}.webp`),
+    );
   }
+  if (total) console.log(`stills: ${(total / 1024).toFixed(0)} KB in all`);
 } finally {
   ws.close();
   browser.kill();

@@ -4,12 +4,22 @@
  */
 
 import {browser} from 'wxt/browser';
+import {
+  readJson,
+  readText,
+  removeKey,
+  writeJson,
+  writeText,
+} from '../app/web-storage';
+import {contextGone, reportSaveProblem} from '../settings/problems';
 import {startContent} from './start';
 
 // A widget's content (notes text, favorite sites, timer state) lives in
 // local storage under its own key, apart from the synced settings: content
 // can outgrow sync's 8 KB per-item quota, and typing must never hit sync's
-// write limits. Removing a widget keeps its content, so nothing is lost.
+// write limits. Removing a widget keeps its content, so nothing is lost
+// (only an example setup's untouched sample content is ever deleted,
+// samples.ts).
 
 const key = (id: string) => `widget.${id}`;
 /**
@@ -23,35 +33,32 @@ const mirrorKey = (id: string) => `tarn.widget.${id}`;
  * Left behind, it means storage.local missed the newest content (the save
  * failed: an old tab after an update, a full store), and the mirror holds
  * it. Without this, the next tab loaded the older stored value and a city
- * or a note seemed to reset (seen 2026-10-19).
+ * or a note seemed to reset (seen 2026-10-19). It holds the latest save's
+ * own token, so a save landing in one tab can't clear a newer one from
+ * another tab that may still fail.
  */
 const pendingKey = (id: string) => `tarn.widget.${id}.pending`;
 
 function pending(id: string): boolean {
-  try {
-    return localStorage.getItem(pendingKey(id)) !== null;
-  } catch {
-    return false;
-  }
+  return readText(pendingKey(id)) !== null;
 }
 
-function setPending(id: string, on: boolean): void {
-  try {
-    if (on) localStorage.setItem(pendingKey(id), '1');
-    else localStorage.removeItem(pendingKey(id));
-  } catch {
-    // Blocked storage: nothing to remember it in.
-  }
+/** Marks a save under way; returns its token for `landed`. */
+function setPending(id: string): string {
+  const token = Math.random().toString(36).slice(2);
+  // Blocked storage: nothing to remember it in.
+  writeText(pendingKey(id), token);
+  return token;
+}
+
+/** The save with `token` reached storage; clears the flag if it's still its. */
+function landed(id: string, token: string): void {
+  if (readText(pendingKey(id)) === token) removeKey(pendingKey(id));
 }
 
 /** The mirror's content, or undefined when there is none. */
 function mirrored(id: string): unknown {
-  try {
-    const raw = localStorage.getItem(mirrorKey(id));
-    return raw === null ? undefined : JSON.parse(raw);
-  } catch {
-    return undefined;
-  }
+  return readJson(mirrorKey(id));
 }
 
 /** The widget's content as last saved, read at once; may be slightly stale. */
@@ -59,20 +66,13 @@ export function peekWidgetData<T>(
   id: string,
   normalize: (raw: unknown) => T,
 ): T {
-  try {
-    const raw = localStorage.getItem(mirrorKey(id));
-    return normalize(raw === null ? startContent(id) : JSON.parse(raw));
-  } catch {
-    return normalize(startContent(id));
-  }
+  const raw = mirrored(id);
+  return normalize(raw === undefined ? startContent(id) : raw);
 }
 
 function mirror(id: string, value: unknown): void {
-  try {
-    localStorage.setItem(mirrorKey(id), JSON.stringify(value));
-  } catch {
-    // Too big or blocked: the widget just loads a moment later.
-  }
+  // Too big or blocked: the widget just loads a moment later.
+  writeJson(mirrorKey(id), value);
 }
 
 function localArea() {
@@ -108,11 +108,7 @@ export async function loadWidgetData<T>(
  * content (start.ts), from the first-paint copy; may be slightly stale.
  */
 export function peekWidgetDataStored(id: string): boolean {
-  try {
-    return localStorage.getItem(mirrorKey(id)) !== null;
-  } catch {
-    return false;
-  }
+  return readText(mirrorKey(id)) !== null;
 }
 
 /** Whether the widget holds content of its own yet. */
@@ -128,14 +124,26 @@ export async function saveWidgetData(
   value: unknown,
 ): Promise<void> {
   mirror(id, value);
-  setPending(id, true);
+  const token = setPending(id);
   try {
     await localArea()?.set({[key(id)]: value});
-    setPending(id, false);
+    landed(id, token);
   } catch (error) {
     // Stays pending: the next load stores the mirror's copy.
     console.warn('[tarn] widget not saved:', error);
+    if (contextGone(error)) reportSaveProblem('stale');
   }
+}
+
+/**
+ * Deletes a widget's content and its first-paint copy. Only for content
+ * nobody wrote (an example's untouched samples): removing a widget keeps
+ * its content.
+ */
+export async function deleteWidgetData(id: string): Promise<void> {
+  removeKey(mirrorKey(id));
+  removeKey(pendingKey(id));
+  await localArea()?.remove(key(id));
 }
 
 /** Calls `listener` when the widget's content changes in another tab. */

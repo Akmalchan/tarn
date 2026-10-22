@@ -12,6 +12,11 @@ export const ru: Catalog = {
   'common.remove': 'Удалить',
   'common.settings': 'Настройки',
   'common.openSettings': 'Открыть настройки',
+  'saving.failed':
+    'Не удалось сохранить последнее изменение. Попробуйте ещё раз чуть позже.',
+  'saving.stale':
+    'Tarn обновился. Перезагрузите страницу, чтобы изменения снова сохранялись.',
+  'saving.reload': 'Перезагрузить',
   'tip.title': 'Настройте под себя',
   'tip.body':
     'Здесь обои, циферблаты и виджеты. Пока настройки открыты, виджеты можно перетаскивать.',
@@ -23,14 +28,13 @@ export const ru: Catalog = {
   'tip.step': 'Шаг {n} из {count}',
   'tip.footer.title': 'Скройте нижнюю панель Chrome',
   'tip.footer.body':
-    'Chrome добавляет полосу внизу этой страницы. Нажмите на неё правой кнопкой мыши и выберите скрыть нижнюю панель.',
+    'Chrome добавляет полосу внизу этой страницы. Нажмите в ней «Настроить Chrome» и отключите нижнюю панель в самом низу меню.',
   'tip.pin.title': 'Открепите от панели',
   'tip.pin.body':
     'Chrome закрепил Tarn рядом с адресной строкой. Он там не нужен? Нажмите на значок правой кнопкой мыши и открепите его.',
   'tip.bookmarks.title': 'Панель закладок',
   'tip.bookmarks.body':
     'Chrome скрывает её в новых вкладках. Нажмите {keys}, чтобы она была видна на всех страницах.',
-  'tip.art.hideFooter': 'Скрыть нижнюю панель',
   'tip.art.unpin': 'Открепить',
   'widget.favorites': 'Закладки',
   'widget.notes': 'Заметки',
@@ -76,10 +80,6 @@ export const ru: Catalog = {
   'favorites.namePlaceholder': 'Показывается под значком',
   'favorites.address': 'Адрес',
   'favorites.badAddress': 'Это не похоже на веб-адрес.',
-  'favorites.useBookmarks': 'Взять мои закладки',
-  'favorites.useBookmarksHint': 'Скопировать сайты с панели закладок',
-  'favorites.noBookmarks': 'Панель закладок пуста',
-  'favorites.imported': 'Панель закладок добавлена.',
   'favorites.more': 'Ещё',
   'favorites.icon': 'Значок',
   'favorites.chooseIcon': 'Выбрать изображение',
@@ -160,6 +160,11 @@ export const ru: Catalog = {
   'takeover.chooseBody':
     'Похожие на расширения новой вкладки уже выбраны. Если позже выключить Tarn, они снова включатся.',
   'takeover.newTabTag': 'Новая вкладка',
+  'takeover.noneTitle': 'Других новых вкладок не найдено',
+  'takeover.noneBody':
+    'Ни одно из расширений не похоже на страницу новой вкладки. Если какое-то всё равно её занимает, покажите все расширения и выберите его.',
+  'takeover.showAll': 'Показать все расширения',
+  'takeover.showNewTabs': 'Показать только новые вкладки',
   'takeover.switchOff': 'Отключить и использовать Tarn',
   'panel.search': 'Поиск',
   'panel.searchSettings': 'Поиск по настройкам',
@@ -260,13 +265,16 @@ export const ru: Catalog = {
   'panel.weather.providerLabel': 'Источник погоды',
   'panel.weather.apiKey': 'Ключ API',
   'panel.weather.pasteKey': 'Вставьте ключ',
-  'panel.weather.units': 'Единицы',
   'panel.weather.unitsLabel': 'Единицы температуры',
   'panel.weather.auto': 'Авто',
   'panel.weather.noteOpenMeteo':
     'Бесплатно, без ключа. Погода запрашивается только для добавленных виджетов «Погода» — примерно раз в 30 минут, пока открыта вкладка.',
   'panel.weather.noteGoogle':
     'Запросы оплачиваются из проекта Google Cloud вашего ключа; в нём должен быть включён Weather API. Ключ остаётся на этом компьютере.',
+  'panel.weather.restrictKey':
+    'В Google Cloud ограничьте ключ одним Weather API.',
+  'panel.weather.noKeyHere':
+    'На этом компьютере ещё нет ключа, поэтому погода берётся из Open-Meteo.',
   'panel.weather.keySaved': 'Ключ API сохранён',
   'panel.weather.keyRemoved': 'Ключ API удалён',
   'panel.keys': 'Клавиатура',
@@ -313,6 +321,7 @@ export const ru: Catalog = {
   'panel.whatsNew': 'Что нового',
   'panel.whatsNew.unseen': 'Новое',
   'panel.rate': 'Оценить Tarn',
+  'whatsNew.v1_0_1.fixes': 'Исправления ошибок и оптимизация.',
   'whatsNew.v1_0_0.wallpapers':
     'Шестнадцать живых обоев, у каждых — индикатор нагрузки на компьютер.',
   'whatsNew.v1_0_0.appearance':
@@ -346,6 +355,9 @@ export const ru: Catalog = {
   'panel.examples.note':
     'Попробуйте готовую страницу с примерами. «Отменить» вернёт ваши виджеты.',
   'panel.examples.shown': 'Показан пример «{name}»',
+  'panel.examples.back': 'Вернуть мои виджеты',
+  'panel.examples.keep': 'Оставить эту страницу',
+  'panel.examples.backDone': 'Ваши виджеты вернулись',
   'panel.examples.bookmarks': 'Только закладки',
   'panel.examples.notes': 'Заметки и задачи',
   'panel.examples.starter': 'Начальный',
@@ -415,6 +427,11 @@ export const ru: Catalog = {
   'keys.help': 'Показать сочетания',
   'keys.leave': 'Выйти из текстового поля',
   'keys.or': 'или',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Shift',
+  'keys.esc': 'Esc',
+  'page.newTab': 'Новая вкладка',
   'code.example.equalizer': 'Эквалайзер',
   'code.example.aurora': 'Сияние',
   'code.example.synthwave': 'Синтвейв',

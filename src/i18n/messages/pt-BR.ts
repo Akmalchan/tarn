@@ -12,6 +12,11 @@ export const ptBR: Catalog = {
   'common.remove': 'Remover',
   'common.settings': 'Ajustes',
   'common.openSettings': 'Abrir ajustes',
+  'saving.failed':
+    'Não foi possível salvar sua última alteração. Tente de novo daqui a pouco.',
+  'saving.stale':
+    'O Tarn foi atualizado. Recarregue para continuar salvando as alterações.',
+  'saving.reload': 'Recarregar',
   'tip.title': 'Deixe do seu jeito',
   'tip.body':
     'Papéis de parede, mostradores de relógio e widgets ficam aqui. Com os ajustes abertos, arraste os widgets para movê-los.',
@@ -23,14 +28,13 @@ export const ptBR: Catalog = {
   'tip.step': 'Passo {n} de {count}',
   'tip.footer.title': 'Oculte o rodapé do Chrome',
   'tip.footer.body':
-    'O Chrome adiciona uma barra na parte de baixo desta página. Clique nela com o botão direito e escolha ocultar o rodapé.',
+    'O Chrome adiciona uma barra no rodapé desta página. Clique em Personalizar o Chrome e desative o rodapé no fim do painel.',
   'tip.pin.title': 'Desafixe da barra',
   'tip.pin.body':
     'O Chrome fixou o Tarn ao lado da barra de endereço. Não precisa dele aí? Clique no ícone com o botão direito e escolha desafixar.',
   'tip.bookmarks.title': 'Sua barra de favoritos',
   'tip.bookmarks.body':
     'O Chrome a esconde nas novas guias. Pressione {keys} para mantê-la em todas as páginas.',
-  'tip.art.hideFooter': 'Ocultar rodapé',
   'tip.art.unpin': 'Desafixar',
   'widget.favorites': 'Favoritos',
   'widget.notes': 'Notas',
@@ -76,10 +80,6 @@ export const ptBR: Catalog = {
   'favorites.namePlaceholder': 'Aparece abaixo do ícone',
   'favorites.address': 'Endereço',
   'favorites.badAddress': 'Isso não parece um endereço da web.',
-  'favorites.useBookmarks': 'Usar meus favoritos',
-  'favorites.useBookmarksHint': 'Copiar os sites da sua barra de favoritos',
-  'favorites.noBookmarks': 'Sua barra de favoritos está vazia',
-  'favorites.imported': 'Sua barra de favoritos foi adicionada.',
   'favorites.more': 'Mais',
   'favorites.icon': 'Ícone',
   'favorites.chooseIcon': 'Escolher uma imagem',
@@ -160,6 +160,11 @@ export const ptBR: Catalog = {
   'takeover.chooseBody':
     'As que parecem extensões de nova guia já estão selecionadas. Desativar o Tarn depois as reativa.',
   'takeover.newTabTag': 'Nova guia',
+  'takeover.noneTitle': 'Nenhuma outra nova guia encontrada',
+  'takeover.noneBody':
+    'Nenhuma das suas extensões parece uma página de nova guia. Se alguma ainda assumir o controle, mostre todas as extensões e escolha-a.',
+  'takeover.showAll': 'Mostrar todas as extensões',
+  'takeover.showNewTabs': 'Mostrar só novas guias',
   'takeover.switchOff': 'Desativar e usar o Tarn',
   'panel.search': 'Pesquisar',
   'panel.searchSettings': 'Pesquisar ajustes',
@@ -260,13 +265,16 @@ export const ptBR: Catalog = {
   'panel.weather.providerLabel': 'Provedor do clima',
   'panel.weather.apiKey': 'Chave de API',
   'panel.weather.pasteKey': 'Cole a chave',
-  'panel.weather.units': 'Unidades',
   'panel.weather.unitsLabel': 'Unidades de temperatura',
   'panel.weather.auto': 'Automático',
   'panel.weather.noteOpenMeteo':
     'Grátis, sem chave. O clima só é buscado para os widgets de Clima que você adicionar, a cada 30 minutos mais ou menos com uma guia aberta.',
   'panel.weather.noteGoogle':
     'As solicitações são cobradas do projeto do Google Cloud da sua chave, que precisa ter a Weather API ativada. A chave fica neste computador.',
+  'panel.weather.restrictKey':
+    'No Google Cloud, restrinja a chave à Weather API.',
+  'panel.weather.noKeyHere':
+    'Este computador ainda não tem chave, então o clima vem do Open-Meteo.',
   'panel.weather.keySaved': 'Chave de API salva',
   'panel.weather.keyRemoved': 'Chave de API removida',
   'panel.keys': 'Teclado',
@@ -312,6 +320,7 @@ export const ptBR: Catalog = {
   'panel.whatsNew': 'Novidades',
   'panel.whatsNew.unseen': 'Novo',
   'panel.rate': 'Avaliar o Tarn',
+  'whatsNew.v1_0_1.fixes': 'Correções de bugs e otimizações.',
   'whatsNew.v1_0_0.wallpapers':
     'Dezesseis papéis de parede animados, cada um com um indicador de quanto exige do seu computador.',
   'whatsNew.v1_0_0.appearance':
@@ -345,6 +354,9 @@ export const ptBR: Catalog = {
   'panel.examples.note':
     'Experimente uma página pronta com conteúdo de exemplo. Desfazer traz seus widgets de volta.',
   'panel.examples.shown': '{name} exibido',
+  'panel.examples.back': 'Voltar aos meus widgets',
+  'panel.examples.keep': 'Manter esta configuração',
+  'panel.examples.backDone': 'Seus widgets voltaram',
   'panel.examples.bookmarks': 'Só favoritos',
   'panel.examples.notes': 'Notas e tarefas',
   'panel.examples.starter': 'Inicial',
@@ -414,6 +426,11 @@ export const ptBR: Catalog = {
   'keys.help': 'Ver atalhos',
   'keys.leave': 'Sair de um campo de texto',
   'keys.or': 'ou',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Shift',
+  'keys.esc': 'Esc',
+  'page.newTab': 'Nova guia',
   'code.example.equalizer': 'Equalizador',
   'code.example.aurora': 'Aurora',
   'code.example.synthwave': 'Synthwave',

@@ -4,7 +4,8 @@
  */
 
 // Bundled and run in Chrome by scene-previews.mjs: draws one frame of a
-// scene with the real shaders and returns it as a small WebP.
+// scene with the real shaders and returns it as a WebP (a settings
+// thumbnail, or the full-screen still).
 
 import {createNoiseTexture} from '../src/backdrop/noise-texture';
 import {sceneById} from '../src/backdrop/scenes';

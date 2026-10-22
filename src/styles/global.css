@@ -43,10 +43,6 @@
 /* Design tokens. Components read these; nothing hardcodes a color. */
 :root {
   --text: rgb(244 247 251);
-  --text-dim: rgb(244 247 251 / 0.62);
-  --glass-bg: rgb(12 16 26 / 0.32);
-  --glass-border: rgb(255 255 255 / 0.12);
-  --glass-active: rgb(255 255 255 / 0.14);
   --focus-ring: rgb(255 255 255 / 0.7);
 
   --font-sans:

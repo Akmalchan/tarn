@@ -64,6 +64,15 @@ export function isTyping(event: Event): boolean {
   );
 }
 
+/**
+ * Whether the key belongs to an input method still composing (Japanese,
+ * Chinese, Korean): its Enter picks a candidate, its Escape cancels it.
+ * 229 is what Chrome and Safari report for those keys.
+ */
+export function isComposing(event: KeyboardEvent): boolean {
+  return event.isComposing || event.keyCode === 229;
+}
+
 const IS_MAC = /Mac|iPhone|iPad/.test(globalThis.navigator?.platform ?? '');
 
 /** One way to press a shortcut: its keys, as shown on the keycaps. */
@@ -75,15 +84,28 @@ export interface ShortcutRow {
   label: MessageKey;
 }
 
+/**
+ * A key as this computer's keyboard labels it: symbols on a Mac, the
+ * language's own names elsewhere (German keyboards say Strg, Umschalt).
+ * `command` is Cmd on a Mac and Ctrl elsewhere.
+ */
+export function keyName(
+  key: 'command' | 'alt' | 'shift' | 'esc',
+  mac = IS_MAC,
+): string {
+  if (mac && key !== 'esc') {
+    return {command: '⌘', alt: '⌥', shift: '⇧'}[key];
+  }
+  return t(key === 'command' ? 'keys.ctrl' : `keys.${key}`);
+}
+
 /** The list the ? sheet and the settings panel show, in this platform's keys. */
 export function shortcutList(mac = IS_MAC): readonly ShortcutRow[] {
-  const command = mac ? '⌘' : 'Ctrl';
-  const alt = mac ? '⌥' : 'Alt';
   return [
-    {chords: [[command, 'K'], ['/']], label: 'keys.search'},
-    {chords: [[alt, '1–9']], label: 'keys.sites'},
+    {chords: [[keyName('command', mac), 'K'], ['/']], label: 'keys.search'},
+    {chords: [[keyName('alt', mac), '1–9']], label: 'keys.sites'},
     {chords: [['?']], label: 'keys.help'},
-    {chords: [['Esc']], label: 'keys.leave'},
+    {chords: [[keyName('esc', mac)]], label: 'keys.leave'},
   ];
 }
 

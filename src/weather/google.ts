@@ -56,19 +56,20 @@ export async function fetchGoogle(
   }
   const query = (extra: Record<string, string>) =>
     new URLSearchParams({
-      key,
       'location.latitude': String(lat),
       'location.longitude': String(lon),
       unitsSystem: unit === 'fahrenheit' ? 'IMPERIAL' : 'METRIC',
       ...extra,
     });
   const [current, hours, days] = await Promise.all([
-    getJson(`${BASE}/currentConditions:lookup?${query({})}`),
+    getJson(`${BASE}/currentConditions:lookup?${query({})}`, key),
     getJson(
       `${BASE}/forecast/hours:lookup?${query({hours: '24', pageSize: '24'})}`,
+      key,
     ),
     getJson(
       `${BASE}/forecast/days:lookup?${query({days: '7', pageSize: '7'})}`,
+      key,
     ),
   ]);
   return parseGoogle(
@@ -130,10 +131,13 @@ export function parseGoogle(
   };
 }
 
-async function getJson(url: string): Promise<unknown> {
+async function getJson(url: string, key: string): Promise<unknown> {
   let response: Response;
   try {
     response = await fetch(url, {
+      // In a header, not the address, so it stays out of logs and history
+      // (Google allows the header from extension pages).
+      headers: {'X-Goog-Api-Key': key},
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
       // A stalled request gives up rather than holding back every refresh.

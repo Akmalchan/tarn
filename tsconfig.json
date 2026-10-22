@@ -1,12 +1,12 @@
 {
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
+    // Also in WXT's generated config; kept here because strict is a stack
+    // decision (AGENTS.md), not WXT's.
     "strict": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false
   }
 }

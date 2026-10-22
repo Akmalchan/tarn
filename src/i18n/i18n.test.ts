@@ -12,6 +12,16 @@ const catalogs = import.meta.glob<Record<string, Record<string, string>>>(
   {eager: true},
 );
 
+// The code that shows the words: every key must appear in it.
+const code = import.meta.glob<string>(['../**/*.ts', '!../**/*.test.ts'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+/** Keys built from a value at run time, e.g. t(`weather.${condition}`). */
+const DYNAMIC = ['weather.', 'keys.'];
+
 const placeholders = (text: string) =>
   [...text.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
 
@@ -34,6 +44,21 @@ describe('translations', () => {
       }
     },
   );
+});
+
+describe('keys', () => {
+  it('are all used', () => {
+    const text = Object.entries(code)
+      .filter(([path]) => !path.startsWith('./messages/'))
+      .map(([, source]) => source)
+      .join('\n');
+    const unused = Object.keys(en).filter(
+      key =>
+        !text.includes(`'${key}'`) &&
+        !DYNAMIC.some(prefix => key.startsWith(prefix)),
+    );
+    expect(unused).toEqual([]);
+  });
 });
 
 describe('resolveLanguage', () => {

@@ -17,7 +17,9 @@ export type RendererCommand =
   | {type: 'visible'; visible: boolean}
   | {type: 'reducedMotion'; reduced: boolean}
   | {type: 'tiles'; rects: number[]; strength: number; radius: number}
-  | {type: 'pace'; pace: Pace};
+  | {type: 'pace'; pace: Pace}
+  /** Stop drawing until the next scene: its still picture shows instead. */
+  | {type: 'hold'};
 
 export interface WorkerInit {
   type: 'init';
@@ -37,7 +39,12 @@ export type WorkerEvent =
   | {type: 'firstFrame'}
   /** A frame of this scene is on screen (a photo may take a moment). */
   | {type: 'sceneShown'; id: string}
+  /** Nothing will draw (no WebGL2, or a shader failed on this GPU). */
   | {type: 'unavailable'}
+  /** This scene stutters even at the lowest quality; its loop stopped. */
+  | {type: 'cantKeepUp'; id: string}
+  | {type: 'contextLost'}
+  | {type: 'contextRestored'}
   | {
       type: 'clock';
       clock: number;
@@ -71,6 +78,9 @@ export function applyCommand(
       break;
     case 'pace':
       renderer.setPace(command.pace);
+      break;
+    case 'hold':
+      renderer.hold();
       break;
   }
 }

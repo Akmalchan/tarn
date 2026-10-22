@@ -3,8 +3,15 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
-import {describe, expect, it} from 'vitest';
-import {shortcutFor, shortcutList, type KeyPress} from './shortcuts';
+import {afterEach, describe, expect, it} from 'vitest';
+import {useLanguage} from '../i18n';
+import {
+  isComposing,
+  keyName,
+  shortcutFor,
+  shortcutList,
+  type KeyPress,
+} from './shortcuts';
 
 const press = (key: string, code: string, extra: Partial<KeyPress> = {}) =>
   ({
@@ -74,8 +81,32 @@ describe('shortcutFor', () => {
 });
 
 describe('shortcutList', () => {
+  afterEach(() => useLanguage('en'));
+
   it("names this platform's keys", () => {
     expect(shortcutList(true)[0]!.chords[0]).toEqual(['⌘', 'K']);
     expect(shortcutList(false)[0]!.chords[0]).toEqual(['Ctrl', 'K']);
+  });
+
+  it('names the keys as the language labels them, off a Mac', async () => {
+    await useLanguage('de');
+    expect(shortcutList(false)[0]!.chords[0]).toEqual(['Strg', 'K']);
+    expect(keyName('shift', false)).toBe('Umschalt');
+    expect(keyName('shift', true)).toBe('⇧');
+    await useLanguage('fr');
+    expect(keyName('esc', false)).toBe('Échap');
+  });
+});
+
+describe('isComposing', () => {
+  const key = (isComposing: boolean, keyCode: number) =>
+    ({key: 'Enter', isComposing, keyCode}) as KeyboardEvent;
+
+  it('skips the Enter that picks an input-method candidate', () => {
+    expect(isComposing(key(true, 229))).toBe(true);
+    expect(isComposing(key(true, 13))).toBe(true);
+    // Safari reports the commit Enter after compositionend, with 229.
+    expect(isComposing(key(false, 229))).toBe(true);
+    expect(isComposing(key(false, 13))).toBe(false);
   });
 });

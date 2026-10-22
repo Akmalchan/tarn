@@ -12,6 +12,11 @@ export const ko: Catalog = {
   'common.remove': '삭제',
   'common.settings': '설정',
   'common.openSettings': '설정 열기',
+  'saving.failed':
+    '마지막 변경 사항을 저장할 수 없어요. 잠시 후 다시 시도해 주세요.',
+  'saving.stale':
+    'Tarn이 업데이트되었어요. 변경 사항을 계속 저장하려면 새로고침하세요.',
+  'saving.reload': '새로고침',
   'tip.title': '나만의 화면으로',
   'tip.body':
     '배경화면, 시계 디자인, 위젯을 여기서 바꿀 수 있어요. 설정이 열려 있는 동안 위젯을 드래그해 옮길 수 있어요.',
@@ -23,14 +28,13 @@ export const ko: Catalog = {
   'tip.step': '{count}단계 중 {n}단계',
   'tip.footer.title': 'Chrome 바닥글 숨기기',
   'tip.footer.body':
-    'Chrome은 이 페이지 아래에 막대를 추가해요. 막대를 마우스 오른쪽 버튼으로 클릭하고 바닥글 숨기기를 선택하세요.',
+    'Chrome은 이 페이지 하단에 막대를 추가합니다. 거기서 Chrome 맞춤설정을 클릭한 뒤 패널 맨 아래에서 바닥글을 끄세요.',
   'tip.pin.title': '툴바에서 고정 해제',
   'tip.pin.body':
     'Chrome이 Tarn을 주소창 옆에 고정했어요. 필요 없다면 아이콘을 마우스 오른쪽 버튼으로 클릭하고 고정을 해제하세요.',
   'tip.bookmarks.title': '북마크바',
   'tip.bookmarks.body':
     'Chrome은 새 탭에서 북마크바를 숨겨요. {keys} 키를 누르면 모든 페이지에 표시돼요.',
-  'tip.art.hideFooter': '바닥글 숨기기',
   'tip.art.unpin': '고정 해제',
   'widget.favorites': '북마크',
   'widget.notes': '메모',
@@ -75,10 +79,6 @@ export const ko: Catalog = {
   'favorites.namePlaceholder': '아이콘 아래에 표시돼요',
   'favorites.address': '주소',
   'favorites.badAddress': '웹 주소가 아닌 것 같아요.',
-  'favorites.useBookmarks': '내 북마크 사용',
-  'favorites.useBookmarksHint': '북마크바의 사이트를 복사합니다',
-  'favorites.noBookmarks': '북마크바가 비어 있어요',
-  'favorites.imported': '북마크바를 추가했어요.',
   'favorites.more': '더보기',
   'favorites.icon': '아이콘',
   'favorites.chooseIcon': '이미지 선택',
@@ -156,6 +156,11 @@ export const ko: Catalog = {
   'takeover.chooseBody':
     '새 탭 확장 프로그램으로 보이는 것은 이미 선택돼 있어요. 나중에 Tarn을 끄면 다시 켜져요.',
   'takeover.newTabTag': '새 탭',
+  'takeover.noneTitle': '다른 새 탭이 없어요',
+  'takeover.noneBody':
+    '새 탭 페이지로 보이는 확장 프로그램이 없어요. 그래도 다른 페이지가 열리면 모든 확장 프로그램을 표시해서 골라 주세요.',
+  'takeover.showAll': '모든 확장 프로그램 보기',
+  'takeover.showNewTabs': '새 탭만 보기',
   'takeover.switchOff': '끄고 Tarn 사용',
   'panel.search': '검색',
   'panel.searchSettings': '설정 검색',
@@ -256,13 +261,16 @@ export const ko: Catalog = {
   'panel.weather.providerLabel': '날씨 제공자',
   'panel.weather.apiKey': 'API 키',
   'panel.weather.pasteKey': '키 붙여넣기',
-  'panel.weather.units': '단위',
   'panel.weather.unitsLabel': '온도 단위',
   'panel.weather.auto': '자동',
   'panel.weather.noteOpenMeteo':
     '무료이고 키가 필요 없어요. 추가한 날씨 위젯에 대해서만, 탭이 열려 있는 동안 약 30분마다 날씨를 가져와요.',
   'panel.weather.noteGoogle':
     '요청 비용은 키의 Google Cloud 프로젝트에 청구되며, 이 프로젝트에서 Weather API를 사용 설정해야 해요. 키는 이 컴퓨터에만 저장돼요.',
+  'panel.weather.restrictKey':
+    'Google Cloud에서 키를 Weather API로만 제한해 두세요.',
+  'panel.weather.noKeyHere':
+    '이 컴퓨터에는 아직 키가 없어서 날씨는 Open-Meteo에서 가져와요.',
   'panel.weather.keySaved': 'API 키를 저장했어요',
   'panel.weather.keyRemoved': 'API 키를 삭제했어요',
   'panel.keys': '키보드',
@@ -308,6 +316,7 @@ export const ko: Catalog = {
   'panel.whatsNew': '새로운 기능',
   'panel.whatsNew.unseen': '새 소식',
   'panel.rate': 'Tarn 평가하기',
+  'whatsNew.v1_0_1.fixes': '버그 수정 및 최적화.',
   'whatsNew.v1_0_0.wallpapers':
     '움직이는 배경화면 16종, 각각 컴퓨터에 주는 부담을 보여줘요.',
   'whatsNew.v1_0_0.appearance':
@@ -339,6 +348,9 @@ export const ko: Catalog = {
   'panel.examples.note':
     '예시 내용이 담긴 페이지를 바로 써 보세요. 실행 취소하면 내 위젯이 돌아와요.',
   'panel.examples.shown': '“{name}” 표시됨',
+  'panel.examples.back': '내 위젯으로 돌아가기',
+  'panel.examples.keep': '이 구성 유지',
+  'panel.examples.backDone': '내 위젯이 돌아왔어요',
   'panel.examples.bookmarks': '북마크만',
   'panel.examples.notes': '메모와 할 일',
   'panel.examples.starter': '기본',
@@ -407,6 +419,11 @@ export const ko: Catalog = {
   'keys.help': '단축키 보기',
   'keys.leave': '입력란에서 나가기',
   'keys.or': '또는',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Shift',
+  'keys.esc': 'Esc',
+  'page.newTab': '새 탭',
   'code.example.equalizer': '이퀄라이저',
   'code.example.aurora': '오로라',
   'code.example.synthwave': '신스웨이브',

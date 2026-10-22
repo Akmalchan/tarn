@@ -12,18 +12,19 @@ import './tarn-tasks';
 import './tarn-weather';
 import './tarn-calendar';
 import './tarn-code';
-import {t, type MessageKey} from '../i18n';
+import {t} from '../i18n';
+import {KINDS} from './kinds';
 
 /**
  * Every widget, in one place. A widget is a self-contained custom element
  * (its own code, styles and storage, keyed by `widgetId`) plus one entry
- * here; nothing else in Tarn needs to know about it. The modules load
+ * here and one in kinds.ts (its name, note and glyph, which the settings
+ * panel reads without loading the elements). The modules load
  * eagerly on purpose: a reload must draw every widget in its first frame
- * (see Arrival in AGENTS.md), and each widget is only a few KB.
+ * (see "Arrival in detail" in docs/architecture.md), and each widget is
+ * only a few KB.
  */
 export interface WidgetDefinition {
-  /** Its name, also its default heading. */
-  readonly nameKey: MessageKey;
   /** The custom element that draws it. */
   readonly tag: string;
   /**
@@ -35,17 +36,13 @@ export interface WidgetDefinition {
 }
 
 export const WIDGETS: Readonly<Record<WidgetKind, WidgetDefinition>> = {
-  favorites: {
-    nameKey: 'widget.favorites',
-    tag: 'tarn-favorites',
-    editable: true,
-  },
-  notes: {nameKey: 'widget.notes', tag: 'tarn-notes'},
-  tasks: {nameKey: 'widget.tasks', tag: 'tarn-tasks'},
-  focus: {nameKey: 'widget.focus', tag: 'tarn-focus'},
-  weather: {nameKey: 'widget.weather', tag: 'tarn-weather', editable: true},
-  calendar: {nameKey: 'widget.calendar', tag: 'tarn-calendar'},
-  code: {nameKey: 'widget.code', tag: 'tarn-code'},
+  favorites: {tag: 'tarn-favorites', editable: true},
+  notes: {tag: 'tarn-notes'},
+  tasks: {tag: 'tarn-tasks'},
+  focus: {tag: 'tarn-focus'},
+  weather: {tag: 'tarn-weather', editable: true},
+  calendar: {tag: 'tarn-calendar'},
+  code: {tag: 'tarn-code'},
 };
 
 /**
@@ -65,6 +62,6 @@ export function renderWidget(
   return html`<${tag}
     .widgetId=${id}
     .editing=${editing}
-    .heading=${name ?? t(definition.nameKey)}
+    .heading=${name ?? t(KINDS[kind].nameKey)}
   ></${tag}>`;
 }

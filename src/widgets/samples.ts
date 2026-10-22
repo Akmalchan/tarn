@@ -3,21 +3,27 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
+import {browser} from 'wxt/browser';
 import type {WidgetSize} from '../layout/bands';
 import {
   CUSTOM_KINDS,
   WIDGET_KINDS,
   WIDGET_SIZE_OPTIONS,
   newWidgetId,
+  normalizeSettings,
   type WidgetEntry,
   type WidgetKind,
 } from '../settings/schema';
-import {saveWidgetData} from './data';
+import {OWN_KEY} from '../settings/backup';
+import {loadSettings} from '../settings/store';
+import {deleteWidgetData, saveWidgetData} from './data';
 import {t, type MessageKey} from '../i18n';
 
 // Example setups, in Settings > Advanced: one click shows what a page can
-// look like, with sample content, and Undo brings the user's own widgets
-// back (their content is never touched: samples get new widget ids).
+// look like, with sample content, and Undo or "Back to my widgets" brings
+// the user's own widgets back (their content is never touched: samples get
+// new widget ids). Samples nobody changed are deleted once their widgets
+// are gone (pruneSamples).
 // Sample weather tiles have no place, so trying an example sends nothing.
 
 const site = (host: string, title: string) => ({
@@ -124,6 +130,7 @@ export const EXAMPLES: readonly Example[] = [
 
 /** Creates an example's widgets and fills them with sample content. */
 export async function buildExample(preset: Preset): Promise<WidgetEntry[]> {
+  const samples: Record<string, unknown> = {};
   // Presets are layout shapes, so sizes win: a kind that doesn't offer
   // the size is swapped for the next one that does.
   const widgets = preset.map(([wanted, size], i) => {
@@ -134,27 +141,97 @@ export async function buildExample(preset: Preset): Promise<WidgetEntry[]> {
       : kinds.find(k => WIDGET_SIZE_OPTIONS[k].includes(size))!;
     return {id: newWidgetId(kind), kind, size};
   });
+  for (const widget of widgets) {
+    if (widget.kind === 'notes') samples[widget.id] = t('start.note');
+    if (widget.kind === 'tasks') {
+      const tasks: MessageKey[] = [
+        'panel.examples.task1',
+        'panel.examples.task2',
+        'panel.examples.task3',
+      ];
+      samples[widget.id] = tasks.map((key, n) => ({id: `t${n}`, text: t(key)}));
+    }
+    if (widget.kind === 'favorites') {
+      samples[widget.id] = sampleFavorites(widget.size);
+    }
+  }
+  const written = await sampleRecord();
+  for (const [id, value] of Object.entries(samples)) {
+    written[id] = JSON.stringify(value);
+  }
+  await browser.storage.local.set({[SAMPLES_KEY]: written});
   await Promise.all(
-    widgets.map(widget => {
-      if (widget.kind === 'notes') {
-        return saveWidgetData(widget.id, t('start.note'));
-      }
-      if (widget.kind === 'tasks') {
-        const tasks: MessageKey[] = [
-          'panel.examples.task1',
-          'panel.examples.task2',
-          'panel.examples.task3',
-        ];
-        return saveWidgetData(
-          widget.id,
-          tasks.map((key, n) => ({id: `t${n}`, text: t(key)})),
-        );
-      }
-      if (widget.kind === 'favorites') {
-        return saveWidgetData(widget.id, sampleFavorites(widget.size));
-      }
-      return Promise.resolve();
-    }),
+    Object.entries(samples).map(([id, value]) => saveWidgetData(id, value)),
   );
   return widgets;
+}
+
+/**
+ * The sample content each example widget was given, as JSON, by widget
+ * id, so it can be told apart from content the user wrote.
+ */
+const SAMPLES_KEY = 'examples.samples';
+
+async function sampleRecord(): Promise<Record<string, string>> {
+  const stored: unknown = (await browser.storage.local.get(SAMPLES_KEY))[
+    SAMPLES_KEY
+  ];
+  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(stored).filter(([, json]) => typeof json === 'string'),
+  ) as Record<string, string>;
+}
+
+/**
+ * Deletes the sample content of example widgets that are gone: not in
+ * `keep` (what the panel shows, and what its Undo could bring back), the
+ * stored list or the user's kept list. Content the user changed stays, as
+ * a removed widget's always does; only untouched samples go, so trying
+ * examples doesn't pile up copies in storage and in every backup.
+ */
+export async function pruneSamples(
+  keep: readonly WidgetEntry[],
+): Promise<void> {
+  const samples = await sampleRecord();
+  const ids = Object.keys(samples);
+  if (!ids.length) return;
+  const own = (await ownWidgets()) ?? [];
+  const shown = (await loadSettings()).widgets;
+  const used = new Set([...keep, ...own, ...shown].map(w => w.id));
+  const stored = await browser.storage.local.get(ids.map(id => `widget.${id}`));
+  for (const id of ids) {
+    if (used.has(id)) continue;
+    if (JSON.stringify(stored[`widget.${id}`]) === samples[id]) {
+      await deleteWidgetData(id);
+    }
+    delete samples[id];
+  }
+  await browser.storage.local.set({[SAMPLES_KEY]: samples});
+}
+
+// The user's own widget list from before the first example they tried is
+// kept in storage.local (OWN_KEY; the panel may close before they decide)
+// until they keep an example or go back. Their content stays under their
+// own widget ids, so the list is all it takes to get everything back.
+
+/** Keeps `widgets` unless an earlier list is already kept. */
+export async function rememberOwnWidgets(
+  widgets: readonly WidgetEntry[],
+): Promise<void> {
+  if ((await ownWidgets()) !== null) return;
+  await browser.storage.local.set({[OWN_KEY]: widgets});
+}
+
+/** The kept list, or null while no example is being tried. */
+export async function ownWidgets(): Promise<WidgetEntry[] | null> {
+  const stored: unknown = (await browser.storage.local.get(OWN_KEY))[OWN_KEY];
+  return Array.isArray(stored)
+    ? [...normalizeSettings({widgets: stored}).widgets]
+    : null;
+}
+
+export async function forgetOwnWidgets(): Promise<void> {
+  await browser.storage.local.remove(OWN_KEY);
 }

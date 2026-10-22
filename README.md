@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-1a73e8?style=flat-square" alt="Version 1.0.0" />
+  <img src="https://img.shields.io/badge/version-1.0.1-1a73e8?style=flat-square" alt="Version 1.0.1" />
   <img src="https://img.shields.io/badge/Manifest-V3-34a853?style=flat-square" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/WebGL2-hand--written-5f6368?style=flat-square" alt="Hand-written WebGL2" />
   <img src="https://img.shields.io/badge/network_at_load-0_requests-5f6368?style=flat-square" alt="Zero network requests at load" />
@@ -16,8 +16,8 @@
 <p align="center">
   A new tab extension that renders a live WebGL2 scene and still costs
   about as much as Chrome's own static new tab.<br />
-  Zero network requests. First paint in ~60 ms. Chrome, Edge, Brave, Arc,
-  Opera, Vivaldi and Firefox.
+  Zero network requests at load. First paint in ~60 ms. Chrome, Edge,
+  Brave, Arc, Opera, Vivaldi and Firefox.
 </p>
 
 ---
@@ -31,7 +31,7 @@
 | Range                 | **A** | Every Chromium browser and Firefox, from one codebase        |
 | Durability            | **A** | Automatic backup before every update; never loses a setup    |
 | Precision             | **A** | Frost drawn per pixel, frames paced to the millisecond       |
-| Development potential | **B** | 1.0.0                                                        |
+| Development potential | **B** | 1.0.1                                                        |
 
 ## Performance
 
@@ -43,17 +43,17 @@ Measured on an Apple M4 in Chrome:
 | Network requests at load       | **0**      | 4                | 0–115             |
 | Page CPU, live scene at 30 fps | **5.9%**   | 5.8% (static)    | 0.3–0.8% (static) |
 | JS memory                      | **6.2 MB** | 7.9 MB           | 2.0–57.9 MB       |
-| Work in a hidden tab           | **none**   | none             | varies            |
+| Frames in a hidden tab         | **0**      | 0                | varies            |
 
 How it gets there:
 
 - **Off the main thread.** The scene renders in a Web Worker through an
-  `OffscreenCanvas`. The page's own thread sits at ~0.4% while idle: no
-  layouts, no style recalculations; the clock wakes once a minute.
+  `OffscreenCanvas`. The page's own thread stays well under 1% while
+  idle: no layouts, no style recalculations; the clock wakes once a minute.
 - **Paced, not spinning.** 30 fps while you use the page, easing to 20 fps
   at 40% speed after a minute without input. Between frames the loop
   sleeps on a timer instead of waking for every 120 Hz refresh.
-- **Hidden tab? ZA WARUDO.** Time stops: zero frames and no work at all,
+- **Hidden tab? ZA WARUDO.** Time stops: zero frames, nothing drawn,
   until you come back.
 - **Measured GPU cost per scene.** Each wallpaper's shader is benchmarked
   in ms per frame (0.007 ms for the lightest, 0.19 ms for the sharpest)
@@ -70,8 +70,9 @@ How it gets there:
 - **No flash on reload.** A 320 px frame of the scene is kept per tab and
   painted synchronously in the first frame, then the live scene continues
   from the exact same moment.
-- **Reduced motion** holds a still frame. No WebGL? A CSS gradient of the
-  scene takes over within 2.5 s.
+- **Reduced motion** holds a still frame. No WebGL, or a computer that
+  can't keep up? A still picture of the scene takes over (within 2.5 s
+  when nothing draws).
 
 ## Features
 
@@ -85,9 +86,10 @@ How it gets there:
   keyboard shortcuts, sync through your browser account, automatic
   backups, export and import.
 - **10 languages**, following your browser.
-- **Private:** no server, no account, no analytics. Weather is the only
-  feature that goes online, and only once you add it.
-  [PRIVACY.md](PRIVACY.md)
+- **Private:** no server, no account, no analytics. Tarn goes online only
+  for what you ask: a search when you press Enter (to your browser's own
+  engine), voice, Lens or AI Mode when you use them, and Weather for the
+  place you pick. [PRIVACY.md](PRIVACY.md)
 
 ## Build
 

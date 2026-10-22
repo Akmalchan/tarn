@@ -8,7 +8,12 @@ import {
   photoMirror,
   type PhotoMirrorEntry,
 } from '../../wallpapers/store';
+import {toneOfHex} from '../../ui/color';
 import type {Hex, Scene} from './types';
+import {AUTO_SCENE, sceneFor} from './ids';
+import {surfacesDark, type Appearance} from '../../ui/appearance';
+
+export {AUTO_SCENE, DEFAULT_SCENE_ID, SCENE_IDS} from './ids';
 
 /**
  * Domain-warped noise: slow, deep, like light moving through still water.
@@ -346,18 +351,38 @@ const silk: Scene = {
   resolution: 0.33,
   fragment: /* glsl */ `
 // Silk: a warped sine height field. The slope is analytic: the sines'
-// derivatives are exact cosines, and the warp's own (gentle, low-frequency)
-// slope comes from screen-space derivatives of the two noise fetches, so
-// one evaluation replaces three.
+// derivatives are exact cosines, and the warp's noise comes with its own
+// exact gradient (noiseD). Until 2026-10-20 the warp read the baked noise
+// texture and took its slope from dFdx/dFdy: bilinear filtering kinks at
+// every texel and the derivatives are constant per 2x2 pixel block, so the
+// lighting showed straight vertical and horizontal lines.
+
+// noise() with its gradient: x, and d/dp in yz.
+vec3 noiseD(vec2 p) {
+  ivec2 i = ivec2(floor(p));
+  vec2 f = fract(p);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  vec2 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+  vec2 ga = gradient(i), gb = gradient(i + ivec2(1, 0));
+  vec2 gc = gradient(i + ivec2(0, 1)), gd = gradient(i + ivec2(1, 1));
+  float va = dot(ga, f), vb = dot(gb, f - vec2(1.0, 0.0));
+  float vc = dot(gc, f - vec2(0.0, 1.0)), vd = dot(gd, f - vec2(1.0, 1.0));
+  float k = va - vb - vc + vd;
+  float value = va + u.x * (vb - va) + u.y * (vc - va) + u.x * u.y * k;
+  vec2 grad = ga + u.x * (gb - ga) + u.y * (gc - ga) + u.x * u.y * (ga - gb - gc + gd)
+    + du * (u.yx * k + vec2(vb, vc) - va);
+  return vec3(value, grad);
+}
+
 vec3 scene(vec2 uv, float t) {
   vec2 p = uv * 2.1;
   vec2 q = 0.6 * p;
-  vec2 nz = vec2(noiseFast(q + vec2(0.0, 0.1 * t)),
-                 noiseFast(q + vec2(4.3, -0.08 * t)));
+  vec3 n1 = noiseD(q + vec2(0.0, 0.1 * t));
+  vec3 n2 = noiseD(q + vec2(4.3, -0.08 * t));
+  vec2 nz = vec2(n1.x, n2.x);
   vec2 w = p + 0.38 * nz;
-  // d(w)/d(p) = I + 0.38 * d(nz)/d(p); p moves 2.1 / height per pixel.
-  float px = 2.1 / uResolution.y;
-  vec2 nzx = dFdx(nz) / px, nzy = dFdy(nz) / px;
+  // d(w)/d(p) = I + 0.38 * d(nz)/d(p), with q = 0.6 p.
+  vec2 nzx = 0.6 * vec2(n1.y, n2.y), nzy = 0.6 * vec2(n1.z, n2.z);
   mat2 J = mat2(1.0 + 0.38 * nzx.x, 0.38 * nzx.y,
                 0.38 * nzy.x, 1.0 + 0.38 * nzy.y);
 
@@ -438,8 +463,7 @@ vec3 scene(vec2 uv, float t) {
     float sc = fk == 0.0 ? 60.0 : fk == 1.0 ? 32.0 : 16.0;
     vec2 g = uv * sc + vec2(0.18 * t * (0.6 + 0.4 * fk) * (k == 1 ? -1.0 : 1.0), -0.12 * t * (0.5 + 0.3 * fk));
     for (int y = 0; y <= 1; y++) {
-      vec2 cell = floor(g) + vec2(0.0, float(y) - 0.5 + step(0.5, fract(g.y)) - 0.5);
-      cell = floor(g) + vec2(0.0, float(y) * (fract(g.y) < 0.5 ? -1.0 : 1.0));
+      vec2 cell = floor(g) + vec2(0.0, float(y) * (fract(g.y) < 0.5 ? -1.0 : 1.0));
       float h = hash01(cell + fk * 9.0);
       if (h > 0.4) continue;
       vec2 c = cell + 0.5 + 0.4 * vec2(sin(t * (0.5 + h) + h * 20.0), cos(t * (0.45 + h) + h * 13.0));
@@ -1367,11 +1391,10 @@ export const SCENES: readonly Scene[] = [
   matrix,
 ];
 
-export const DEFAULT_SCENE_ID = tarn.id;
-
 /**
- * A still CSS gradient of a scene, built from its own colors: the background
- * when WebGL is unavailable, and under the thumbnail while it loads.
+ * A still CSS gradient of a scene, built from its own colors: under the
+ * thumbnail and the still picture while they load, and the last resort if
+ * the picture is missing.
  */
 export function sceneStill(scene: Scene): string {
   const [a, b, c, d] = scene.colors;
@@ -1387,6 +1410,17 @@ export function sceneStill(scene: Scene): string {
 export function scenePreview(scene: Scene): string {
   return `url('/scenes/${scene.id}.webp') center / cover no-repeat,
     ${sceneStill(scene)}`;
+}
+
+/**
+ * A built-in scene's full-screen still picture (`public/stills/`, made by
+ * `scripts/scene-previews.mjs`): shown with `cover` whenever the live scene
+ * can't run here. Photos have none; they keep their own still.
+ */
+export function scenePicture(scene: Scene): string | null {
+  return scene.photo || !SCENES.some(s => s.id === scene.id)
+    ? null
+    : `/stills/${scene.id}.webp`;
 }
 
 /**
@@ -1430,7 +1464,18 @@ export function photoScene(id: string, entry: PhotoMirrorEntry): Scene {
  * The scene for a `scene` setting. A photo this computer doesn't have
  * (synced from another, or deleted) shows the default scene instead.
  */
+/**
+ * The scene id a `scene` setting shows right now (`auto`: Silk on a light
+ * page, Tarn on a dark one; `appearance` as in Settings > Advanced).
+ */
+export function shownSceneId(setting: string, appearance?: Appearance): string {
+  return setting === AUTO_SCENE
+    ? sceneFor(setting, surfacesDark(appearance))
+    : setting;
+}
+
 export function sceneById(id: string): Scene {
+  if (id === AUTO_SCENE) id = shownSceneId(id);
   if (isPhotoId(id)) {
     const entry = photoMirror()[id];
     return entry ? photoScene(id, entry) : tarn;
@@ -1443,15 +1488,5 @@ export function sceneById(id: string): Scene {
  * scenes get dark text and a stronger frost on widgets.
  */
 export function sceneTone(scene: Scene): 'light' | 'dark' {
-  if (scene.tone) return scene.tone;
-  const n = Number.parseInt(scene.base.slice(1), 16);
-  const channel = (v: number) => {
-    const c = v / 255;
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const luminance =
-    0.2126 * channel((n >> 16) & 255) +
-    0.7152 * channel((n >> 8) & 255) +
-    0.0722 * channel(n & 255);
-  return luminance > 0.35 ? 'light' : 'dark';
+  return scene.tone ?? toneOfHex(scene.base);
 }

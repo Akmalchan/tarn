@@ -22,6 +22,7 @@ export interface Release {
  * changes people would notice, not the whole CHANGELOG.
  */
 export const RELEASES: readonly Release[] = [
+  {version: '1.0.1', notes: ['whatsNew.v1_0_1.fixes']},
   {
     version: '1.0.0',
     notes: [

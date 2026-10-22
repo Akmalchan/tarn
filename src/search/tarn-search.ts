@@ -6,18 +6,20 @@
 import {LitElement, css, html, nothing, svg, type PropertyValues} from 'lit';
 import {browser} from 'wxt/browser';
 import {LocaleController, locale, t} from '../i18n';
-import type {SearchSettings} from '../settings/schema';
-import {toUrl} from '../widgets/favorites-model';
+import {aiModeOn, type SearchSettings} from '../settings/schema';
+import {isComposing} from '../app/shortcuts';
+import {addressUrl} from './address';
 
 // The search box under the clock, shaped and behaving like the browser's
 // own new-tab search box (a pill with a soft shadow, gray icons, a
 // dropdown that joins onto it). Written for Tarn; nothing is copied.
 //
 // - Enter searches with the browser's default engine (the `search`
-//   permission: chrome.search / browser.search). Tarn never picks or
-//   changes the engine.
-// - While typing: a typed address to open, matching bookmarks (offline),
-//   then the search itself, and AI Mode when that's on.
+//   permission: chrome.search / browser.search), or opens a typed address
+//   (./address.ts). Tarn never picks or changes the engine. A bookmark
+//   opens only when picked with the arrow keys or the pointer.
+// - While typing: a typed address to open, the search itself, matching
+//   bookmarks (offline), and AI Mode when that's on.
 // - The buttons do something only when pressed. The mic listens right in
 //   the box (it turns red, a voice line follows the level, the words
 //   appear) and turns speech into text with the browser's recognition
@@ -111,6 +113,8 @@ export class TarnSearch extends LitElement {
     lensError: {state: true},
     dropping: {state: true},
     levels: {state: true},
+    editing: {type: Boolean, reflect: true},
+    confirming: {state: true},
   };
 
   static override styles = css`
@@ -367,6 +371,7 @@ export class TarnSearch extends LitElement {
       cursor: pointer;
     }
 
+    li:hover,
     li[aria-selected='true'] {
       background: var(--box-hover);
     }
@@ -609,10 +614,93 @@ export class TarnSearch extends LitElement {
       color: var(--box-ink);
     }
 
+    /* Read out, not shown: the box shows it as its placeholder. */
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* Edit mode (settings open): a holder on the box's top edge with
+       Remove, like each widget's, so the box goes the way they do. */
+    .holder {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 26px;
+      padding: 0 3px 0 11px;
+      translate: -50% -50%;
+      font: 500 12px var(--font-sans);
+      color: var(--ink);
+      white-space: nowrap;
+      background: var(--tile-held, rgb(20 25 34 / 0.86));
+      border: 1px solid
+        color-mix(in srgb, var(--tile-line, rgb(255 255 255 / 0.14)), white 35%);
+      border-radius: 999px;
+      box-shadow: 0 4px 14px rgb(0 0 0 / 0.22);
+      animation: holder-in 200ms ease-out both;
+    }
+
+    .holder span {
+      padding-right: 3px;
+    }
+
+    .holder button {
+      display: grid;
+      place-items: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1;
+      color: var(--ink-dim);
+      background: transparent;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      transition:
+        background-color 150ms ease,
+        color 150ms ease;
+    }
+
+    .holder button:hover {
+      color: var(--ink);
+      background: var(--chip-hover);
+    }
+
+    .holder button:focus-visible {
+      outline: 2px solid var(--focus-ring, #8ab4f8);
+      outline-offset: 1px;
+    }
+
+    /* Second press removes. */
+    .holder button.confirm {
+      padding: 0 9px;
+      font-size: 12px;
+      color: #fff;
+      background: rgb(214 64 69 / 0.92);
+    }
+
+    @keyframes holder-in {
+      from {
+        opacity: 0;
+        translate: -50% -30%;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .tool.listening,
       .wave.idle i,
-      .lens {
+      .lens,
+      .holder {
         animation: none;
       }
     }
@@ -635,8 +723,15 @@ export class TarnSearch extends LitElement {
   declare dropping: boolean;
   /** The microphone stream the voice line follows, while listening. */
   declare levels: {stream: MediaStream; audio: AudioContext} | null;
+  /** The settings panel is open: the box shows Remove, like the widgets. */
+  declare editing: boolean;
+  /** Remove was pressed once; a second press within 3 s removes. */
+  declare confirming: boolean;
+  private confirmTimer = 0;
 
   private lookup = 0;
+  /** The text the dropdown's rows were made for. */
+  private suggestedFor = '';
   private recognition: Recognition | null = null;
   private levelFrame = 0;
   private messageTimer = 0;
@@ -652,6 +747,8 @@ export class TarnSearch extends LitElement {
       ai: 'off',
     };
     this.glass = 'shader';
+    this.editing = false;
+    this.confirming = false;
     this.query = '';
     this.suggestions = [];
     this.selected = 0;
@@ -675,6 +772,7 @@ export class TarnSearch extends LitElement {
     document.removeEventListener('keydown', this.onDocumentKey);
     document.removeEventListener('paste', this.onPaste);
     this.stopVoice();
+    clearTimeout(this.confirmTimer);
   }
 
   override willUpdate(changed: PropertyValues<this>): void {
@@ -688,10 +786,54 @@ export class TarnSearch extends LitElement {
     if (changed.has('settings')) this.setAttribute('look', this.settings.style);
   }
 
+  /** The edit-mode holder: the box's name and Remove (press twice). */
+  private holder() {
+    const name = t('panel.page.search');
+    return html`<div class="holder">
+      <span>${name}</span>
+      <button
+        class=${this.confirming ? 'confirm' : ''}
+        aria-label=${
+          this.confirming
+            ? t('board.confirmRemove', {name})
+            : t('board.removeWidget', {name})
+        }
+        title=${t('common.remove')}
+        @click=${this.askRemove}
+      >
+        ${this.confirming ? t('common.remove') : '×'}
+      </button>
+    </div>`;
+  }
+
+  /**
+   * First press asks; a second press within 3 s hides the box (the app
+   * saves `search.show`; Settings > Search brings it back).
+   */
+  private askRemove = (event: Event) => {
+    event.stopPropagation();
+    clearTimeout(this.confirmTimer);
+    if (!this.confirming) {
+      this.confirming = true;
+      this.confirmTimer = window.setTimeout(
+        () => (this.confirming = false),
+        3000,
+      );
+      return;
+    }
+    this.confirming = false;
+    this.dispatchEvent(
+      new CustomEvent('tarn-remove-search', {bubbles: true, composed: true}),
+    );
+  };
+
   override render() {
-    const {voice, lens, ai} = this.settings;
+    const {voice, lens} = this.settings;
     const listening = this.voice === 'listening' || this.voice === 'heard';
+    const message = this.voiceMessage();
+    const active = this.open && this.suggestions[this.selected];
     return html`
+      ${this.editing ? this.holder() : nothing}
       <div class="field" @click=${this.focusInput}>
         ${
           listening
@@ -711,13 +853,14 @@ export class TarnSearch extends LitElement {
           aria-expanded=${this.open}
           aria-controls="list"
           aria-autocomplete="list"
+          aria-activedescendant=${active ? `opt-${this.selected}` : nothing}
           aria-label=${t('search.placeholder')}
           placeholder=${this.placeholder()}
-          ?readonly=${listening}
-          .value=${listening ? this.heard : this.query}
+          ?readonly=${listening || message}
+          .value=${listening ? this.heard : message ? '' : this.query}
           @input=${this.onInput}
           @keydown=${this.onKey}
-          @focus=${() => (this.open = this.suggestions.length > 0)}
+          @focus=${this.onFocus}
           @blur=${() => (this.open = false)}
         />
         <div class="tools">
@@ -743,7 +886,7 @@ export class TarnSearch extends LitElement {
           ${
             lens
               ? html`<button
-                  class="tool"
+                  class="tool lens-button"
                   title=${t('search.lens')}
                   aria-label=${t('search.lens')}
                   aria-haspopup="dialog"
@@ -754,7 +897,7 @@ export class TarnSearch extends LitElement {
               : nothing
           }
           ${
-            ai !== 'off'
+            aiModeOn(this.settings)
               ? html`<button
                   class="ai"
                   title=${t('search.aiMode')}
@@ -773,6 +916,7 @@ export class TarnSearch extends LitElement {
             </ul>`
           : nothing
       }
+      <span class="sr" role="status">${message}</span>
       ${this.lens ? this.renderLens() : nothing}
     `;
   }
@@ -794,9 +938,9 @@ export class TarnSearch extends LitElement {
                   : 'search',
           );
     return html`<li
+      id="opt-${index}"
       role="option"
       aria-selected=${index === this.selected}
-      @pointermove=${() => (this.selected = index)}
       @pointerdown=${(event: PointerEvent) => {
         event.preventDefault();
         this.choose(index);
@@ -815,6 +959,12 @@ export class TarnSearch extends LitElement {
     this.renderRoot.querySelector<HTMLInputElement>('.field input')?.focus();
   };
 
+  private onFocus = () => {
+    // Back in the box: a voice message gives way to the text typed before.
+    if (this.voiceMessage()) this.voice = 'off';
+    this.open = this.suggestions.length > 0;
+  };
+
   private onInput = (event: Event) => {
     this.query = (event.target as HTMLInputElement).value;
     void this.suggest();
@@ -826,11 +976,13 @@ export class TarnSearch extends LitElement {
     const id = ++this.lookup;
     if (!text) {
       this.suggestions = [];
+      this.suggestedFor = '';
       this.open = false;
       return;
     }
+    // Row 0 is what Enter does: open the typed address, or search.
     const rows: Suggestion[] = [];
-    const site = looksLikeAddress(text) ? toUrl(text) : null;
+    const site = addressUrl(text);
     if (site) {
       rows.push({
         kind: 'site',
@@ -839,6 +991,7 @@ export class TarnSearch extends LitElement {
         url: site,
       });
     }
+    rows.push({kind: 'search', label: text, detail: t('search.searchWeb')});
     for (const mark of await findBookmarks(text)) {
       rows.push({
         kind: 'bookmark',
@@ -847,12 +1000,12 @@ export class TarnSearch extends LitElement {
         url: mark.url,
       });
     }
-    rows.push({kind: 'search', label: text, detail: t('search.searchWeb')});
-    if (this.settings.ai !== 'off') {
+    if (aiModeOn(this.settings)) {
       rows.push({kind: 'ai', label: text, detail: t('search.aiMode')});
     }
     if (id !== this.lookup) return;
     this.suggestions = rows;
+    this.suggestedFor = text;
     this.selected = 0;
     const input = this.renderRoot.querySelector('.field input');
     this.open =
@@ -861,6 +1014,8 @@ export class TarnSearch extends LitElement {
   }
 
   private onKey = (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
+    if (this.voiceMessage()) this.voice = 'off';
     const last = this.suggestions.length - 1;
     if (event.key === 'ArrowDown' && this.open) {
       event.preventDefault();
@@ -870,10 +1025,18 @@ export class TarnSearch extends LitElement {
       this.selected = this.selected <= 0 ? last : this.selected - 1;
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      if (this.open && this.suggestions[this.selected]) {
+      const text = this.query.trim();
+      // Rows still made for earlier text (bookmarks are async) don't count.
+      if (
+        this.open &&
+        this.suggestedFor === text &&
+        this.suggestions[this.selected]
+      ) {
         this.choose(this.selected);
-      } else if (this.query.trim()) {
-        void this.search(this.query.trim());
+      } else if (text) {
+        const site = addressUrl(text);
+        if (site) this.navigate(site);
+        else void this.search(text);
       }
     } else if (event.key === 'Escape') {
       if (this.open) this.open = false;
@@ -931,7 +1094,7 @@ export class TarnSearch extends LitElement {
   private onDocumentKey = (event: KeyboardEvent) => {
     if (event.key !== 'Escape') return;
     if (this.voice !== 'off') this.stopVoice();
-    else if (this.lens) this.lens = false;
+    else if (this.lens) this.closeLens();
   };
 
   // ---- Google Lens ----------------------------------------------------------
@@ -940,7 +1103,9 @@ export class TarnSearch extends LitElement {
     return html`<div
       class="lens"
       role="dialog"
-      aria-label=${t('search.lensTitle')}
+      aria-modal="true"
+      aria-labelledby="lens-title"
+      @keydown=${this.onLensKey}
       @dragover=${(event: DragEvent) => {
         event.preventDefault();
         this.dropping = true;
@@ -949,12 +1114,12 @@ export class TarnSearch extends LitElement {
       @drop=${this.onDrop}
     >
       <div class="lens-head">
-        <h2>${t('search.lensTitle')}</h2>
+        <h2 id="lens-title">${t('search.lensTitle')}</h2>
         <button
           class="tool"
           title=${t('search.close')}
           aria-label=${t('search.close')}
-          @click=${() => (this.lens = false)}
+          @click=${this.closeLens}
         >
           ${icon('close')}
         </button>
@@ -1000,10 +1165,45 @@ export class TarnSearch extends LitElement {
     </div>`;
   }
 
-  private openLens = () => {
+  /** Opens the Lens box and moves focus into it, onto the drop zone. */
+  private openLens = async () => {
     this.open = false;
     this.lensError = '';
     this.lens = true;
+    await this.updateComplete;
+    this.renderRoot.querySelector<HTMLElement>('.lens .drop')?.focus();
+  };
+
+  /** Closes the Lens box; focus goes back to the Lens button. */
+  private closeLens = () => {
+    const inside = this.renderRoot
+      .querySelector('.lens')
+      ?.matches(':focus-within');
+    this.lens = false;
+    if (inside) {
+      this.renderRoot.querySelector<HTMLElement>('.lens-button')?.focus();
+    }
+  };
+
+  /** Tab stays inside the Lens box while it is open, like a modal. */
+  private onLensKey = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab') return;
+    const box = event.currentTarget as HTMLElement;
+    const stops = [
+      ...box.querySelectorAll<HTMLElement>(
+        'button, input:not([hidden]), [tabindex="0"]',
+      ),
+    ];
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    const here = (this.renderRoot as ShadowRoot).activeElement;
+    if (event.shiftKey && here === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && here === last) {
+      event.preventDefault();
+      first?.focus();
+    }
   };
 
   private pickImage = () => {
@@ -1079,6 +1279,15 @@ export class TarnSearch extends LitElement {
   }
 
   // ---- Voice ------------------------------------------------------------------
+
+  /** What went wrong with voice, while that message shows; else ''. */
+  private voiceMessage(): string {
+    return this.voice === 'noSpeech' ||
+      this.voice === 'denied' ||
+      this.voice === 'failed'
+      ? this.placeholder()
+      : '';
+  }
 
   /** What the box says: the usual hint, "Speak now", or what went wrong. */
   private placeholder(): string {
@@ -1164,12 +1373,17 @@ export class TarnSearch extends LitElement {
    */
   private async followLevel(): Promise<void> {
     this.stopLevel();
+    // The listening this microphone is for: a stop, or a new start while
+    // the browser was still asking, makes it stale.
+    const mine = this.recognition;
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-      if (!this.recognition) {
-        for (const track of stream.getTracks()) track.stop();
+      stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      if (!mine || this.recognition !== mine) {
+        stopTracks(stream);
         return;
       }
+      this.stopLevel();
       const audio = new AudioContext();
       const analyser = audio.createAnalyser();
       analyser.fftSize = 64;
@@ -1188,14 +1402,14 @@ export class TarnSearch extends LitElement {
       this.levels = {stream, audio};
       this.levelFrame = requestAnimationFrame(step);
     } catch {
-      this.levels = null;
+      if (stream && this.levels?.stream !== stream) stopTracks(stream);
     }
   }
 
   private stopLevel(): void {
     cancelAnimationFrame(this.levelFrame);
     if (this.levels) {
-      for (const track of this.levels.stream.getTracks()) track.stop();
+      stopTracks(this.levels.stream);
       void this.levels.audio.close();
     }
     this.levels = null;
@@ -1215,14 +1429,9 @@ export class TarnSearch extends LitElement {
   };
 }
 
-/** "github.com", "localhost:3000/x", "https://…": something to open, not search. */
-function looksLikeAddress(text: string): boolean {
-  if (/\s/.test(text)) return false;
-  return (
-    /^https?:\/\//i.test(text) ||
-    /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}(:\d+)?(\/.*)?$/i.test(text) ||
-    /^localhost(:\d+)?(\/.*)?$/i.test(text)
-  );
+/** Lets the microphone go: the browser's recording dot turns off. */
+function stopTracks(stream: MediaStream): void {
+  for (const track of stream.getTracks()) track.stop();
 }
 
 function host(url: string): string {

@@ -11,7 +11,7 @@
 import {browser} from 'wxt/browser';
 import {SETTINGS_KEY} from '../settings/store';
 
-export const TIP_KEY = 'tip.settings';
+const TIP_KEY = 'tip.settings';
 
 /** New tabs the tip shows on before it gives up by itself. */
 export const TIP_TABS = 3;

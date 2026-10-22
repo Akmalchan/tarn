@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
+import {TileBudget} from './budget';
 import {fragmentFor, hasEntry, parseErrors, type CodeError} from './source';
 
 /**
@@ -34,7 +35,13 @@ export type StageCommand =
       readonly canvas: OffscreenCanvas | HTMLCanvasElement;
     }
   | {readonly type: 'remove'; readonly id: string}
-  | {readonly type: 'code'; readonly id: string; readonly code: string}
+  /** `paused`: this code was too heavy here before (heavy.ts); wait for Run. */
+  | {
+      readonly type: 'code';
+      readonly id: string;
+      readonly code: string;
+      readonly paused?: boolean;
+    }
   /** The tile's size in device pixels (CSS pixels times up to 2). */
   | {
       readonly type: 'size';
@@ -70,10 +77,8 @@ export type StageEvent =
 /** Frames per second at each pace, and how fast time runs (like scenes). */
 const FPS: Record<StagePace, number> = {active: 30, calm: 20};
 const RATE: Record<StagePace, number> = {active: 1, calm: 0.4};
-/** Resolution steps for a tile the GPU can't keep up with, then a pause. */
-const SCALES = [1, 0.5, 0.25];
-/** Frames a tile may fall behind before it steps down. */
-const LATE_LIMIT = 12;
+/** A fence this old when the context is lost: its tile hung the GPU. */
+const STUCK_MS = 150;
 
 const VERTEX = `#version 300 es
 void main() {
@@ -111,11 +116,14 @@ interface Tile {
   width: number;
   height: number;
   mouse: [number, number, number, number];
-  scale: number;
-  late: number;
+  budget: TileBudget;
   paused: boolean;
   drawn: boolean;
   fence: WebGLSync | null;
+  /** Its fence's place in the GPU's queue, its time, and frames waited. */
+  fenceAt: number;
+  fencedAt: number;
+  waited: number;
 }
 
 type Context2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -123,7 +131,7 @@ type Context2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 export class CodeRenderer {
   private readonly canvas: OffscreenCanvas;
   private gl: WebGL2RenderingContext | null;
-  private readonly parallel: boolean;
+  private parallel: boolean;
   private readonly tiles = new Map<string, Tile>();
   private colors = new Float32Array(12).fill(0.6);
   private ink = new Float32Array([0.96, 0.97, 0.98]);
@@ -134,6 +142,7 @@ export class CodeRenderer {
   private last = 0;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private lostAt = -Infinity;
+  private fences = 0;
 
   constructor(private readonly post: (event: StageEvent) => void) {
     this.canvas = new OffscreenCanvas(256, 256);
@@ -166,7 +175,7 @@ export class CodeRenderer {
         this.remove(command.id);
         break;
       case 'code':
-        this.setCode(command.id, command.code);
+        this.setCode(command.id, command.code, command.paused);
         break;
       case 'size': {
         const tile = this.tiles.get(command.id);
@@ -190,8 +199,7 @@ export class CodeRenderer {
         const tile = this.tiles.get(command.id);
         if (!tile?.paused) break;
         tile.paused = false;
-        tile.scale = SCALES[SCALES.length - 1]!;
-        tile.late = 0;
+        tile.budget = new TileBudget();
         this.post({type: 'state', id: command.id, state: {state: 'ok'}});
         this.wake();
         break;
@@ -226,11 +234,13 @@ export class CodeRenderer {
       width: 0,
       height: 0,
       mouse: [-1, -1, 0, 0],
-      scale: SCALES[0]!,
-      late: 0,
+      budget: new TileBudget(),
       paused: false,
       drawn: false,
       fence: null,
+      fenceAt: 0,
+      fencedAt: 0,
+      waited: 0,
     });
     if (!this.gl || !context) {
       this.post({type: 'state', id, state: {state: 'unavailable'}});
@@ -246,14 +256,13 @@ export class CodeRenderer {
     this.tiles.delete(id);
   }
 
-  private setCode(id: string, code: string): void {
+  private setCode(id: string, code: string, paused = false): void {
     const tile = this.tiles.get(id);
     const gl = this.gl;
     if (!tile || !gl || code === tile.code) return;
     tile.code = code;
-    tile.paused = false;
-    tile.scale = SCALES[0]!;
-    tile.late = 0;
+    tile.paused = paused;
+    tile.budget = new TileBudget();
     if (!hasEntry(code)) {
       this.release(tile.pending);
       tile.pending = null;
@@ -315,7 +324,11 @@ export class CodeRenderer {
       this.release(tile.program);
       tile.program = ready;
       tile.drawn = false;
-      this.post({type: 'state', id, state: {state: 'ok'}});
+      this.post({
+        type: 'state',
+        id,
+        state: tile.paused ? {state: 'heavy'} : {state: 'ok'},
+      });
     } else {
       const log =
         gl.getShaderInfoLog(pending.fragment) ||
@@ -367,14 +380,19 @@ export class CodeRenderer {
     if (!this.reduced) this.clock += dt * RATE[this.pace];
 
     let animating = false;
+    // Compiling, or not yet at its step: reduced motion keeps going too.
+    let settling = false;
     for (const [id, tile] of this.tiles) {
       if (tile.pending) this.settle(id, tile);
-      if (tile.pending) animating = true;
+      if (tile.pending) animating = settling = true;
       // Reduced motion: one still frame, drawn again only when asked.
       if (this.reduced && tile.drawn) continue;
-      if (this.draw(gl, id, tile)) animating = true;
+      if (this.draw(gl, id, tile)) {
+        animating = true;
+        if (!tile.drawn) settling = true;
+      }
     }
-    if (animating && (!this.reduced || this.hasPending())) {
+    if (animating && (!this.reduced || settling)) {
       const interval = 1000 / FPS[this.pace];
       const spent = performance.now() - now;
       this.timer = setTimeout(
@@ -386,32 +404,30 @@ export class CodeRenderer {
     }
   }
 
-  private hasPending(): boolean {
-    for (const tile of this.tiles.values()) if (tile.pending) return true;
-    return false;
-  }
-
   /** Draws one tile; true while it should keep animating. */
   private draw(gl: WebGL2RenderingContext, id: string, tile: Tile): boolean {
     const program = tile.program;
     if (!program || tile.paused || !tile.context) return false;
     if (tile.width < 1 || tile.height < 1) return false;
 
-    // The GPU hasn't finished this tile's last frame: it is too heavy.
+    // The GPU hasn't finished this tile's last frame: it is too heavy,
+    // unless it waits behind another tile's (one context runs in order).
     if (tile.fence) {
-      const done =
-        gl.getSyncParameter(tile.fence, gl.SYNC_STATUS) === gl.SIGNALED;
-      if (!done) {
-        if (++tile.late >= LATE_LIMIT) this.stepDown(id, tile);
+      if (!this.signaled(gl, tile.fence)) {
+        tile.waited++;
+        if (!this.queued(gl, tile) && tile.budget.behind()) {
+          this.pause(id, tile);
+        }
         return !tile.paused;
       }
       gl.deleteSync(tile.fence);
       tile.fence = null;
-      tile.late = Math.max(0, tile.late - 1);
+      tile.budget.done(tile.waited === 0);
     }
 
-    const width = Math.max(1, Math.round(tile.width * tile.scale));
-    const height = Math.max(1, Math.round(tile.height * tile.scale));
+    const scale = tile.budget.scale;
+    const width = Math.max(1, Math.round(tile.width * scale));
+    const height = Math.max(1, Math.round(tile.height * scale));
     this.fit(width, height);
     const date = new Date();
     gl.viewport(0, 0, width, height);
@@ -421,13 +437,7 @@ export class CodeRenderer {
     gl.uniform2f(program.uResolution, width, height);
     gl.uniform1f(program.uTime, this.clock);
     const [mx, my, inside, down] = tile.mouse;
-    gl.uniform4f(
-      program.uMouse,
-      mx * tile.scale,
-      height - my * tile.scale,
-      inside,
-      down,
-    );
+    gl.uniform4f(program.uMouse, mx * scale, height - my * scale, inside, down);
     gl.uniform4f(
       program.uDate,
       date.getFullYear(),
@@ -442,8 +452,13 @@ export class CodeRenderer {
     gl.uniform3fv(program.uColors, this.colors);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     tile.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    tile.fenceAt = ++this.fences;
+    tile.fencedAt = performance.now();
+    tile.waited = 0;
     gl.flush();
 
+    // Still finding its step: the tile keeps its last picture meanwhile.
+    if (!tile.budget.settled) return true;
     const context = tile.context;
     context.clearRect(0, 0, tile.width, tile.height);
     context.drawImage(
@@ -464,6 +479,24 @@ export class CodeRenderer {
     return true;
   }
 
+  private signaled(gl: WebGL2RenderingContext, fence: WebGLSync): boolean {
+    return gl.getSyncParameter(fence, gl.SYNC_STATUS) === gl.SIGNALED;
+  }
+
+  /** Another tile's older frame isn't done either: this one waits behind it. */
+  private queued(gl: WebGL2RenderingContext, tile: Tile): boolean {
+    for (const other of this.tiles.values()) {
+      if (
+        other.fence &&
+        other.fenceAt < tile.fenceAt &&
+        !this.signaled(gl, other.fence)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** Grows the shared canvas to fit the biggest tile, never shrinks it. */
   private fit(width: number, height: number): void {
     const round = (n: number) => Math.ceil(n / 64) * 64;
@@ -473,13 +506,8 @@ export class CodeRenderer {
     }
   }
 
-  private stepDown(id: string, tile: Tile): void {
-    tile.late = 0;
-    const next = SCALES.indexOf(tile.scale) + 1;
-    if (next < SCALES.length) {
-      tile.scale = SCALES[next]!;
-      return;
-    }
+  /** Too heavy even at the smallest step; the page remembers it (heavy.ts). */
+  private pause(id: string, tile: Tile): void {
     tile.paused = true;
     this.post({type: 'state', id, state: {state: 'heavy'}});
   }
@@ -487,9 +515,21 @@ export class CodeRenderer {
   // ---- A lost context ---------------------------------------------------
 
   private onLost(): void {
+    // The tile whose frame the GPU was stuck on: the oldest fence, if it
+    // is older than a few frames (a reset from elsewhere finds them
+    // fresh). It doesn't restart.
+    const now = performance.now();
+    let stuck: [string, Tile] | null = null;
+    for (const entry of this.tiles) {
+      const tile = entry[1];
+      if (tile.paused || !tile.fence || now - tile.fencedAt < STUCK_MS) {
+        continue;
+      }
+      if (!stuck || tile.fenceAt < stuck[1].fenceAt) stuck = entry;
+    }
+    if (stuck) this.pause(...stuck);
     // Twice within a minute: something on the page is too much for the
     // GPU, so nothing restarts by itself.
-    const now = performance.now();
     const again = now - this.lostAt < 60_000;
     this.lostAt = now;
     for (const [id, tile] of this.tiles) {
@@ -497,22 +537,22 @@ export class CodeRenderer {
       tile.pending = null;
       tile.fence = null;
       tile.drawn = false;
-      if (again) {
-        tile.paused = true;
-        this.post({type: 'state', id, state: {state: 'heavy'}});
-      }
+      if (again && !tile.paused) this.pause(id, tile);
     }
   }
 
   private onRestored(): void {
     const gl = this.gl;
     if (!gl) return;
+    // Extensions are asked for again on a restored context.
+    this.parallel = !!gl.getExtension('KHR_parallel_shader_compile');
+    // Every tile from its smallest step again; paused ones stay paused.
     for (const [id, tile] of this.tiles) {
-      const code = tile.code;
-      const paused = tile.paused;
-      tile.code = '';
-      this.setCode(id, code);
-      tile.paused = paused;
+      if (!hasEntry(tile.code)) continue;
+      tile.budget.restart();
+      tile.pending = this.build(gl, tile.code);
+      if (!this.parallel) this.settle(id, tile);
     }
+    this.wake();
   }
 }

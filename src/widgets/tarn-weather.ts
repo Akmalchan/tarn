@@ -8,8 +8,22 @@ import {browser} from 'wxt/browser';
 import {DEFAULT_SETTINGS, type WeatherSettings} from '../settings/schema';
 import {loadSettings, watchSettings} from '../settings/store';
 import {conditionName} from '../weather/conditions';
-import {roundCoordinate, watchGoogleKey} from '../weather/config';
-import {REFRESH_MS, fetchForecast, isCurrent} from '../weather/forecast';
+import {getGoogleKey, roundCoordinate, watchGoogleKey} from '../weather/config';
+import {
+  KEY_RETRY_MS,
+  REFRESH_MS,
+  RETRY_MS,
+  claimFetch,
+  daysFrom,
+  fetchForecast,
+  forecastKey,
+  isCurrent,
+  isWaiting,
+  localDate,
+  releaseFetch,
+  settingsChanged,
+  usableSettings,
+} from '../weather/forecast';
 import {weatherGlyph} from '../weather/glyphs';
 import {searchPlaces} from '../weather/open-meteo';
 import {WeatherError, type Forecast, type Place} from '../weather/types';
@@ -30,10 +44,6 @@ interface WeatherData {
 }
 
 const EMPTY: WeatherData = {place: null, forecast: null};
-/** After a failed request, try again this much later. */
-const RETRY_MS = 5 * 60_000;
-/** After a rejected key or a used-up quota: until the key changes, or this. */
-const KEY_RETRY_MS = 6 * 60 * 60_000;
 
 /** Whether `zone` is a time zone this browser can format in. */
 function isTimeZone(zone: unknown): zone is string {
@@ -58,8 +68,9 @@ function normalize(raw: unknown): WeatherData {
       ? {
           name: p.name.slice(0, 80),
           detail: typeof p.detail === 'string' ? p.detail.slice(0, 120) : '',
-          lat: p.lat,
-          lon: p.lon,
+          // Rounded when picked; again here for an imported file's.
+          lat: roundCoordinate(p.lat),
+          lon: roundCoordinate(p.lon),
           ...(p.here === true ? {here: true} : {}),
         }
       : null;
@@ -674,7 +685,10 @@ export class TarnWeather extends LitElement {
   /** Widgets are being arranged: the place can be changed from a button. */
   declare editing: boolean;
   declare data: WeatherData;
-  /** Provider and units, from settings (null until loaded). */
+  /**
+   * Provider and units as this computer can use them (usableSettings;
+   * null until loaded).
+   */
   declare settings: WeatherSettings | null;
   /** Why the forecast can't be updated right now, if it can't. */
   declare problem: string;
@@ -690,6 +704,11 @@ export class TarnWeather extends LitElement {
   private searchTimer = 0;
   private searchId = 0;
   private fetching = false;
+  /** Another window is fetching this place until then (epoch ms). */
+  private claimedUntil = 0;
+  /** The settings as synced, and whether this computer has a Google key. */
+  private chosen: WeatherSettings | null = null;
+  private hasKey: boolean | null = null;
 
   constructor() {
     super();
@@ -711,10 +730,20 @@ export class TarnWeather extends LitElement {
     this.data = peekWidgetData(this.widgetId, normalize);
     void loadWidgetData(this.widgetId, normalize).then(this.apply);
     this.unwatch = watchWidgetData(this.widgetId, normalize, this.apply);
-    void loadSettings().then(s => this.useSettings(s.weather));
+    void Promise.all([loadSettings(), getGoogleKey()]).then(([s, key]) => {
+      this.hasKey = key !== '';
+      // Settings that changed meanwhile are newer than the ones loaded.
+      this.useSettings(this.chosen ?? s.weather);
+    });
     this.unwatchSettings = watchSettings(s => this.useSettings(s.weather));
     // A new Google key: try again now rather than waiting out the error.
-    this.unwatchKey = watchGoogleKey(() => this.retryNow());
+    this.unwatchKey = watchGoogleKey(() => {
+      void getGoogleKey().then(key => {
+        this.hasKey = key !== '';
+        if (this.chosen) this.useSettings(this.chosen);
+        this.retryNow();
+      });
+    });
     document.addEventListener('visibilitychange', this.refresh);
   }
 
@@ -723,6 +752,9 @@ export class TarnWeather extends LitElement {
     this.unwatch();
     this.unwatchSettings();
     this.unwatchKey();
+    // Loaded afresh on the next connect.
+    this.chosen = null;
+    this.hasKey = null;
     document.removeEventListener('visibilitychange', this.refresh);
     clearTimeout(this.timer);
     clearTimeout(this.searchTimer);
@@ -787,7 +819,9 @@ export class TarnWeather extends LitElement {
   }
 
   private renderNow(place: Place, forecast: Forecast | null) {
-    const today = forecast?.days[0];
+    // Today's own high and low, not the first day of an older forecast.
+    const date = forecast && localDate(Date.now(), forecast.timeZone);
+    const today = forecast?.days.find(d => d.date === date);
     const condition = forecast
       ? `${conditionName(forecast.now.condition)}${
           today
@@ -844,8 +878,9 @@ export class TarnWeather extends LitElement {
   }
 
   private renderDays(forecast: Forecast) {
-    const days = forecast.days;
+    const days = daysFrom(forecast);
     if (!days.length) return nothing;
+    const today = localDate(Date.now(), forecast.timeZone);
     const low = Math.min(...days.map(d => d.min));
     const high = Math.max(...days.map(d => d.max));
     const span = Math.max(high - low, 1);
@@ -856,10 +891,10 @@ export class TarnWeather extends LitElement {
     return html`
       <div class="days">
         ${days.slice(0, 7).map(
-          (d, i) => html`
+          d => html`
             <div class="day">
               <span
-                >${i === 0 ? t('weather.today') : safeFormat(weekday, Date.parse(`${d.date}T12:00:00Z`))}</span
+                >${d.date === today ? t('weather.today') : safeFormat(weekday, Date.parse(`${d.date}T12:00:00Z`))}</span
               >
               <span class="icon">${weatherGlyph(d.condition)}</span>
               <span class="min">${deg(d.min)}</span>
@@ -959,12 +994,15 @@ export class TarnWeather extends LitElement {
     this.refresh();
   };
 
-  private useSettings(settings: WeatherSettings): void {
-    const changed =
-      settings.provider !== this.settings?.provider ||
-      settings.units !== this.settings?.units;
+  private useSettings(chosen: WeatherSettings): void {
+    this.chosen = chosen;
+    // Nothing is fetched before it's known which provider can answer.
+    if (this.hasKey === null) return;
+    const settings = usableSettings(chosen, this.hasKey);
+    const changed = settingsChanged(this.settings, settings);
     this.settings = settings;
     if (changed) this.retryNow();
+    else this.refresh();
   }
 
   /** Something that could fix a failure changed: forget the wait, try now. */
@@ -998,8 +1036,16 @@ export class TarnWeather extends LitElement {
       return;
     }
     // A failed update waits its turn, across tab switches and new tabs.
-    if (retryAt !== undefined && retryAt > Date.now()) {
+    if (isWaiting(retryAt)) {
       this.timer = window.setTimeout(this.refresh, retryAt - Date.now());
+      return;
+    }
+    // Another window is fetching it: its result arrives through storage.
+    if (this.claimedUntil > Date.now()) {
+      this.timer = window.setTimeout(
+        this.refresh,
+        this.claimedUntil - Date.now(),
+      );
       return;
     }
     void this.fetchNow();
@@ -1011,6 +1057,7 @@ export class TarnWeather extends LitElement {
     if (!settings) return;
     this.fetching = true;
     let stored: WeatherData = this.data;
+    let claimed: string | null = null;
     try {
       // Another tab may have just fetched it.
       stored = await loadWidgetData(this.widgetId, normalize);
@@ -1020,6 +1067,15 @@ export class TarnWeather extends LitElement {
         this.data = stored;
         return;
       }
+      // Or be fetching it right now, in another window.
+      const key = forecastKey(place, settings);
+      const wait = claimFetch(key);
+      if (wait) {
+        this.claimedUntil = Date.now() + wait;
+        this.data = stored;
+        return;
+      }
+      claimed = key;
       const forecast = await fetchForecast(place, settings);
       // The place may have changed while the request was out: keep the new
       // one, and fetch for it next.
@@ -1057,6 +1113,7 @@ export class TarnWeather extends LitElement {
       this.data = next;
       await saveWidgetData(this.widgetId, next);
     } finally {
+      if (claimed) releaseFetch(claimed);
       this.fetching = false;
       // Every way out schedules what comes next (a timer, or nothing).
       this.refresh();
@@ -1112,12 +1169,16 @@ export class TarnWeather extends LitElement {
 
   private useMyLocation = async () => {
     this.note = '';
-    const granted = await browser.permissions
-      .request({permissions: ['geolocation']})
-      .catch(() => false);
-    if (!granted) {
-      this.note = t('weather.locationDenied');
-      return;
+    // Firefox asks through the optional permission. Chrome can't make
+    // geolocation optional, so it asks the way it asks a website.
+    if (import.meta.env.FIREFOX) {
+      const granted = await browser.permissions
+        .request({permissions: ['geolocation']})
+        .catch(() => false);
+      if (!granted) {
+        this.note = t('weather.locationDenied');
+        return;
+      }
     }
     this.note = t('weather.finding');
     navigator.geolocation.getCurrentPosition(
@@ -1131,8 +1192,12 @@ export class TarnWeather extends LitElement {
           lon: position.coords.longitude,
         });
       },
-      () => {
-        this.note = t('weather.locationFailed');
+      error => {
+        this.note = t(
+          error.code === error.PERMISSION_DENIED
+            ? 'weather.locationDenied'
+            : 'weather.locationFailed',
+        );
       },
       {maximumAge: REFRESH_MS, timeout: 15_000},
     );

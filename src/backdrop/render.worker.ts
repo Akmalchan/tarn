@@ -27,6 +27,9 @@ self.onmessage = (
       onFirstFrame: () => post({type: 'firstFrame'}),
       onSceneShown: id => post({type: 'sceneShown', id}),
       onUnavailable: () => post({type: 'unavailable'}),
+      onCantKeepUp: id => post({type: 'cantKeepUp', id}),
+      onContextLost: () => post({type: 'contextLost'}),
+      onContextRestored: () => post({type: 'contextRestored'}),
       onClock: (clock, at, running, quality, rate) =>
         post({type: 'clock', clock, at, running, quality, rate}),
     });

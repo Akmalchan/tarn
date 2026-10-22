@@ -8,10 +8,11 @@ import type {LayoutItem, WidgetSize} from '../layout/bands';
 import {
   GAP,
   PITCH,
+  keepPlace,
   moveTo,
-  nearestIndex,
   nearestOrder,
   placeTiles,
+  stableOrder,
   swap,
 } from './geometry';
 
@@ -54,45 +55,6 @@ describe('moveTo', () => {
   });
 });
 
-describe('nearestIndex', () => {
-  it('stays put when dropped where it already is', () => {
-    const list = items('l', 'l', 'l');
-    const {tiles} = placeTiles(list, 6);
-    const t = tiles[1]!;
-    expect(
-      nearestIndex(list, 'w1', 6, t.x + t.width / 2, t.y + t.height / 2),
-    ).toBe(1);
-  });
-
-  it('moves to the slot under the pointer', () => {
-    // Three large widgets in a row; drag the first over the third's slot.
-    const list = items('l', 'l', 'l');
-    const {tiles} = placeTiles(list, 6);
-    const third = tiles[2]!;
-    expect(
-      nearestIndex(
-        list,
-        'w0',
-        6,
-        third.x + third.width / 2,
-        third.y + third.height / 2,
-      ),
-    ).toBe(2);
-  });
-
-  it('keeps its slot when the pointer is only a little closer to another', () => {
-    const list = items('l', 'l', 'l');
-    const {tiles} = placeTiles(list, 6);
-    const a = tiles[0]!;
-    const b = tiles[1]!;
-    // Just past halfway from slot 0 towards slot 1.
-    const x = a.x + a.width / 2 + (b.x - a.x) * 0.55;
-    const y = a.y + a.height / 2;
-    expect(nearestIndex(list, 'w0', 6, x, y, 0)).toBe(1);
-    expect(nearestIndex(list, 'w0', 6, x, y, PITCH * 0.3)).toBe(0);
-  });
-});
-
 describe('swap', () => {
   it('trades two places and leaves the rest', () => {
     const list = items('s', 'm', 'l');
@@ -121,5 +83,38 @@ describe('nearestOrder', () => {
     expect(
       nearestOrder(list, 'w0', 6, own.x + 20, own.y + 20, PITCH * 0.3),
     ).toEqual(list);
+  });
+});
+
+describe('keepPlace', () => {
+  const ids = (list: readonly {id: string}[] | null) => list?.map(w => w.id);
+
+  it('keeps a held widget where the preview has it in a new list', () => {
+    const preview = items('s', 's', 's', 's');
+    const held = moveTo(preview, 'w0', 2);
+    // The new list: w3 gone, a new w9 at the front.
+    const next: LayoutItem[] = [{id: 'w9', size: 'm'}, ...preview.slice(0, 3)];
+    expect(ids(keepPlace(next, held, 'w0'))).toEqual(['w9', 'w1', 'w0', 'w2']);
+  });
+
+  it('gives null when the held widget was removed', () => {
+    expect(keepPlace(items('s'), items('s', 's'), 'w1')).toBeNull();
+  });
+});
+
+describe('stableOrder', () => {
+  it('keeps tiles in place and adds new ones at the end', () => {
+    expect(stableOrder([], ['a', 'b', 'c'])).toEqual(['a', 'b', 'c']);
+    // A move: the page order stays.
+    expect(stableOrder(['a', 'b', 'c'], ['c', 'a', 'b'])).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
+    expect(stableOrder(['a', 'b', 'c'], ['d', 'c', 'a'])).toEqual([
+      'a',
+      'c',
+      'd',
+    ]);
   });
 });

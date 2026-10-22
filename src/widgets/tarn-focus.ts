@@ -19,8 +19,10 @@ import {
   MIN_MS,
   cleanDuration,
   format,
+  nextTickMs,
   parseDuration,
 } from './focus-time';
+import {isComposing} from '../app/shortcuts';
 
 /**
  * Timer state. While running, only the end time is stored, so every open
@@ -269,6 +271,7 @@ export class TarnFocus extends LitElement {
   };
 
   private onTimeKey = (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     const input = event.target as HTMLInputElement;
     if (event.key === 'Enter') input.blur();
     if (event.key === 'Escape') {
@@ -322,8 +325,11 @@ export class TarnFocus extends LitElement {
     if (this.state.endsAt === null || document.visibilityState !== 'visible') {
       return;
     }
-    if (this.left() === 0) return;
-    this.timer = window.setTimeout(this.schedule, 1000 - (this.now % 1000) + 5);
+    const left = this.left();
+    if (left === 0) return;
+    // On the countdown's own seconds (the time shown rounds up), so each
+    // digit and the end come right on time, not up to a second late.
+    this.timer = window.setTimeout(this.schedule, nextTickMs(left));
   };
 }
 

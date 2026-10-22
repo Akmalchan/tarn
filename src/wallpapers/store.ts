@@ -23,7 +23,10 @@
  * A photo is selected through the usual `scene` setting, as `photo:<id>`.
  */
 
-export const PHOTO_PREFIX = 'photo:';
+import {readJson, writeJson} from '../app/web-storage';
+import {averageHex, toneOfHex} from '../ui/color';
+
+const PHOTO_PREFIX = 'photo:';
 
 /** What settings needs to show a photo: everything but the big images. */
 export interface WallpaperInfo {
@@ -55,7 +58,8 @@ export interface WallpaperRecord {
 const DB_NAME = 'tarn-wallpapers';
 const INFO = 'info';
 const IMAGES = 'images';
-const DISPLAY_EDGE = 3840;
+/** Longest side of the display copy, the image the renderer decodes. */
+export const DISPLAY_EDGE = 3840;
 const THUMB_EDGE = 480;
 /** Larger files are refused before decoding: likely not a photo. */
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
@@ -75,43 +79,34 @@ const MIRROR_KEY = 'tarn.photos';
  * or when nothing is stored. Never trusts the stored shape.
  */
 export function photoMirror(): Record<string, PhotoMirrorEntry> {
-  if (typeof localStorage === 'undefined') return {};
-  try {
-    const raw: unknown = JSON.parse(localStorage.getItem(MIRROR_KEY) ?? '{}');
-    if (!raw || typeof raw !== 'object') return {};
-    const out: Record<string, PhotoMirrorEntry> = {};
-    for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
-      const e = v as Partial<PhotoMirrorEntry> | null;
-      if (
-        isPhotoId(id) &&
-        e &&
-        typeof e.base === 'string' &&
-        /^#[0-9a-f]{6}$/i.test(e.base) &&
-        (e.tone === 'light' || e.tone === 'dark') &&
-        typeof e.w === 'number' &&
-        typeof e.h === 'number'
-      ) {
-        out[id] = {base: e.base, tone: e.tone, w: e.w, h: e.h};
-      }
+  const raw = readJson(MIRROR_KEY);
+  if (!raw || typeof raw !== 'object') return {};
+  const out: Record<string, PhotoMirrorEntry> = {};
+  for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+    const e = v as Partial<PhotoMirrorEntry> | null;
+    if (
+      isPhotoId(id) &&
+      e &&
+      typeof e.base === 'string' &&
+      /^#[0-9a-f]{6}$/i.test(e.base) &&
+      (e.tone === 'light' || e.tone === 'dark') &&
+      typeof e.w === 'number' &&
+      typeof e.h === 'number'
+    ) {
+      out[id] = {base: e.base, tone: e.tone, w: e.w, h: e.h};
     }
-    return out;
-  } catch {
-    return {};
   }
+  return out;
 }
 
 function writeMirror(infos: readonly WallpaperInfo[]): void {
-  if (typeof localStorage === 'undefined') return;
   const mirror: Record<string, PhotoMirrorEntry> = {};
   for (const {id, base, tone, width: w, height: h} of infos) {
     mirror[id] = {base, tone, w, h};
   }
-  try {
-    localStorage.setItem(MIRROR_KEY, JSON.stringify(mirror));
-  } catch {
-    // Full storage only costs first paint its base color; the photo still
-    // draws once it loads.
-  }
+  // Full storage (or none, in a worker) only costs first paint its base
+  // color; the photo still draws once it loads.
+  writeJson(MIRROR_KEY, mirror);
 }
 
 /** Rebuilds the mirror from IndexedDB, the source of truth. */
@@ -170,7 +165,7 @@ export async function addWallpaper(file: File): Promise<WallpaperInfo> {
       width,
       height,
       base,
-      tone: toneOf(base),
+      tone: toneOfHex(base),
       thumb,
     };
     await put({info, images: {id: info.id, display, original: file}});
@@ -188,16 +183,6 @@ export async function addWallpaper(file: File): Promise<WallpaperInfo> {
 export async function listWallpapers(): Promise<WallpaperInfo[]> {
   const all = await syncMirror();
   return all.sort((a, b) => b.created - a.created);
-}
-
-export async function getWallpaperInfo(
-  id: string,
-): Promise<WallpaperInfo | null> {
-  const db = await open();
-  const info = await request<WallpaperInfo | undefined>(
-    db.transaction(INFO).objectStore(INFO).get(id),
-  );
-  return info ?? null;
 }
 
 /** The copy the background draws, or null if this computer doesn't have it. */
@@ -300,33 +285,5 @@ function meanColor(bitmap: ImageBitmap): string {
   const context = canvas.getContext('2d', {willReadFrequently: true});
   if (!context) return '#000000';
   context.drawImage(bitmap, 0, 0, 16, 16);
-  const {data} = context.getImageData(0, 0, 16, 16);
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    r += data[i]!;
-    g += data[i + 1]!;
-    b += data[i + 2]!;
-  }
-  const n = data.length / 4;
-  const hex = (v: number) =>
-    Math.round(v / n)
-      .toString(16)
-      .padStart(2, '0');
-  return `#${hex(r)}${hex(g)}${hex(b)}`;
-}
-
-/** Light or dark, by the same luminance rule as the built-in scenes. */
-function toneOf(hex: string): 'light' | 'dark' {
-  const n = Number.parseInt(hex.slice(1), 16);
-  const channel = (v: number) => {
-    const c = v / 255;
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const luminance =
-    0.2126 * channel((n >> 16) & 255) +
-    0.7152 * channel((n >> 8) & 255) +
-    0.0722 * channel(n & 255);
-  return luminance > 0.35 ? 'light' : 'dark';
+  return averageHex(context.getImageData(0, 0, 16, 16).data);
 }

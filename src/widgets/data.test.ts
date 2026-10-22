@@ -5,6 +5,7 @@
 
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {fakeBrowser} from 'wxt/testing/fake-browser';
+import {watchSaveProblems, type SaveProblem} from '../settings/problems';
 import {loadWidgetData, saveWidgetData} from './data';
 
 /** A plain in-memory localStorage, as a page has. */
@@ -59,5 +60,38 @@ describe('widget content', () => {
     // Another computer's copy, or a stale mirror: storage wins.
     localStorage.setItem('tarn.widget.notes-b', JSON.stringify('Old'));
     expect(await loadWidgetData('notes-b', asText)).toBe('One');
+  });
+
+  it("keeps another tab's unsaved content when this tab's save lands", async () => {
+    // Two tabs save one note; the later one (B) is still under way.
+    const set = fakeBrowser.storage.local.set.bind(fakeBrowser.storage.local);
+    let finishA = () => {};
+    let failB = (_: Error) => {};
+    const spy = vi.spyOn(fakeBrowser.storage.local, 'set');
+    spy.mockImplementationOnce(
+      items =>
+        new Promise(done => (finishA = () => void set(items).then(done))),
+    );
+    spy.mockImplementationOnce(() => new Promise((_, fail) => (failB = fail)));
+    const a = saveWidgetData('notes-c', 'From A');
+    const b = saveWidgetData('notes-c', 'From B, newer');
+    finishA();
+    await a;
+    failB(new Error('QUOTA_BYTES quota exceeded'));
+    await b;
+    spy.mockRestore();
+    // A's landing didn't clear B's flag: the next load keeps B's text.
+    expect(await loadWidgetData('notes-c', asText)).toBe('From B, newer');
+  });
+
+  it('asks for a reload when Tarn was updated under this page', async () => {
+    const seen: SaveProblem[] = [];
+    const stop = watchSaveProblems(problem => seen.push(problem));
+    vi.spyOn(fakeBrowser.storage.local, 'set').mockRejectedValueOnce(
+      new Error('Extension context invalidated.'),
+    );
+    await saveWidgetData('notes-d', 'Typed');
+    stop();
+    expect(seen).toEqual(['stale']);
   });
 });

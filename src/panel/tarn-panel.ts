@@ -8,16 +8,24 @@ import {keyed} from 'lit/directives/keyed.js';
 import {browser} from 'wxt/browser';
 import {mirrorSettings} from '../app/mirror';
 import {CUSTOM_TAB_ICON_KEY} from '../app/first-paint';
-import {newWidgetSizeType, newWidgetType} from '../widgets/drag-new';
+import {readText, writeText} from '../app/web-storage';
+import {
+  newDragToken,
+  newWidgetSizeType,
+  newWidgetType,
+} from '../widgets/drag-new';
 import {answerPanelPresence} from '../app/side-panel';
 import {
+  AUTO_SCENE,
   DEFAULT_SCENE_ID,
   SCENES,
   sceneById,
   scenePreview,
   sceneTone,
+  shownSceneId,
 } from '../backdrop/scenes';
 import {loadLevel, type LoadLevel} from '../backdrop/scenes/load';
+import {forgetTooSlow} from '../backdrop/too-slow';
 import type {Scene} from '../backdrop/scenes/types';
 import type {WidgetSize} from '../layout/bands';
 import {
@@ -32,6 +40,7 @@ import {
   WEATHER_UNITS,
   WIDGET_KINDS,
   WIDGET_SIZE_OPTIONS,
+  aiModeOn,
   newWidgetId,
   type ClockStyle,
   type ClockColor,
@@ -57,6 +66,7 @@ import {
 } from '../i18n';
 import {
   autoBackups,
+  canRestore,
   createBackup,
   downloadBackup,
   restoreAutoBackup,
@@ -68,14 +78,23 @@ import {
   loadSettings,
   replaceSettings,
   resetSettings,
+  saveOnClose,
   saveSettings,
   watchSettings,
 } from '../settings/store';
+import {watchSaveProblems, type SaveProblem} from '../settings/problems';
 import {GLYPHS, type GlyphName} from '../ui/glyphs';
 import {APPEARANCES, applyAppearance, type Appearance} from '../ui/appearance';
 import {wordmark} from '../ui/wordmark';
 import {bump, picks, readRecent, writeRecent} from './recent';
-import {chordKeys, shortcutFor, shortcutList} from '../app/shortcuts';
+import {
+  chordKeys,
+  isComposing,
+  isTyping,
+  shortcutFor,
+  shortcutList,
+} from '../app/shortcuts';
+import {onRadioKey, roveRadios} from '../ui/radios';
 import {
   clockText,
   clockTime,
@@ -83,9 +102,18 @@ import {
   faceFilters,
   faceStyles,
 } from '../widgets/clock-faces';
-import {EXAMPLES, buildExample, type Example} from '../widgets/samples';
+import {
+  EXAMPLES,
+  buildExample,
+  forgetOwnWidgets,
+  ownWidgets,
+  pruneSamples,
+  rememberOwnWidgets,
+  type Example,
+} from '../widgets/samples';
 import '../widgets/tarn-code';
 import {debounce, loadWidgetData, saveWidgetData} from '../widgets/data';
+import {KINDS} from '../widgets/kinds';
 import {aiInstructions} from '../widgets/code/ai-prompt';
 import {
   BLANK_CODE,
@@ -163,6 +191,7 @@ export class TarnPanel extends LitElement {
     jsonStatus: {state: true},
     photos: {state: true},
     backups: {state: true},
+    ownWidgets: {state: true},
     googleKey: {state: true},
     colorsOpen: {state: true},
     codeOpen: {state: true},
@@ -175,22 +204,23 @@ export class TarnPanel extends LitElement {
 
   static override styles = css`
     /* Light first, with a dark twin (light-dark pairs, decided by Settings >
-       Advanced > Appearance; ui/appearance.ts). Black and white; system greys. */
+       Advanced > Appearance; ui/appearance.ts). Black and white; system greys.
+       Text reaches 4.5:1 (WCAG AA) in both: the light grey and red are
+       Apple's "Increase contrast" values (audit 2026-10-20). */
     :host {
       --bg: light-dark(#f2f2f7, #000000);
       --group: light-dark(#ffffff, #1c1c1e);
       --ink: light-dark(#000000, #ffffff);
-      --muted: light-dark(rgb(60 60 67 / 0.6), rgb(235 235 245 / 0.6));
+      --muted: light-dark(rgb(60 60 67 / 0.78), rgb(235 235 245 / 0.6));
       --hair: light-dark(rgb(60 60 67 / 0.2), rgb(84 84 88 / 0.65));
       --field: light-dark(rgb(118 118 128 / 0.12), rgb(118 118 128 / 0.24));
       --tile: light-dark(#000000, #ffffff);
       --tile-ink: light-dark(#ffffff, #000000);
       --seg-on: light-dark(#ffffff, #636366);
       --press: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.08));
-      --track: light-dark(rgb(120 120 128 / 0.22), rgb(120 120 128 / 0.32));
-      --on: light-dark(#000000, #ffffff);
-      --danger: light-dark(#ff3b30, #ff453a);
-      --knob-on: light-dark(#ffffff, #000000);
+      --danger: light-dark(#d70015, #ff453a);
+      /* Behind white text: one red dark enough in both. */
+      --danger-fill: #d70015;
       /* Row rhythm, desktop-sized like macOS System Settings. A row is
          a title line plus an optional description line; the icon's box is
          exactly that tall, so it centers on one or two lines and stays
@@ -376,6 +406,12 @@ export class TarnPanel extends LitElement {
       white-space: nowrap;
     }
 
+    /* A new page puts focus on its title, so a screen reader names the
+       page; Tab goes on from there. No ring: it isn't a control. */
+    h1:focus {
+      outline: none;
+    }
+
     .search {
       display: flex;
       align-items: center;
@@ -516,12 +552,27 @@ export class TarnPanel extends LitElement {
       fill: currentColor;
     }
 
+    /* A title that doesn't fit (a long translation) wraps rather than
+       being cut off. */
     .txt {
       flex: 1;
       min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: break-word;
+    }
+
+    /* A control on the right drops under its title, still on the right,
+       when the two don't fit on one line. */
+    .row:has(> .seg, > .key) {
+      flex-wrap: wrap;
+      row-gap: 6px;
+    }
+
+    .row:has(> .seg, > .key) > .txt {
+      flex: 1 1 auto;
+    }
+
+    .row > :is(.seg, .key) {
+      margin-left: auto;
     }
 
     .sub {
@@ -663,52 +714,6 @@ export class TarnPanel extends LitElement {
       color: var(--muted);
     }
 
-    .value.ink {
-      color: var(--ink);
-    }
-
-    .sw {
-      position: relative;
-      flex: none;
-      width: 34px;
-      height: 20px;
-      padding: 0;
-      background: var(--track);
-      border: 0;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: background-color 200ms ease;
-    }
-
-    .sw::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 16px;
-      height: 16px;
-      background: #ffffff;
-      border-radius: 50%;
-      box-shadow:
-        0 1px 3px rgb(0 0 0 / 0.18),
-        0 0 0 0.5px rgb(0 0 0 / 0.06);
-      transition: transform 250ms cubic-bezier(0.3, 1.3, 0.6, 1);
-    }
-
-    .sw[aria-checked='true'] {
-      background: var(--on);
-    }
-
-    .sw[aria-checked='true']::after {
-      background: var(--knob-on);
-      transform: translateX(14px);
-    }
-
-    .sw:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-
     .seg {
       display: inline-flex;
       flex: none;
@@ -720,7 +725,7 @@ export class TarnPanel extends LitElement {
 
     .seg button {
       min-width: 26px;
-      padding: 3px 7px;
+      padding: 3px 6.5px;
       font: 500 11.5px/16px var(--font-sans);
       color: var(--ink);
       background: none;
@@ -756,6 +761,12 @@ export class TarnPanel extends LitElement {
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px 10px;
       padding: 12px 12px 10px;
+    }
+
+    /* The choices of a card are one radio group; "Show All" stays out of
+       it but in the same grid. */
+    .choices {
+      display: contents;
     }
 
     .pick {
@@ -798,6 +809,11 @@ export class TarnPanel extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    /* The clock card's tiles are narrow: "Show All" wraps instead. */
+    .tiles .meta .label {
+      white-space: normal;
     }
 
     .gauge {
@@ -861,6 +877,11 @@ export class TarnPanel extends LitElement {
 
     .chips button:hover {
       background: var(--field);
+    }
+
+    /* Back to the user's own widgets, above the examples while one is tried. */
+    .examples-own {
+      margin-bottom: 12px;
     }
 
     .lead {
@@ -1117,22 +1138,13 @@ export class TarnPanel extends LitElement {
         'SF Mono',
         Menlo,
         monospace;
-      color: #d93025;
+      color: var(--danger);
     }
 
     .steps {
       display: grid;
       gap: 6px;
       padding-left: 18px;
-    }
-
-    .steps code,
-    .lead code {
-      font:
-        0.95em ui-monospace,
-        'SF Mono',
-        Menlo,
-        monospace;
     }
 
     /* Live scene or photo: a small glass mark in the card's corner. */
@@ -1149,7 +1161,8 @@ export class TarnPanel extends LitElement {
       letter-spacing: 0.02em;
       line-height: 14px;
       color: #fff;
-      background: rgb(0 0 0 / 0.38);
+      /* Dark enough for 4.5:1 even over a white thumbnail. */
+      background: rgb(0 0 0 / 0.54);
       backdrop-filter: blur(6px);
       pointer-events: none;
     }
@@ -1192,12 +1205,6 @@ export class TarnPanel extends LitElement {
       position: relative;
       display: grid;
       min-width: 0;
-    }
-
-    .photo .label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     .delete {
@@ -1399,11 +1406,19 @@ export class TarnPanel extends LitElement {
     }
 
     .toast button {
+      margin: -3px -6px;
+      padding: 3px 6px;
       font: 600 var(--title) var(--font-sans);
       color: inherit;
       background: none;
       border: 0;
+      border-radius: 6px;
       cursor: pointer;
+    }
+
+    /* The toast is inverted, so its ring is too. */
+    .toast button:focus-visible {
+      outline-color: var(--bg);
     }
 
     /* Reset: a quiet red row at the end of home, asking once. */
@@ -1463,9 +1478,10 @@ export class TarnPanel extends LitElement {
     .ask button.go {
       font-weight: 600;
       color: #ffffff;
-      background: var(--danger);
+      background: var(--danger-fill);
     }
 
+    a:focus-visible,
     button:focus-visible,
     input:focus-visible,
     textarea:focus-visible {
@@ -1473,15 +1489,18 @@ export class TarnPanel extends LitElement {
       outline-offset: 2px;
     }
 
+    /* A group clips its corners, so a full-width row or field draws its
+       ring inside itself. */
+    .group :is(.row, textarea):focus-visible {
+      outline-offset: -2px;
+      border-radius: 10px;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .page.forward,
       .page.backward,
       .row[data-flash] {
         animation: none;
-      }
-      .sw,
-      .sw::after {
-        transition: none;
       }
     }
 
@@ -1492,10 +1511,18 @@ export class TarnPanel extends LitElement {
   declare settings: Settings;
   /** The user's own tab icon on this computer, if any (a data URL). */
   declare customTabIcon: string | null;
-  /** Plays a wallpaper inside its card while the pointer rests on it. */
   declare page: Page;
   declare query: string;
-  declare toast: {text: string; undo?: () => void} | null;
+  /**
+   * The message at the bottom: its button (Undo unless `label` says
+   * otherwise) and whether it stays until used.
+   */
+  declare toast: {
+    text: string;
+    undo?: () => void;
+    label?: string;
+    sticky?: boolean;
+  } | null;
   /** The settings.json being edited, or null to show the live settings. */
   declare jsonDraft: string | null;
   declare jsonStatus: string;
@@ -1503,10 +1530,14 @@ export class TarnPanel extends LitElement {
   declare photos: WallpaperInfo[];
   /** Setups Tarn saved before each update, newest first (settings/backup.ts). */
   declare backups: AutoBackupInfo[];
+  /** The user's own widgets while an example is tried (widgets/samples.ts). */
+  declare ownWidgets: readonly WidgetEntry[] | null;
   /** The Google Weather API key, from storage.local (never synced). */
   declare googleKey: string;
   /** The Clock page shows the Custom color row. */
   declare colorsOpen: boolean;
+  /** The custom clock color being picked, saved once it settles. */
+  private pendingHex: string | null = null;
   private hexTimer = 0;
   /** The custom widget whose code is open in the editor, by id. */
   declare codeOpen: string | null;
@@ -1527,16 +1558,30 @@ export class TarnPanel extends LitElement {
   private photoUrls = new Map<string, string>();
 
   private unwatch: () => void = () => {};
+  private unwatchProblems: () => void = () => {};
   private direction: 'forward' | 'backward' | '' = '';
   /** A row to scroll to and highlight after the next render. */
   private flashTarget = '';
+  /**
+   * Where keyboard focus goes after the next render: back to the row that
+   * opened the page we left, a found setting, or the new page's title.
+   */
+  private focusAfter: {back?: Page; target?: string} | null = null;
+  /** Which of a page's openers (`data-opens`) was used, to return to it. */
+  private openedFrom = new Map<Page, number>();
   private toastTimer = 0;
+  /** What had focus before Undo took it, to give it back. */
+  private toastReturn: HTMLElement | null = null;
+  /** The last action came from the keyboard (not the pointer). */
+  private keyboard = false;
   private readonly version = browser.runtime.getManifest().version;
 
   constructor() {
     super();
+    // Arrow keys move through every radio group (ui/radios.ts).
+    this.addEventListener('keydown', onRadioKey);
     this.settings = DEFAULT_SETTINGS;
-    this.customTabIcon = readCustomTabIcon();
+    this.customTabIcon = readText(CUSTOM_TAB_ICON_KEY);
     this.page = 'home';
     this.query = '';
     this.toast = null;
@@ -1544,6 +1589,7 @@ export class TarnPanel extends LitElement {
     this.jsonStatus = '';
     this.photos = [];
     this.backups = [];
+    this.ownWidgets = null;
     this.googleKey = '';
     this.colorsOpen = false;
     this.codeOpen = null;
@@ -1561,15 +1607,43 @@ export class TarnPanel extends LitElement {
     answerPanelPresence();
     void loadSettings().then(s => this.onSettings(s));
     this.unwatch = watchSettings(s => this.onSettings(s));
+    this.unwatchProblems = watchSaveProblems(this.onSaveProblem);
     window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('pointerdown', this.onPointer, true);
     // Another page added or deleted a photo: its mirror key changed.
     window.addEventListener('storage', this.onStorage);
+    // Closing the side panel sends no blur: save what's still waiting.
+    window.addEventListener('pagehide', this.flushEdits);
+    document.addEventListener('visibilitychange', this.flushEdits);
     void this.loadPhotos();
     void autoBackups().then(list => (this.backups = list));
+    void ownWidgets().then(list => (this.ownWidgets = list));
+    // Untouched samples of example setups tried before.
+    void pruneSamples([]).catch(() => {});
     void getGoogleKey().then(key => (this.googleKey = key));
     void hasUnseenUpdate().then(unseen => (this.unseenUpdate = unseen));
     void storeReviewUrl().then(url => (this.reviewUrl = url));
   }
+
+  /**
+   * A change wasn't stored. Failed: say so once, and show (and mirror for
+   * first paint) what is really stored. Stale (Tarn was updated while this
+   * panel stayed open): ask for a reload, until it happens.
+   */
+  private onSaveProblem = (problem: SaveProblem) => {
+    if (problem === 'stale') {
+      clearTimeout(this.toastTimer);
+      this.toast = {
+        text: t('saving.stale'),
+        undo: () => location.reload(),
+        label: t('saving.reload'),
+        sticky: true,
+      };
+      return;
+    }
+    if (!this.toast?.sticky) this.showToast(t('saving.failed'));
+    void this.reloadSettings().catch(() => {});
+  };
 
   private onSettings(settings: Settings): void {
     this.settings = settings;
@@ -1580,14 +1654,24 @@ export class TarnPanel extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.unwatch();
+    this.unwatchProblems();
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('pointerdown', this.onPointer, true);
     window.removeEventListener('storage', this.onStorage);
+    window.removeEventListener('pagehide', this.flushEdits);
+    document.removeEventListener('visibilitychange', this.flushEdits);
     clearTimeout(this.toastTimer);
     for (const url of this.photoUrls.values()) URL.revokeObjectURL(url);
     this.photoUrls.clear();
   }
 
   override updated(): void {
+    roveRadios(this.renderRoot);
+    this.flash();
+    this.moveFocus();
+  }
+
+  private flash(): void {
     if (!this.flashTarget) return;
     const row = this.renderRoot.querySelector<HTMLElement>(
       `[data-target='${this.flashTarget}']`,
@@ -1597,6 +1681,28 @@ export class TarnPanel extends LitElement {
     row.scrollIntoView({block: 'center'});
     row.setAttribute('data-flash', '');
     setTimeout(() => row.removeAttribute('data-flash'), 1400);
+  }
+
+  /** After going to a page, focus follows (the old row is gone with it). */
+  private moveFocus(): void {
+    if (!this.focusAfter) return;
+    const {back, target} = this.focusAfter;
+    this.focusAfter = null;
+    const root = this.renderRoot;
+    let to: HTMLElement | null | undefined;
+    if (back) {
+      to = [...root.querySelectorAll<HTMLElement>(`[data-opens='${back}']`)][
+        this.openedFrom.get(back) ?? 0
+      ];
+    } else if (target) {
+      const row = root.querySelector<HTMLElement>(`[data-target='${target}']`);
+      to = row && (row.matches(FOCUSABLE) ? row : firstFocusable(row));
+    }
+    to ??= root.querySelector<HTMLElement>('.bar h1');
+    to ??= firstFocusable(root.querySelector('.page'));
+    // A found row is already scrolled to the middle; a new page starts at
+    // the top; a row we come back to scrolls into view.
+    to?.focus({preventScroll: !back});
   }
 
   override render() {
@@ -1631,7 +1737,7 @@ export class TarnPanel extends LitElement {
                     <button class="back" @click=${() => this.go(this.backTo())}>
                       ${glyph('back')}${t(PAGE_TITLES[this.backTo()])}
                     </button>
-                    <h1>${t(PAGE_TITLES[this.page])}</h1>
+                    <h1 tabindex="-1">${t(PAGE_TITLES[this.page])}</h1>
                   </div>`
             }
             ${
@@ -1654,20 +1760,22 @@ export class TarnPanel extends LitElement {
           ${body}
         </div>`,
       )}
-      ${
-        this.toast
-          ? html`<div class="toast" role="status">
-              <span>${this.toast.text}</span>
-              ${
-                this.toast.undo
-                  ? html`<button @click=${this.onUndo}>
-                      ${t('panel.undo')}
-                    </button>`
-                  : nothing
-              }
-            </div>`
-          : nothing
-      }
+      <div role="status">
+        ${
+          this.toast
+            ? html`<div class="toast">
+                <span>${this.toast.text}</span>
+                ${
+                  this.toast.undo
+                    ? html`<button @click=${this.onUndo}>
+                        ${this.toast.label ?? t('panel.undo')}
+                      </button>`
+                    : nothing
+                }
+              </div>`
+            : nothing
+        }
+      </div>
       <input
         id="import"
         type="file"
@@ -1697,7 +1805,7 @@ export class TarnPanel extends LitElement {
 
   private renderHome() {
     const {widgets} = this.settings;
-    const preview = clockPreview(this.art(this.settings.scene));
+    const preview = clockPreview(this.art(this.shownScene()));
     const scenes = this.homeScenes();
     const faces = this.homeFaces();
     // The background "Show All" tile shows a scene that isn't on home.
@@ -1705,13 +1813,19 @@ export class TarnPanel extends LitElement {
     return html`
       <section data-target="background">
         <h2>${t('panel.wallpaper')}</h2>
-        <div
-          class="scenes"
-          role="radiogroup"
-          aria-label=${t('panel.wallpaper')}
-        >
-          ${scenes.map(id => this.wallpaperButton(id))}
-          <button class="pick" @click=${() => this.go('backgrounds')}>
+        <div class="scenes">
+          <div
+            class="choices"
+            role="radiogroup"
+            aria-label=${t('panel.wallpaper')}
+          >
+            ${scenes.map(id => this.wallpaperButton(id))}
+          </div>
+          <button
+            class="pick"
+            data-opens="backgrounds"
+            @click=${() => this.go('backgrounds')}
+          >
             ${showAll(sceneArt(moreScene))}
             <span class="meta"
               ><span class="label">${t('panel.showAll')}</span></span
@@ -1722,13 +1836,15 @@ export class TarnPanel extends LitElement {
 
       <section data-target="clock">
         <h2>${t('panel.clock')}</h2>
-        <div
-          class="group tiles"
-          role="radiogroup"
-          aria-label=${t('panel.clock')}
-        >
-          ${faces.map(face => this.faceButton(face, preview))}
-          <button class="pick" @click=${() => this.go('clock')}>
+        <div class="group tiles">
+          <div class="choices" role="radiogroup" aria-label=${t('panel.clock')}>
+            ${faces.map(face => this.faceButton(face, preview))}
+          </div>
+          <button
+            class="pick"
+            data-opens="clock"
+            @click=${() => this.go('clock')}
+          >
             ${showAll(preview.art)}
             <span class="meta"
               ><span class="label">${t('panel.showAll')}</span></span
@@ -1798,7 +1914,11 @@ export class TarnPanel extends LitElement {
         <span class="links version">
           <span>${t('panel.version', {version: this.version})}</span>
           <span aria-hidden="true">·</span>
-          <button class="link" @click=${() => this.go('whatsNew')}>
+          <button
+            class="link"
+            data-opens="whatsNew"
+            @click=${() => this.go('whatsNew')}
+          >
             ${this.unseenUpdate ? html`<span class="dot"></span>` : nothing}
             ${t('panel.whatsNew')}
           </button>
@@ -1876,7 +1996,7 @@ export class TarnPanel extends LitElement {
   }
 
   private renderClock() {
-    const preview = clockPreview(this.art(this.settings.scene));
+    const preview = clockPreview(this.art(this.shownScene()));
     const query = this.query.trim().toLowerCase();
     const faces = CLOCK_STYLES.filter(face =>
       t(FACE_NAMES[face]).toLowerCase().includes(query),
@@ -1975,7 +2095,7 @@ export class TarnPanel extends LitElement {
     const query = this.query.trim().toLowerCase();
     const matches = (kind: WidgetKind, name = '') =>
       !query ||
-      [name, t(KIND_NAMES[kind]), t(KIND_NOTES[kind]), kind]
+      [name, t(KINDS[kind].nameKey), t(KINDS[kind].noteKey), kind]
         .join(' ')
         .toLowerCase()
         .includes(query);
@@ -2034,7 +2154,11 @@ export class TarnPanel extends LitElement {
         custom
           ? html`<section data-target="custom-link">
               <div class="group">
-                <button class="row" @click=${() => this.go('custom')}>
+                <button
+                  class="row"
+                  data-opens="custom"
+                  @click=${() => this.go('custom')}
+                >
                   ${icon('code')}
                   <span class="txt"
                     >${t('panel.custom')}
@@ -2055,7 +2179,7 @@ export class TarnPanel extends LitElement {
    * editor for each custom widget on the tab; the rules, short.
    */
   private renderCustom() {
-    const {scene} = this.settings;
+    const scene = this.shownScene();
     const full = this.settings.widgets.length >= MAX_WIDGETS;
     // Previews sit on a plain dark gray, easy to see on any wallpaper;
     // they keep the wallpaper's colors.
@@ -2217,15 +2341,43 @@ export class TarnPanel extends LitElement {
     `;
   }
 
-  /** Shows an example setup; Undo puts the user's widgets back. */
+  /**
+   * Shows an example setup. Undo puts back the widgets from just before;
+   * "Back to my widgets" puts back the user's own, from before the first
+   * example, even after the panel was closed.
+   */
   private async tryExample(example: Example): Promise<void> {
     const previous = this.settings.widgets;
+    this.ownWidgets ??= previous;
+    await rememberOwnWidgets(this.ownWidgets);
+    // Samples from two examples ago: nothing, not even Undo, shows them.
+    await pruneSamples([...previous, ...this.ownWidgets]).catch(() => {});
     const widgets = await buildExample(example.widgets);
     this.applyPatch({widgets});
-    this.showToast(t('panel.examples.shown', {name: t(example.name)}), () =>
-      this.applyPatch({widgets: previous}),
-    );
+    this.showToast(t('panel.examples.shown', {name: t(example.name)}), () => {
+      this.applyPatch({widgets: previous});
+      if (previous === this.ownWidgets) this.keepExample();
+    });
   }
+
+  private backToOwnWidgets = () => {
+    const own = this.ownWidgets;
+    if (!own) return;
+    const example = this.settings.widgets;
+    this.applyPatch({widgets: own});
+    this.keepExample();
+    this.showToast(t('panel.examples.backDone'), () => {
+      this.ownWidgets = own;
+      void rememberOwnWidgets(own);
+      this.applyPatch({widgets: example});
+    });
+  };
+
+  /** Forgets the user's own list: what's shown now is theirs. */
+  private keepExample = () => {
+    this.ownWidgets = null;
+    void forgetOwnWidgets();
+  };
 
   /**
    * A widget to add, as a row: drag it onto the page to place it there
@@ -2243,10 +2395,10 @@ export class TarnPanel extends LitElement {
         @dragend=${(event: DragEvent) =>
           (event.currentTarget as HTMLElement).classList.remove('dragging')}
       >
-        ${icon(KIND_GLYPHS[kind])}
+        ${icon(KINDS[kind].glyph)}
         <span class="txt"
-          >${t(KIND_NAMES[kind])}
-          <span class="sub">${t(KIND_NOTES[kind])}</span></span
+          >${t(KINDS[kind].nameKey)}
+          <span class="sub">${t(KINDS[kind].noteKey)}</span></span
         >
         <svg class="grip" viewBox="0 0 10 16" aria-hidden="true">
           <circle cx="3" cy="3" r="1.3" />
@@ -2273,9 +2425,11 @@ export class TarnPanel extends LitElement {
     // Search filters this page's sections (SEARCH_INDEX, page 'advanced').
     const query = this.query.trim().toLowerCase();
     const shown = new Set(
-      SEARCH_INDEX.filter(
-        entry => entry.page === 'advanced' && entryMatches(entry, query),
-      ).map(entry => entry.target),
+      this.searchIndex()
+        .filter(
+          entry => entry.page === 'advanced' && entryMatches(entry, query),
+        )
+        .map(entry => entry.target),
     );
     if (query && !shown.size) {
       return html`<p class="none">
@@ -2406,10 +2560,14 @@ export class TarnPanel extends LitElement {
           : nothing
       }
       ${
-        canManageRivals && !query
+        canManageRivals && show('takeover')
           ? html`<section>
               <div class="group">
-                <button class="row" @click=${this.openTakeover}>
+                <button
+                  class="row"
+                  data-target="takeover"
+                  @click=${this.openTakeover}
+                >
                   ${icon('sliders')}
                   <span class="txt">${t('popup.takeover')}</span>
                 </button>
@@ -2495,6 +2653,20 @@ export class TarnPanel extends LitElement {
         show('examples')
           ? html`<section data-target="examples">
               <h2>${t('panel.examples')}</h2>
+              ${
+                this.ownWidgets
+                  ? html`<div class="group examples-own">
+                      <button class="row" @click=${this.backToOwnWidgets}>
+                        ${icon('reset')}
+                        <span class="txt">${t('panel.examples.back')}</span>
+                      </button>
+                      <button class="row" @click=${this.keepExample}>
+                        ${icon('check')}
+                        <span class="txt">${t('panel.examples.keep')}</span>
+                      </button>
+                    </div>`
+                  : nothing
+              }
               <div class="chips">
                 ${EXAMPLES.map(
                   example =>
@@ -2517,7 +2689,11 @@ export class TarnPanel extends LitElement {
                   <span class="txt">${t('panel.about.version')}</span>
                   <span class="value">${this.version}</span>
                 </div>
-                <button class="row" @click=${() => this.go('whatsNew')}>
+                <button
+                  class="row"
+                  data-opens="whatsNew"
+                  @click=${() => this.go('whatsNew')}
+                >
                   ${icon('sparkle')}
                   <span class="txt">${t('panel.whatsNew')}</span>
                   ${
@@ -2643,10 +2819,6 @@ export class TarnPanel extends LitElement {
   }
 
   /**
-   * Weather: who to ask and in which units. Nothing is fetched until a
-   * Weather widget is added and given a place (src/weather/).
-   */
-  /**
    * The search box: shown or not, and which buttons it carries. Searches
    * always go to the browser's own engine (search/tarn-search.ts).
    */
@@ -2729,7 +2901,7 @@ export class TarnPanel extends LitElement {
                 ${onOff('panel.search.lens', 'lens', lens, value =>
                   this.setSearch({lens: value}),
                 )}
-                ${onOff('panel.search.ai', 'sparkle', ai !== 'off', value =>
+                ${onOff('panel.search.ai', 'sparkle', aiModeOn({ai}), value =>
                   this.setSearch({ai: value ? 'google' : 'off'}),
                 )}
               </div>
@@ -2744,9 +2916,16 @@ export class TarnPanel extends LitElement {
     this.applyPatch({search: {...this.settings.search, ...patch}});
   }
 
+  /**
+   * Weather: who to ask and in which units. Nothing is fetched until a
+   * Weather widget is added and given a place (src/weather/).
+   */
   private renderWeather() {
     const {provider} = this.settings.weather;
     const google = provider === 'google';
+    // The provider syncs but the key stays on each computer: without one
+    // here, Weather widgets use Open-Meteo (usableSettings).
+    const noKeyHere = google && !this.googleKey;
     return html`
       <section data-target="weather">
         <h2>${t('widget.weather')}</h2>
@@ -2791,19 +2970,30 @@ export class TarnPanel extends LitElement {
           }
         </div>
         <p class="note">
-          ${t(
-            google ? 'panel.weather.noteGoogle' : 'panel.weather.noteOpenMeteo',
-          )}
+          ${
+            google
+              ? html`${noKeyHere ? t('panel.weather.noKeyHere') : nothing}
+                ${t('panel.weather.noteGoogle')}
+                ${t('panel.weather.restrictKey')}`
+              : t('panel.weather.noteOpenMeteo')
+          }
         </p>
       </section>
     `;
+  }
+
+  /** What search can find now: Previous setups only once there are some. */
+  private searchIndex(): readonly SearchEntry[] {
+    return SEARCH_INDEX.filter(
+      entry => entry.target !== 'previous' || this.backups.length > 0,
+    );
   }
 
   private renderResults() {
     const query = this.query.trim().toLowerCase();
     // Matches the words in the current language and in English, so either
     // finds a setting.
-    const hits = SEARCH_INDEX.filter(entry => entryMatches(entry, query));
+    const hits = this.searchIndex().filter(entry => entryMatches(entry, query));
     if (!hits.length) {
       return html`<p class="none">
         ${t('panel.noSettings', {query: this.query.trim()})}
@@ -2838,7 +3028,7 @@ export class TarnPanel extends LitElement {
       <button
         class="pick"
         role="radio"
-        aria-checked=${scene.id === this.settings.scene}
+        aria-checked=${scene.id === this.shownScene()}
         @click=${() => this.selectScene(scene.id)}
       >
         <span class="thumb" style="background: ${scenePreview(scene)}"
@@ -2863,7 +3053,7 @@ export class TarnPanel extends LitElement {
         <button
           class="pick"
           role="radio"
-          aria-checked=${id === this.settings.scene}
+          aria-checked=${id === this.shownScene()}
           @click=${() => this.selectScene(id)}
         >
           <span class="thumb" style="background: ${background}"
@@ -2922,11 +3112,11 @@ export class TarnPanel extends LitElement {
   }
 
   private widgetRow(widget: WidgetEntry, index: number) {
-    const kindName = t(KIND_NAMES[widget.kind]);
+    const kindName = t(KINDS[widget.kind].nameKey);
     const name = widget.name ?? kindName;
     return html`
       <div class="row">
-        ${icon(KIND_GLYPHS[widget.kind])}
+        ${icon(KINDS[widget.kind].glyph)}
         <input
           class="name"
           .value=${name}
@@ -2950,6 +3140,7 @@ export class TarnPanel extends LitElement {
               <button
                 role="radio"
                 title=${t(SIZE_NAMES[size])}
+                aria-label=${t(SIZE_NAMES[size])}
                 aria-checked=${size === widget.size}
                 @click=${() => this.resizeWidget(index, size)}
               >
@@ -2983,6 +3174,7 @@ export class TarnPanel extends LitElement {
       <button
         class="row"
         data-target=${target || nothing}
+        data-opens=${page}
         @click=${() => this.go(page)}
       >
         ${icon(glyphName)}
@@ -3004,6 +3196,16 @@ export class TarnPanel extends LitElement {
     this.direction =
       page === 'home' || page === this.backTo() ? 'backward' : 'forward';
     if (page === this.page) this.direction = '';
+    const back = this.direction === 'backward' && !target;
+    if (!back) {
+      // Remember which row opened the page, to come back to it.
+      const openers = [
+        ...this.renderRoot.querySelectorAll(`[data-opens='${page}']`),
+      ];
+      const here = this.shadowRoot?.activeElement;
+      this.openedFrom.set(page, Math.max(0, here ? openers.indexOf(here) : 0));
+    }
+    this.focusAfter = back ? {back: this.page} : {target};
     this.page = page;
     this.query = '';
     this.flashTarget = target;
@@ -3021,14 +3223,30 @@ export class TarnPanel extends LitElement {
   };
 
   private onSearchKey = (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     if (event.key === 'Escape') {
       this.query = '';
       (event.target as HTMLInputElement).blur();
     }
   };
 
-  /** Cmd/Ctrl+K, or / when not typing, puts the cursor in search. */
+  /**
+   * Cmd/Ctrl+K, or / when not typing, puts the cursor in search. Cmd/Ctrl+Z
+   * outside a text field runs the toast's Undo.
+   */
   private onKeyDown = (event: KeyboardEvent) => {
+    this.keyboard = true;
+    if (
+      (event.metaKey || event.ctrlKey) &&
+      !event.shiftKey &&
+      event.code === 'KeyZ' &&
+      this.toast?.undo &&
+      !isTyping(event)
+    ) {
+      event.preventDefault();
+      this.onUndo();
+      return;
+    }
     const shortcut = shortcutFor(event);
     if (shortcut?.kind !== 'search') return;
     const active = this.shadowRoot?.activeElement;
@@ -3051,7 +3269,7 @@ export class TarnPanel extends LitElement {
       size: DEFAULT_WIDGET_SIZE[kind],
     };
     this.applyPatch({widgets: [...this.settings.widgets, widget]});
-    this.showToast(t('panel.widgets.added', {name: t(KIND_NAMES[kind])}));
+    this.showToast(t('panel.widgets.added', {name: t(KINDS[kind].nameKey)}));
   }
 
   /** A custom widget from an example: its code first, then the widget. */
@@ -3077,7 +3295,11 @@ export class TarnPanel extends LitElement {
     (event.currentTarget as HTMLElement).classList.add('dragging');
     event.dataTransfer.setData(
       newWidgetType('code'),
-      JSON.stringify({code: example.code, name: t(example.name)}),
+      JSON.stringify({
+        code: example.code,
+        name: t(example.name),
+        token: newDragToken(),
+      }),
     );
     event.dataTransfer.setData(newWidgetSizeType(example.size), example.size);
     event.dataTransfer.effectAllowed = 'copy';
@@ -3130,7 +3352,7 @@ export class TarnPanel extends LitElement {
   private dragWidget(kind: WidgetKind, event: DragEvent): void {
     if (!event.dataTransfer) return;
     (event.currentTarget as HTMLElement).classList.add('dragging');
-    event.dataTransfer.setData(newWidgetType(kind), kind);
+    event.dataTransfer.setData(newWidgetType(kind), newDragToken());
     event.dataTransfer.effectAllowed = 'copy';
   }
 
@@ -3142,7 +3364,7 @@ export class TarnPanel extends LitElement {
     });
     this.showToast(
       t('panel.widgets.removed', {
-        name: removed.name ?? t(KIND_NAMES[removed.kind]),
+        name: removed.name ?? t(KINDS[removed.kind].nameKey),
       }),
       () => {
         const widgets = [...this.settings.widgets];
@@ -3154,6 +3376,7 @@ export class TarnPanel extends LitElement {
 
   /** Enter saves (by leaving the field); Escape puts the name back. */
   private onNameKey = (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     const input = event.target as HTMLInputElement;
     if (event.key === 'Enter') input.blur();
     if (event.key === 'Escape') {
@@ -3169,7 +3392,7 @@ export class TarnPanel extends LitElement {
       widgets: this.settings.widgets.map((w, i) => {
         if (i !== index) return w;
         const {id, kind, size} = w;
-        return name && name !== t(KIND_NAMES[kind])
+        return name && name !== t(KINDS[kind].nameKey)
           ? {id, kind, size, name}
           : {id, kind, size};
       }),
@@ -3205,9 +3428,7 @@ export class TarnPanel extends LitElement {
       this.showToast(t('panel.tab.badImage'));
       return;
     }
-    try {
-      localStorage.setItem(CUSTOM_TAB_ICON_KEY, icon);
-    } catch {
+    if (!writeText(CUSTOM_TAB_ICON_KEY, icon)) {
       this.showToast(t('panel.tab.badImage'));
       return;
     }
@@ -3235,6 +3456,11 @@ export class TarnPanel extends LitElement {
   }
 
   /** How any wallpaper looks as a thumbnail: its picture and its tone. */
+  /** The wallpaper on screen: the setting, with `auto` resolved. */
+  private shownScene(): string {
+    return shownSceneId(this.settings.scene, this.settings.appearance);
+  }
+
   private art(id: string): Art {
     if (!isPhotoId(id)) return sceneArt(sceneById(id));
     const photo = this.photos.find(p => p.id === id);
@@ -3310,7 +3536,8 @@ export class TarnPanel extends LitElement {
   private async deletePhoto(id: string): Promise<void> {
     const wasCurrent = this.settings.scene === id;
     const record = await deleteWallpaper(id);
-    if (wasCurrent) this.selectScene(DEFAULT_SCENE_ID);
+    // Back to the default, which follows light and dark.
+    if (wasCurrent) this.selectScene(AUTO_SCENE);
     await this.loadPhotos();
     if (!record) return;
     this.showToast(t('panel.photoDeleted', {name: record.info.name}), () => {
@@ -3331,7 +3558,7 @@ export class TarnPanel extends LitElement {
       readRecent('scenes'),
       SCENES.map(s => s.id),
       HOME_SCENES,
-      this.settings.scene,
+      this.shownScene(),
       exists,
     );
   }
@@ -3354,12 +3581,20 @@ export class TarnPanel extends LitElement {
   private onClockHex = (event: Event) => {
     const clockHex = (event.target as HTMLInputElement).value;
     this.settings = {...this.settings, clockColor: 'custom', clockHex};
+    this.pendingHex = clockHex;
     clearTimeout(this.hexTimer);
-    this.hexTimer = window.setTimeout(
-      () => this.applyPatch({clockColor: 'custom', clockHex}),
-      350,
-    );
+    this.hexTimer = window.setTimeout(() => this.saveHex(), 350);
   };
+
+  private saveHex(closing = false): void {
+    clearTimeout(this.hexTimer);
+    const clockHex = this.pendingHex;
+    this.pendingHex = null;
+    if (clockHex === null) return;
+    const patch = {clockColor: 'custom', clockHex} as const;
+    if (closing) saveOnClose(patch);
+    else this.applyPatch(patch);
+  }
 
   private selectFace(face: ClockStyle): void {
     if (face !== 'none') {
@@ -3370,6 +3605,9 @@ export class TarnPanel extends LitElement {
   }
 
   private selectScene(id: string): void {
+    // Picked again after this computer couldn't keep up with it: open tabs
+    // and the next new tab try it live (too-slow.ts).
+    forgetTooSlow(id);
     writeRecent('scenes', bump(this.homeScenes(), readRecent('scenes'), id));
     this.settings = {...this.settings, scene: id};
     // Mirror for first paint too, so the next new tab opens on it directly.
@@ -3392,7 +3630,15 @@ export class TarnPanel extends LitElement {
     previous: Promise<TarnBackup | null>,
     text: string,
   ): Promise<void> {
-    const before = await previous;
+    let before: TarnBackup | null;
+    try {
+      before = await previous;
+    } catch (error) {
+      // Storage refused it (an old panel after an update says so itself).
+      console.warn('[tarn] restore failed:', error);
+      if (!this.toast?.sticky) this.showToast(t('saving.failed'));
+      return;
+    }
     await this.reloadSettings();
     if (!before) return;
     this.showToast(text, () => {
@@ -3425,6 +3671,10 @@ export class TarnPanel extends LitElement {
     try {
       raw = JSON.parse(await file.text());
     } catch {
+      raw = null;
+    }
+    // Some other JSON file must not replace the setup.
+    if (!canRestore(raw)) {
       this.showToast(t('panel.backup.notBackup'));
       return;
     }
@@ -3527,7 +3777,10 @@ export class TarnPanel extends LitElement {
     }
     this.jsonDraft = null;
     this.jsonStatus = t('panel.json.applied');
-    void replaceSettings(raw).then(() => this.reloadSettings());
+    void replaceSettings(raw).then(
+      () => this.reloadSettings(),
+      () => (this.jsonStatus = t('saving.failed')),
+    );
   };
 
   private copyDiagnostics = async () => {
@@ -3544,16 +3797,86 @@ export class TarnPanel extends LitElement {
     }
   };
 
+  private onPointer = () => {
+    this.keyboard = false;
+  };
+
+  /**
+   * A short note at the bottom, read out by screen readers (the status
+   * region is always there, so its new text is announced). With Undo it
+   * stays longer, and while the pointer or focus is on it; after a
+   * keyboard action focus moves to Undo, so it is one key away.
+   */
   private showToast(text: string, undo?: () => void): void {
+    // An old panel's request to reload stays until it's done.
+    if (this.toast?.sticky) return;
     this.toast = {text, undo};
+    this.timeToast(undo ? TOAST_UNDO_MS : TOAST_MS);
+    if (!undo || !this.keyboard) return;
+    const active = this.shadowRoot?.activeElement;
+    this.toastReturn = active instanceof HTMLElement ? active : null;
+    void this.updateComplete.then(() =>
+      this.renderRoot.querySelector<HTMLElement>('.toast button')?.focus(),
+    );
+  }
+
+  private timeToast(ms: number): void {
     clearTimeout(this.toastTimer);
-    this.toastTimer = window.setTimeout(() => (this.toast = null), 4000);
+    this.toastTimer = window.setTimeout(() => {
+      const toast = this.renderRoot.querySelector('.toast');
+      if (toast?.matches(':hover, :focus-within')) this.timeToast(2000);
+      else this.closeToast();
+    }, ms);
+  }
+
+  private closeToast(): void {
+    clearTimeout(this.toastTimer);
+    const focused = this.renderRoot
+      .querySelector('.toast')
+      ?.matches(':focus-within');
+    this.toast = null;
+    const back = this.toastReturn;
+    this.toastReturn = null;
+    if (!focused) return;
+    // Focus goes back where it was, or to the page when that row is gone.
+    const to = back?.isConnected
+      ? back
+      : (this.renderRoot.querySelector<HTMLElement>('.bar h1') ??
+        firstFocusable(this.renderRoot.querySelector('.page')));
+    to?.focus();
   }
 
   private onUndo = () => {
-    this.toast?.undo?.();
-    this.toast = null;
+    const undo = this.toast?.undo;
+    // Back to where focus was first, then undo (which may re-render it).
+    this.closeToast();
+    undo?.();
   };
+
+  /**
+   * The panel is going away (closing sends no blur): the saves still
+   * waiting on a pause in typing run now. Code is mirrored at once
+   * (widgets/data.ts); the clock color goes through the background.
+   */
+  private flushEdits = () => {
+    if (document.visibilityState === 'visible') return;
+    this.saveCode.flush();
+    this.saveHex(true);
+  };
+}
+
+/** How long a toast stays; longer when it offers Undo. */
+const TOAST_MS = 4000;
+const TOAST_UNDO_MS = 8000;
+
+/** What can take keyboard focus (a radio out of its group's turn can't). */
+const FOCUSABLE =
+  'button, a[href], input:not([type=hidden]), textarea, select, [tabindex]';
+
+function firstFocusable(within: Element | null): HTMLElement | undefined {
+  return [...(within?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].find(
+    el => el.tabIndex >= 0 && !el.hidden,
+  );
 }
 
 const glyph = (name: GlyphName) =>
@@ -3608,14 +3931,6 @@ function tabIconName(value: TabIcon): string {
   if (value === 'custom') return t('panel.tab.custom');
   const short = BROWSER.replace(/^(Google|Microsoft) /, '').replace('™', '');
   return short || t('panel.tab.browser');
-}
-
-function readCustomTabIcon(): string | null {
-  try {
-    return localStorage.getItem(CUSTOM_TAB_ICON_KEY);
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -3815,41 +4130,11 @@ const SCOPED_SEARCH: Partial<Record<Page, MessageKey>> = {
   advanced: 'panel.searchAdvanced',
 };
 
-const KIND_NAMES: Record<WidgetKind, MessageKey> = {
-  favorites: 'widget.favorites',
-  notes: 'widget.notes',
-  tasks: 'widget.tasks',
-  weather: 'widget.weather',
-  focus: 'widget.focus',
-  calendar: 'widget.calendar',
-  code: 'widget.code',
-};
-
-const KIND_NOTES: Record<WidgetKind, MessageKey> = {
-  favorites: 'panel.widgetAbout.favorites',
-  notes: 'panel.widgetAbout.notes',
-  tasks: 'panel.widgetAbout.tasks',
-  weather: 'panel.widgetAbout.weather',
-  focus: 'panel.widgetAbout.focus',
-  calendar: 'panel.widgetAbout.calendar',
-  code: 'panel.widgetAbout.code',
-};
-
 const PHOTO_ERRORS: Record<WallpaperErrorCode, MessageKey> = {
   notImage: 'panel.photoNotImage',
   tooLarge: 'panel.photoTooLarge',
   cantOpen: 'panel.photoCantOpen',
   cantProcess: 'panel.photoCantAdd',
-};
-
-const KIND_GLYPHS: Record<WidgetKind, GlyphName> = {
-  favorites: 'bookmark',
-  notes: 'note',
-  tasks: 'checklist',
-  weather: 'weather',
-  focus: 'timer',
-  calendar: 'calendar',
-  code: 'code',
 };
 
 const CLOCK_COLOR_NAMES: Record<ClockColor, MessageKey> = {
@@ -3875,8 +4160,7 @@ const PROVIDER_NAMES: Record<WeatherProvider, string> = {
 };
 
 /** Symbols, the same in every language; Auto is translated where shown. */
-const UNIT_NAMES: Record<WeatherUnits, string> = {
-  auto: 'Auto',
+const UNIT_NAMES: Record<Exclude<WeatherUnits, 'auto'>, string> = {
   celsius: '°C',
   fahrenheit: '°F',
 };
@@ -3927,7 +4211,16 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     target: 'clock',
     glyph: 'clock',
     words:
-      'time date face color colour light dark white black classic glass bold rounded minimal serif stacked outline pixel 8-bit retro flip lcd digital neon gothic fraktur gotisch analog dial hide',
+      'time date face classic glass bold rounded minimal serif stacked outline pixel 8-bit retro flip lcd digital neon gothic fraktur gotisch analog dial hide',
+  },
+  {
+    label: 'panel.clockColor',
+    where: 'panel.page.clock',
+    page: 'clock',
+    target: 'clock-color',
+    glyph: 'contrast',
+    words: 'clock time color colour light dark white black custom hex ink',
+    also: ['panel.clockColor.custom'],
   },
   {
     label: 'panel.page.widgets',
@@ -4013,6 +4306,19 @@ const SEARCH_INDEX: readonly SearchEntry[] = [
     words: 'keyboard keys shortcuts hotkeys slash',
     also: ['panel.keys', 'panel.searchSettings'],
   },
+  ...(canManageRivals
+    ? ([
+        {
+          label: 'popup.takeover',
+          where: 'panel.page.advanced',
+          page: 'advanced',
+          target: 'takeover',
+          glyph: 'sliders',
+          words:
+            'switch off other new tab extensions takeover replace disable conflict',
+        },
+      ] satisfies SearchEntry[])
+    : []),
   {
     label: 'panel.examples',
     where: 'panel.page.advanced',

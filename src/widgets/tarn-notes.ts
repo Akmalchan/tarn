@@ -11,6 +11,7 @@ import {
   saveWidgetData,
   watchWidgetData,
 } from './data';
+import {mergeText, shiftCaret} from './merge';
 import {widgetStyles} from './styles';
 import {LocaleController, t} from '../i18n';
 
@@ -63,8 +64,11 @@ export class TarnNotes extends LitElement {
   /** The widget's name: the user's, or the default. */
   declare heading: string;
   declare text: string;
+  /** The text as last loaded or saved here: what typing started from. */
+  private base = '';
   private unwatch: () => void = () => {};
   private save = debounce((text: string) => {
+    this.base = text;
     void saveWidgetData(this.widgetId, text);
   }, 400);
 
@@ -79,15 +83,40 @@ export class TarnNotes extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.text = peekWidgetData(this.widgetId, normalize);
-    void loadWidgetData(this.widgetId, normalize).then(t => (this.text = t));
-    this.unwatch = watchWidgetData(this.widgetId, normalize, text => {
-      // Another tab edited it; don't fight the user typing here.
-      if (this.shadowRoot?.activeElement?.tagName !== 'TEXTAREA') {
-        this.text = text;
-      }
-    });
+    this.text = this.base = peekWidgetData(this.widgetId, normalize);
+    void loadWidgetData(this.widgetId, normalize).then(text =>
+      this.adopt(text),
+    );
+    this.unwatch = watchWidgetData(this.widgetId, normalize, text =>
+      this.adopt(text),
+    );
     window.addEventListener('pagehide', this.save.flush);
+  }
+
+  /**
+   * Another tab's text (or what's stored). With nothing typed here since
+   * the last save, it simply shows, even with the cursor in the note (it
+   * stays there after switching tabs); typing not yet saved is merged
+   * with it, never dropped. The caret keeps its place in the text.
+   */
+  private async adopt(stored: string): Promise<void> {
+    const before = this.text;
+    const next = mergeText(this.base, before, stored);
+    this.base = stored;
+    if (next !== stored) this.save(next);
+    if (next === before) return;
+    const field = this.renderRoot.querySelector('textarea');
+    const focused = field !== null && this.shadowRoot?.activeElement === field;
+    const [start, end] = focused
+      ? [field.selectionStart, field.selectionEnd]
+      : [0, 0];
+    this.text = next;
+    if (!focused) return;
+    await this.updateComplete;
+    field.setSelectionRange(
+      shiftCaret(before, next, start),
+      shiftCaret(before, next, end),
+    );
   }
 
   override disconnectedCallback(): void {

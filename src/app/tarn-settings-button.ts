@@ -6,6 +6,7 @@
 import {LitElement, css, html, nothing, svg} from 'lit';
 import {browser} from 'wxt/browser';
 import {finishTip, takeTip} from './first-run';
+import {isComposing, keyName} from './shortcuts';
 import {openSidePanel, prepareSidePanel, watchSidePanel} from './side-panel';
 import {LocaleController, t, type MessageKey} from '../i18n';
 import {surfacesDark} from '../ui/appearance';
@@ -56,9 +57,14 @@ async function guidePages(): Promise<GuidePage[]> {
 }
 
 /** The keys that keep Chrome's bookmarks bar shown, for this computer. */
-function bookmarkKeys(): string {
-  const mac = /Mac/i.test(navigator.platform || navigator.userAgent);
-  return mac ? '⌘ ⇧ B' : 'Ctrl + Shift + B';
+function bookmarkKeys(): string[] {
+  return [keyName('command'), keyName('shift'), 'B'];
+}
+
+/** The same keys in a sentence: "⌘ ⇧ B", or "Ctrl + Shift + B". */
+function bookmarkKeysText(): string {
+  const keys = bookmarkKeys();
+  return keys.join(keys[0] === '⌘' ? ' ' : ' + ');
 }
 
 /** The macOS-style pointer drawn over the pictures. */
@@ -90,9 +96,14 @@ function guideShot(page: GuidePage) {
     }
     ${
       page === 'footer'
-        ? html`<div class="menu">
-              <b>${t('tip.art.hideFooter')}</b><i class="short"></i>
-            </div>
+        ? html`<img
+              class="piece panel-piece"
+              src="/guide/footer-panel-${surfacesDark() ? 'dark' : 'light'}.webp"
+              alt=""
+            />
+            <span class="ring"></span>
+            <span class="step one">1</span>
+            <span class="step two">2</span>
             ${POINTER}`
         : nothing
     }
@@ -108,10 +119,7 @@ function guideShot(page: GuidePage) {
     ${
       page === 'bookmarks'
         ? html`<div class="keys">
-            ${bookmarkKeys()
-              .split(' ')
-              .filter(k => k !== '+')
-              .map(k => html`<kbd>${k}</kbd>`)}
+            ${bookmarkKeys().map(k => html`<kbd>${k}</kbd>`)}
           </div>`
         : nothing
     }
@@ -263,8 +271,7 @@ export class TarnSettingsButton extends LitElement {
         transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .card h2,
-    .card p,
+    .card .words,
     .card .actions {
       margin-left: 6px;
       margin-right: 6px;
@@ -322,10 +329,57 @@ export class TarnSettingsButton extends LitElement {
       width: 196px;
     }
 
+    /* Customize Chrome in the footer (1), then the panel's switch (2). */
     .shot[data-page='footer'] .piece {
-      left: -10px;
-      bottom: 18px;
-      width: 288px;
+      left: -28px;
+      bottom: 22px;
+      width: 300px;
+    }
+
+    .shot[data-page='footer'] .panel-piece {
+      top: 18px;
+      right: 10px;
+      bottom: auto;
+      left: auto;
+      width: 190px;
+    }
+
+    .shot .ring {
+      position: absolute;
+      top: 43px;
+      left: 236px;
+      width: 22px;
+      height: 14px;
+      border: 2px solid #8ab4f8;
+      border-radius: 10px;
+    }
+
+    .shot .step {
+      position: absolute;
+      display: grid;
+      width: 18px;
+      height: 18px;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--menu);
+      background: var(--menu-ink);
+      font:
+        600 11px/1 system-ui,
+        sans-serif;
+    }
+
+    .shot .step.one {
+      left: 152px;
+      bottom: 27px;
+    }
+
+    .shot .step.two {
+      top: 30px;
+      left: 50px;
+    }
+
+    .shot:not([data-page='footer']) :is(.ring, .step) {
+      display: none;
     }
 
     .shot[data-page='pin'] .piece {
@@ -380,12 +434,6 @@ export class TarnSettingsButton extends LitElement {
       white-space: nowrap;
     }
 
-    .shot[data-page='footer'] .menu {
-      left: 50%;
-      bottom: 62px;
-      transform: translateX(-30%);
-    }
-
     .shot[data-page='pin'] .menu {
       top: 58px;
       left: 52px;
@@ -406,8 +454,8 @@ export class TarnSettingsButton extends LitElement {
     }
 
     .shot[data-page='footer'] .pointer {
-      left: 178px;
-      bottom: 70px;
+      left: 226px;
+      bottom: 16px;
     }
 
     .shot[data-page='pin'] .pointer {
@@ -502,9 +550,22 @@ export class TarnSettingsButton extends LitElement {
       font-weight: 600;
     }
 
-    /* Three lines tall on every page, so Back and Next stay put. */
+    /* Every page's words sit in the same cell, the others hidden, so the
+       card is as tall as its longest page in this language and Back and
+       Next stay put. */
+    .words {
+      display: grid;
+    }
+
+    .words > div {
+      grid-area: 1 / 1;
+    }
+
+    .words > div:not(.on) {
+      visibility: hidden;
+    }
+
     p {
-      min-height: 4.35em;
       margin: 0;
       font-size: 13px;
       line-height: 1.45;
@@ -638,7 +699,22 @@ export class TarnSettingsButton extends LitElement {
     setTimeout(() => (this.tip = undefined), TIP_OUT_MS);
   }
 
+  /**
+   * Arrow keys and Escape step through the guide only when they come to
+   * it: from its own buttons, or with nothing focused. A key typed into
+   * the search box (or any control) stays that control's.
+   */
   private onKey = (event: KeyboardEvent) => {
+    if (event.defaultPrevented || isComposing(event)) return;
+    const path = event.composedPath();
+    const card = this.renderRoot.querySelector('.card');
+    const target = path[0];
+    const toPage =
+      target === document.body ||
+      target === document.documentElement ||
+      target === document ||
+      target === window;
+    if (!toPage && !(card && path.includes(card))) return;
     if (event.key === 'Escape') this.endTip();
     else if (event.key === 'ArrowRight') this.next();
     else if (event.key === 'ArrowLeft') this.back();
@@ -673,7 +749,6 @@ export class TarnSettingsButton extends LitElement {
   private renderTip() {
     const page = this.pages[this.step] ?? 'settings';
     const last = this.step === this.pages.length - 1;
-    const text = GUIDE_TEXT[page];
     return html`
       ${page === 'settings' ? html`<span class="ring"></span>` : nothing}
       <aside
@@ -683,8 +758,17 @@ export class TarnSettingsButton extends LitElement {
         aria-live="polite"
       >
         ${guideShot(page)}
-        <h2 id="tip-title">${t(text.title)}</h2>
-        <p>${t(text.body, {keys: bookmarkKeys()})}</p>
+        <div class="words">
+          ${this.pages.map((each, i) => {
+            const words = GUIDE_TEXT[each];
+            return html`<div class=${i === this.step ? 'on' : ''}>
+              <h2 id=${i === this.step ? 'tip-title' : nothing}>
+                ${t(words.title)}
+              </h2>
+              <p>${t(words.body, {keys: bookmarkKeysText()})}</p>
+            </div>`;
+          })}
+        </div>
         <div class="actions">
           ${
             this.step === 0

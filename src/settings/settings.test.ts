@@ -9,9 +9,16 @@ import {
   CLOCK_STYLES,
   DEFAULT_SETTINGS,
   START_WIDGETS,
+  aiModeOn,
   normalizeSettings,
 } from './schema';
-import {loadSettings, saveSettings, watchSettings} from './store';
+import {
+  SAVE_MESSAGE,
+  closingPatch,
+  loadSettings,
+  saveSettings,
+  watchSettings,
+} from './store';
 
 describe('normalizeSettings', () => {
   it.each([undefined, null, 42, 'x', [], {scene: 7}, {scene: 'unknown'}])(
@@ -174,6 +181,20 @@ describe('normalizeSettings', () => {
     }));
     expect(normalizeSettings({widgets}).widgets).toHaveLength(24);
   });
+
+  it('offers AI Mode only for Google, not for values kept for later', () => {
+    const ai = (value: string) =>
+      aiModeOn(normalizeSettings({search: {ai: value}}).search);
+    expect(ai('google')).toBe(true);
+    expect(ai('off')).toBe(false);
+    // Kept (a newer Tarn may offer them), but never sent anywhere here.
+    expect(normalizeSettings({search: {ai: 'chatgpt'}}).search.ai).toBe(
+      'chatgpt',
+    );
+    for (const later of ['chatgpt', 'claude', 'perplexity']) {
+      expect(ai(later), later).toBe(false);
+    }
+  });
 });
 
 describe('settings store', () => {
@@ -220,5 +241,30 @@ describe('concurrent saves', () => {
       scene: 'ember',
       tabIcon: 'none',
     });
+  });
+});
+
+describe('closingPatch', () => {
+  it('keeps the settings a closing page asked to save', () => {
+    const patch = {clockColor: 'custom', clockHex: '#ff8800'};
+    expect(closingPatch({type: SAVE_MESSAGE, patch})).toEqual(patch);
+  });
+
+  it('drops what this version does not know, and never turns Tarn off', () => {
+    expect(
+      closingPatch({
+        type: SAVE_MESSAGE,
+        patch: {enabled: false, nonsense: 1, clockHex: '#000000'},
+      }),
+    ).toEqual({clockHex: '#000000'});
+    expect(
+      closingPatch({type: SAVE_MESSAGE, patch: {enabled: false}}),
+    ).toBeNull();
+  });
+
+  it('ignores other messages', () => {
+    expect(closingPatch({type: 'tarn:warm'})).toBeNull();
+    expect(closingPatch({type: SAVE_MESSAGE, patch: 'x'})).toBeNull();
+    expect(closingPatch(null)).toBeNull();
   });
 });

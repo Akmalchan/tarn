@@ -5,6 +5,7 @@
 
 import {decidePace, nextPaceCheckMs} from '../../backdrop/pace';
 import type {Scene} from '../../backdrop/scenes/types';
+import {hexToRgb} from '../../ui/color';
 import type {
   CodeRenderer,
   StageCommand,
@@ -17,7 +18,8 @@ import type {
  * The page's side of custom widgets: one renderer for every tile (a worker
  * in production), fed the page's state: visibility, reduced motion, the
  * pace (calm after a minute without input, like the scene) and the
- * current wallpaper's colors. Nothing exists until the first custom tile.
+ * current wallpaper's colors. Nothing exists until the first custom tile,
+ * and it all goes again shortly after the last one.
  */
 
 export interface TileListener {
@@ -26,6 +28,8 @@ export interface TileListener {
 }
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+/** With no custom tile left this long, the stage and its worker go. */
+const END_MS = 2000;
 
 /** The wallpaper's look, kept even before any tile exists. */
 let look: StageCommand = {
@@ -51,6 +55,7 @@ export function codeStage(): Stage {
 }
 
 let nextId = 0;
+const INPUTS = ['pointermove', 'pointerdown', 'keydown', 'wheel'];
 
 class Stage {
   private worker: Worker | null = null;
@@ -59,6 +64,8 @@ class Stage {
   private pace: StagePace = 'active';
   private lastInput = performance.now();
   private paceTimer = 0;
+  private endTimer = 0;
+  private readonly motion = matchMedia(REDUCED_MOTION);
 
   constructor() {
     // In dev, modules come from the WXT dev server, and Chrome kills an
@@ -78,26 +85,44 @@ class Stage {
         ({CodeRenderer}) => new CodeRenderer(event => this.receive(event)),
       );
     }
-    const motion = matchMedia(REDUCED_MOTION);
-    this.send({type: 'reduced', reduced: motion.matches});
-    motion.addEventListener('change', event =>
-      this.send({type: 'reduced', reduced: event.matches}),
-    );
+    this.send({type: 'reduced', reduced: this.motion.matches});
+    this.motion.addEventListener('change', this.onMotion);
     this.send({type: 'visible', visible: !document.hidden});
-    document.addEventListener('visibilitychange', () => {
-      this.send({type: 'visible', visible: !document.hidden});
-      if (!document.hidden) this.onInput();
-    });
-    for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel']) {
+    document.addEventListener('visibilitychange', this.onVisibility);
+    for (const type of INPUTS) {
       addEventListener(type, this.onInput, {passive: true, capture: true});
     }
     this.send(look);
     this.onInput();
   }
 
+  /** No custom tile left: the worker, its context and the listeners go. */
+  private end = () => {
+    if (this.listeners.size) return;
+    this.worker?.terminate();
+    this.worker = null;
+    this.local = null;
+    this.motion.removeEventListener('change', this.onMotion);
+    document.removeEventListener('visibilitychange', this.onVisibility);
+    for (const type of INPUTS) {
+      removeEventListener(type, this.onInput, {capture: true});
+    }
+    clearTimeout(this.paceTimer);
+    if (stage === this) stage = null;
+  };
+
+  private onMotion = (event: MediaQueryListEvent) =>
+    this.send({type: 'reduced', reduced: event.matches});
+
+  private onVisibility = () => {
+    this.send({type: 'visible', visible: !document.hidden});
+    if (!document.hidden) this.onInput();
+  };
+
   /** A tile's canvas; it is the renderer's from now on. */
   add(canvas: HTMLCanvasElement, listener: TileListener): string {
     const id = `tile-${nextId++}`;
+    clearTimeout(this.endTimer);
     this.listeners.set(id, listener);
     if (this.worker) {
       const offscreen = canvas.transferControlToOffscreen();
@@ -113,6 +138,10 @@ class Stage {
   remove(id: string): void {
     this.listeners.delete(id);
     this.send({type: 'remove', id});
+    if (!this.listeners.size) {
+      clearTimeout(this.endTimer);
+      this.endTimer = window.setTimeout(this.end, END_MS);
+    }
   }
 
   send(command: StageCommand): void {
@@ -170,12 +199,5 @@ export function standOut(rgb: number[], tone: 'light' | 'dark'): number[] {
   return rgb.map(
     channel =>
       toValue * (1 - (toSaturation * (value - channel)) / (value - low)),
-  );
-}
-
-function hexToRgb(hex: string): number[] {
-  const value = parseInt(hex.slice(1, 7), 16) || 0;
-  return [(value >> 16) & 255, (value >> 8) & 255, value & 255].map(
-    channel => channel / 255,
   );
 }

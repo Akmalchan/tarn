@@ -23,12 +23,23 @@ import {
   type WidgetEntry,
   type WidgetKind,
 } from '../settings/schema';
-import {CELL, GAP, PITCH, moveTo, nearestOrder, placeTiles} from './geometry';
+import {
+  CELL,
+  GAP,
+  PITCH,
+  keepPlace,
+  moveTo,
+  nearestOrder,
+  placeTiles,
+  stableOrder,
+} from './geometry';
+import {KINDS} from './kinds';
 import {WIDGETS, renderWidget} from './registry';
 import {LocaleController, t} from '../i18n';
+import {isComposing} from '../app/shortcuts';
 
 export {CELL, GAP} from './geometry';
-export const RADIUS = 24;
+const RADIUS = 24;
 /** Side margin the page keeps around the widgets. */
 const MARGIN = 24;
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -140,6 +151,8 @@ export class TarnBoard extends LitElement {
     :host {
       position: relative;
       display: block;
+      /* Tiles stay in their page order; focus follows the order shown. */
+      reading-flow: source-order;
       --tile-line-strong: color-mix(in srgb, var(--tile-line), white 35%);
     }
 
@@ -457,6 +470,8 @@ export class TarnBoard extends LitElement {
   /** The tile being resized from its corner, if any. */
   declare resizing: Resize | null;
   private reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  /** The tiles' order in the page, which a move leaves alone (stableOrder). */
+  private pageOrder: string[] = [];
 
   constructor() {
     super();
@@ -477,8 +492,8 @@ export class TarnBoard extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     // The column count only changes at a few window widths: listen to those
-    // instead of every resize.
-    for (let n = 3; n <= MAX_COLUMNS; n++) {
+    // instead of every resize. Five columns' width stays 4 (columnsFor).
+    for (const n of [3, 4, MAX_COLUMNS]) {
       const query = matchMedia(
         `(min-width: ${n * PITCH - GAP + 2 * MARGIN}px)`,
       );
@@ -502,6 +517,8 @@ export class TarnBoard extends LitElement {
     this.endDrag(false);
     this.endResize(false);
     this.dispatchTiles([], 0);
+    // No grid any more: the search box takes its own width again.
+    document.documentElement.style.removeProperty('--tarn-grid-width');
   }
 
   /** Reports where the tiles are now, e.g. after the page scrolls. */
@@ -540,8 +557,7 @@ export class TarnBoard extends LitElement {
   };
 
   override willUpdate(changed: PropertyValues<this>): void {
-    // A saved order arrived: the preview has done its job.
-    if (changed.has('widgets')) this.preview = null;
+    if (changed.has('widgets')) this.preview = this.rebase();
     if (changed.has('editing') && !this.editing) {
       this.endDrag(false);
       this.endResize(false);
@@ -563,11 +579,50 @@ export class TarnBoard extends LitElement {
     }
   }
 
+  /**
+   * A new list arrived. Usually it is the saved order, and the preview has
+   * done its job. A move or resize under way carries on over it (it may be
+   * a sync from another computer, or a late save): the held tile keeps its
+   * place in the new list, and is let go if the widget is gone.
+   */
+  private rebase(): WidgetEntry[] | null {
+    const resize = this.resizing;
+    if (resize) {
+      if (this.widgets.some(w => w.id === resize.id)) {
+        return this.widgets.map(w =>
+          w.id === resize.id ? {...w, size: resize.size} : w,
+        );
+      }
+      this.endResize(false);
+      return null;
+    }
+    const preview = this.preview;
+    if (!preview) return null;
+    // A widget on its way in from the panel keeps its place too.
+    const incoming = preview.find(w => w.id === INCOMING);
+    if (incoming) {
+      return keepPlace([...this.widgets, incoming], preview, INCOMING);
+    }
+    if (!this.drag?.moved) return null;
+    const next = keepPlace(this.widgets, preview, this.drag.id);
+    // Search again from wherever the pointer is now.
+    if (next) this.drag.searchedX = Infinity;
+    else this.endDrag(false);
+    return next;
+  }
+
   /** The first widget of a kind on the board, by its element name. */
   widget<K extends keyof HTMLElementTagNameMap>(
     tag: K,
   ): HTMLElementTagNameMap[K] | null {
-    return this.renderRoot.querySelector(tag);
+    // In the order shown, which isn't the page's order (stableOrder).
+    for (const {id} of this.preview ?? this.widgets) {
+      const found = this.renderRoot.querySelector<HTMLElementTagNameMap[K]>(
+        `.tile[data-id="${CSS.escape(id)}"] ${tag}`,
+      );
+      if (found) return found;
+    }
+    return null;
   }
 
   override render() {
@@ -582,6 +637,16 @@ export class TarnBoard extends LitElement {
     else root.removeProperty('--tarn-grid-width');
     const byId = new Map(list.map(w => [w.id, w]));
     const count = tiles.length;
+    // Tiles keep their place in the page and show where their transform
+    // puts them; reading-order gives focus and screen readers the order
+    // shown (Chromium; elsewhere they follow the page).
+    const shown = new Map(tiles.map((tile, index) => [tile.id, index]));
+    const boxes = new Map(tiles.map(tile => [tile.id, tile]));
+    this.pageOrder = stableOrder(
+      this.pageOrder,
+      tiles.map(tile => tile.id),
+    );
+    const inPage = this.pageOrder.map(id => boxes.get(id)!);
     return html`
       ${
         this.editing && count > 1
@@ -590,10 +655,11 @@ export class TarnBoard extends LitElement {
       }
       ${this.renderSlot(tiles)}
       ${repeat(
-        tiles,
+        inPage,
         tile => tile.id,
-        (tile, index) => {
+        tile => {
           const widget = byId.get(tile.id)!;
+          const index = shown.get(tile.id)!;
           if (tile.id === INCOMING) {
             return html`<div
               class="tile incoming"
@@ -628,8 +694,8 @@ export class TarnBoard extends LitElement {
               }
               style=${
                 resized
-                  ? `width:${resized.width}px;height:${resized.height}px;transform:translate(${resized.x}px, ${resized.y}px)`
-                  : `width:${w}px;height:${h}px;transform:translate(${x}px, ${y}px)`
+                  ? `width:${resized.width}px;height:${resized.height}px;transform:translate(${resized.x}px, ${resized.y}px);reading-order:${index}`
+                  : `width:${w}px;height:${h}px;transform:translate(${x}px, ${y}px);reading-order:${index}`
               }
               @pointerdown=${this.onPointerDown}
               @keydown=${this.onTileKey}
@@ -776,6 +842,7 @@ export class TarnBoard extends LitElement {
     tile.addEventListener('pointermove', this.onPointerMove);
     tile.addEventListener('pointerup', this.onPointerUp);
     tile.addEventListener('pointercancel', this.onPointerCancel);
+    tile.addEventListener('lostpointercapture', this.onPointerUp);
     window.addEventListener('keydown', this.onDragKey);
     event.preventDefault();
   };
@@ -783,6 +850,12 @@ export class TarnBoard extends LitElement {
   private onPointerMove = (event: PointerEvent) => {
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointerId) return;
+    // Let go where this page couldn't see it (over the side panel, outside
+    // the window): no pointerup came, so the next move ends the drag.
+    if (event.buttons === 0) {
+      this.endDrag(drag.moved);
+      return;
+    }
     if (
       !drag.moved &&
       Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) <
@@ -854,17 +927,18 @@ export class TarnBoard extends LitElement {
     drag.tile.removeEventListener('pointermove', this.onPointerMove);
     drag.tile.removeEventListener('pointerup', this.onPointerUp);
     drag.tile.removeEventListener('pointercancel', this.onPointerCancel);
+    drag.tile.removeEventListener('lostpointercapture', this.onPointerUp);
     window.removeEventListener('keydown', this.onDragKey);
     if (drag.tile.hasPointerCapture(drag.pointerId)) {
       drag.tile.releasePointerCapture(drag.pointerId);
     }
     this.drag = null;
     this.draggingId = null;
-    if (!commit || !drag.moved) {
+    if (!commit || !drag.moved || !this.preview) {
       this.preview = null;
       return;
     }
-    this.commit(this.preview!, drag.id);
+    this.commit(this.preview, drag.id);
   }
 
   private onTileKey = (event: KeyboardEvent) => {
@@ -961,8 +1035,9 @@ export class TarnBoard extends LitElement {
     this.incomingAt = {x: Infinity, y: Infinity};
     if (!list || !incoming) return;
     const id = newWidgetId(incoming.kind);
-    const added: WidgetEntry = name
-      ? {...incoming, id, name}
+    const label = name?.trim().slice(0, 40);
+    const added: WidgetEntry = label
+      ? {...incoming, id, name: label}
       : {...incoming, id};
     prepare?.(id);
     const next = list.map(w => (w.id === INCOMING ? added : w));
@@ -1033,6 +1108,7 @@ export class TarnBoard extends LitElement {
     tile.addEventListener('pointermove', this.onResizeMove);
     tile.addEventListener('pointerup', this.onResizeUp);
     tile.addEventListener('pointercancel', this.onResizeCancel);
+    tile.addEventListener('lostpointercapture', this.onResizeUp);
     window.addEventListener('keydown', this.onResizeKey);
     this.toggleAttribute('resizing', true);
     event.preventDefault();
@@ -1041,6 +1117,12 @@ export class TarnBoard extends LitElement {
   private onResizeMove = (event: PointerEvent) => {
     const resize = this.resizing;
     if (!resize || event.pointerId !== resize.pointerId) return;
+    // Let go where this page couldn't see it (over the side panel, outside
+    // the window): no pointerup came, so the next move ends the resize.
+    if (event.buttons === 0) {
+      this.endResize(true);
+      return;
+    }
     const widget = this.widgets.find(w => w.id === resize.id);
     if (!widget) return;
     // The frame follows the pointer, held at the widget's smallest and
@@ -1087,6 +1169,7 @@ export class TarnBoard extends LitElement {
     tile.removeEventListener('pointermove', this.onResizeMove);
     tile.removeEventListener('pointerup', this.onResizeUp);
     tile.removeEventListener('pointercancel', this.onResizeCancel);
+    tile.removeEventListener('lostpointercapture', this.onResizeUp);
     window.removeEventListener('keydown', this.onResizeKey);
     if (tile.hasPointerCapture(pointerId))
       tile.releasePointerCapture(pointerId);
@@ -1134,7 +1217,7 @@ export class TarnBoard extends LitElement {
           autocomplete="off"
           size=${Math.max(3, name.length)}
           .value=${live(name)}
-          @keydown=${this.onNameKey}
+          @keydown=${(event: KeyboardEvent) => this.onNameKey(event, name)}
           @change=${(event: Event) => this.rename(widget.id, event)}
         />
         <button
@@ -1154,25 +1237,36 @@ export class TarnBoard extends LitElement {
     `;
   }
 
-  private onNameKey = (event: KeyboardEvent) => {
+  /** Enter saves; Escape puts the current name back (no change is sent). */
+  private onNameKey(event: KeyboardEvent, name: string): void {
+    if (isComposing(event)) return;
     const input = event.target as HTMLInputElement;
     if (event.key === 'Enter') input.blur();
     if (event.key === 'Escape') {
-      input.value = input.defaultValue;
+      input.value = name;
       input.blur();
     }
-  };
+  }
 
   /** Saves a widget's new name; an empty one goes back to the default. */
   private rename(id: string, event: Event): void {
-    const text = (event.target as HTMLInputElement).value.trim().slice(0, 40);
-    const list = this.widgets.map(w => {
-      if (w.id !== id) return w;
-      const rest: WidgetEntry = {id: w.id, kind: w.kind, size: w.size};
-      const custom = text && text !== defaultName(w);
-      return custom ? {...rest, name: text} : rest;
-    });
-    this.save(list);
+    const input = event.target as HTMLInputElement;
+    const text = input.value.trim().slice(0, 40);
+    const widget = this.widgets.find(w => w.id === id);
+    if (!widget) return;
+    const custom = text && text !== defaultName(widget) ? text : undefined;
+    // The same name (or into the field and out again): nothing to save.
+    if (custom === widget.name) {
+      input.value = widgetName(widget);
+      return;
+    }
+    const rest: WidgetEntry = {
+      id: widget.id,
+      kind: widget.kind,
+      size: widget.size,
+    };
+    const renamed = custom ? {...rest, name: custom} : rest;
+    this.save(this.widgets.map(w => (w.id === id ? renamed : w)));
   }
 
   /** First press asks; a second press within a few seconds removes. */
@@ -1263,8 +1357,8 @@ function widgetName(widget: WidgetEntry): string {
 
 /** A widget kind's own name, in the current language. */
 function defaultName(widget: WidgetEntry): string {
-  const definition = WIDGETS[widget.kind];
-  return definition ? t(definition.nameKey) : widget.kind;
+  const kind = KINDS[widget.kind];
+  return kind ? t(kind.nameKey) : widget.kind;
 }
 
 /**

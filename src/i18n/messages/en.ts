@@ -18,6 +18,11 @@ export const en = {
   'common.settings': 'Settings',
   'common.openSettings': 'Open settings',
 
+  // A change that couldn't be stored (settings/problems.ts)
+  'saving.failed': 'Your last change couldn’t be saved. Try again in a moment.',
+  'saving.stale': 'Tarn was updated. Reload to keep saving changes.',
+  'saving.reload': 'Reload',
+
   // First-run tip above the settings button
   'tip.title': 'Make it yours',
   'tip.body':
@@ -30,14 +35,13 @@ export const en = {
   'tip.step': 'Step {n} of {count}',
   'tip.footer.title': 'Hide Chrome’s footer',
   'tip.footer.body':
-    'Chrome adds a bar at the bottom of this page. Right-click it and choose to hide the footer.',
+    'Chrome adds a bar at the bottom of this page. Click Customize Chrome in it, then turn off the footer at the bottom of the panel.',
   'tip.pin.title': 'Unpin from the toolbar',
   'tip.pin.body':
     'Chrome pinned Tarn next to the address bar. Don’t need it there? Right-click its icon and choose Unpin.',
   'tip.bookmarks.title': 'Your bookmarks bar',
   'tip.bookmarks.body':
     'Chrome hides it on new tabs. Press {keys} to keep it on every page.',
-  'tip.art.hideFooter': 'Hide footer',
   'tip.art.unpin': 'Unpin',
 
   // Widget names, also their default headings
@@ -96,10 +100,6 @@ export const en = {
   'favorites.namePlaceholder': 'Shown under the icon',
   'favorites.address': 'Address',
   'favorites.badAddress': 'That doesn’t look like a web address.',
-  'favorites.useBookmarks': 'Use my bookmarks',
-  'favorites.useBookmarksHint': 'Copy the sites from your bookmarks bar',
-  'favorites.noBookmarks': 'Your bookmarks bar is empty',
-  'favorites.imported': 'Your bookmarks bar was added.',
   'favorites.more': 'More',
   'favorites.icon': 'Icon',
   'favorites.chooseIcon': 'Choose an image',
@@ -184,6 +184,11 @@ export const en = {
   'takeover.chooseBody':
     'The ones that look like new-tab extensions are already selected. Turning Tarn off later switches them back on.',
   'takeover.newTabTag': 'New tab',
+  'takeover.noneTitle': 'No other new tab found',
+  'takeover.noneBody':
+    'None of your extensions looks like a new tab page. If one still takes over, show all extensions and pick it.',
+  'takeover.showAll': 'Show all extensions',
+  'takeover.showNewTabs': 'Show only new tabs',
   'takeover.switchOff': 'Switch off and use Tarn',
 
   // Settings panel: shared
@@ -300,13 +305,16 @@ export const en = {
   'panel.weather.providerLabel': 'Weather provider',
   'panel.weather.apiKey': 'API Key',
   'panel.weather.pasteKey': 'Paste key',
-  'panel.weather.units': 'Units',
   'panel.weather.unitsLabel': 'Temperature units',
   'panel.weather.auto': 'Auto',
   'panel.weather.noteOpenMeteo':
     'Free, no key needed. Weather is only fetched for Weather widgets you add, about every 30 minutes while a tab is open.',
   'panel.weather.noteGoogle':
     'Requests are billed to your key’s Google Cloud project, which needs the Weather API turned on. The key stays on this computer.',
+  'panel.weather.restrictKey':
+    'In Google Cloud, restrict the key to the Weather API.',
+  'panel.weather.noKeyHere':
+    'This computer has no key yet, so weather comes from Open-Meteo.',
   'panel.weather.keySaved': 'API key saved',
   'panel.weather.keyRemoved': 'API key removed',
   'panel.keys': 'Keyboard',
@@ -352,6 +360,7 @@ export const en = {
   'panel.whatsNew': 'What’s new',
   'panel.whatsNew.unseen': 'New',
   'panel.rate': 'Rate Tarn',
+  'whatsNew.v1_0_1.fixes': 'Bug fixes and optimizations.',
   'whatsNew.v1_0_0.wallpapers':
     'Sixteen live wallpapers, each with a gauge for how much it asks of your computer.',
   'whatsNew.v1_0_0.appearance':
@@ -384,6 +393,9 @@ export const en = {
   'panel.examples.note':
     'Try a ready-made page with sample content. Undo brings your own widgets back.',
   'panel.examples.shown': '{name} shown',
+  'panel.examples.back': 'Back to my widgets',
+  'panel.examples.keep': 'Keep this setup',
+  'panel.examples.backDone': 'Your widgets are back',
   'panel.examples.bookmarks': 'Just bookmarks',
   'panel.examples.notes': 'Notes and tasks',
   'panel.examples.starter': 'Starter',
@@ -452,6 +464,13 @@ export const en = {
   'keys.help': 'Show shortcuts',
   'keys.leave': 'Leave a text field',
   'keys.or': 'or',
+  // Key names on keycaps (a Mac shows symbols instead)
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Shift',
+  'keys.esc': 'Esc',
+  // The new tab page's title, in the tab strip
+  'page.newTab': 'New Tab',
 
   // Custom widgets (the panel's Custom widgets section and the tile)
   'code.example.equalizer': 'Equalizer',

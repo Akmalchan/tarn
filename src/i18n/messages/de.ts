@@ -12,6 +12,11 @@ export const de: Catalog = {
   'common.remove': 'Entfernen',
   'common.settings': 'Einstellungen',
   'common.openSettings': 'Einstellungen öffnen',
+  'saving.failed':
+    'Deine letzte Änderung konnte nicht gesichert werden. Versuch es gleich noch einmal.',
+  'saving.stale':
+    'Tarn wurde aktualisiert. Lade neu, damit deine Änderungen wieder gesichert werden.',
+  'saving.reload': 'Neu laden',
   'tip.title': 'Ganz nach deinem Geschmack',
   'tip.body':
     'Hier findest du Hintergrundbilder, Zifferblätter und Widgets. Solange die Einstellungen offen sind, kannst du Widgets verschieben.',
@@ -23,14 +28,13 @@ export const de: Catalog = {
   'tip.step': 'Schritt {n} von {count}',
   'tip.footer.title': 'Chromes Fußzeile ausblenden',
   'tip.footer.body':
-    'Chrome fügt unten auf dieser Seite eine Leiste hinzu. Klicke sie mit der rechten Maustaste an und blende die Fußzeile aus.',
+    'Chrome fügt unten auf dieser Seite eine Leiste hinzu. Klicke darin auf „Chrome anpassen“ und schalte unten im Bereich die Fußzeile aus.',
   'tip.pin.title': 'Von der Symbolleiste lösen',
   'tip.pin.body':
     'Chrome hat Tarn neben der Adressleiste angepinnt. Brauchst du es dort nicht? Klicke mit der rechten Maustaste auf das Symbol und löse es.',
   'tip.bookmarks.title': 'Deine Lesezeichenleiste',
   'tip.bookmarks.body':
     'Chrome blendet sie in neuen Tabs aus. Drücke {keys}, damit sie auf jeder Seite bleibt.',
-  'tip.art.hideFooter': 'Fußzeile ausblenden',
   'tip.art.unpin': 'Loslösen',
   'widget.favorites': 'Lesezeichen',
   'widget.notes': 'Notizen',
@@ -76,11 +80,6 @@ export const de: Catalog = {
   'favorites.namePlaceholder': 'Steht unter dem Symbol',
   'favorites.address': 'Adresse',
   'favorites.badAddress': 'Das sieht nicht nach einer Webadresse aus.',
-  'favorites.useBookmarks': 'Meine Lesezeichen verwenden',
-  'favorites.useBookmarksHint':
-    'Die Seiten aus deiner Lesezeichenleiste übernehmen',
-  'favorites.noBookmarks': 'Deine Lesezeichenleiste ist leer',
-  'favorites.imported': 'Deine Lesezeichenleiste wurde hinzugefügt.',
   'favorites.more': 'Mehr',
   'favorites.icon': 'Symbol',
   'favorites.chooseIcon': 'Bild auswählen',
@@ -161,6 +160,11 @@ export const de: Catalog = {
   'takeover.chooseBody':
     'Erweiterungen, die nach „Neuer Tab“ aussehen, sind schon ausgewählt. Wenn du Tarn später ausschaltest, werden sie wieder eingeschaltet.',
   'takeover.newTabTag': 'Neuer Tab',
+  'takeover.noneTitle': 'Kein anderer neuer Tab gefunden',
+  'takeover.noneBody':
+    'Keine deiner Erweiterungen sieht nach einer Neuer-Tab-Seite aus. Wenn trotzdem eine übernimmt, zeig alle Erweiterungen an und wähle sie aus.',
+  'takeover.showAll': 'Alle Erweiterungen zeigen',
+  'takeover.showNewTabs': 'Nur neue Tabs zeigen',
   'takeover.switchOff': 'Ausschalten und Tarn verwenden',
   'panel.search': 'Suchen',
   'panel.searchSettings': 'Einstellungen durchsuchen',
@@ -261,13 +265,16 @@ export const de: Catalog = {
   'panel.weather.providerLabel': 'Wetteranbieter',
   'panel.weather.apiKey': 'API-Schlüssel',
   'panel.weather.pasteKey': 'Schlüssel einfügen',
-  'panel.weather.units': 'Einheiten',
   'panel.weather.unitsLabel': 'Temperatureinheit',
   'panel.weather.auto': 'Auto',
   'panel.weather.noteOpenMeteo':
     'Kostenlos, ohne Schlüssel. Wetter wird nur für deine Wetter-Widgets abgerufen, etwa alle 30 Minuten, solange ein Tab offen ist.',
   'panel.weather.noteGoogle':
     'Anfragen werden dem Google-Cloud-Projekt deines Schlüssels berechnet; dort muss die Weather API aktiviert sein. Der Schlüssel bleibt auf diesem Computer.',
+  'panel.weather.restrictKey':
+    'Beschränke den Schlüssel in Google Cloud auf die Weather API.',
+  'panel.weather.noKeyHere':
+    'Dieser Computer hat noch keinen Schlüssel, daher kommt das Wetter von Open-Meteo.',
   'panel.weather.keySaved': 'API-Schlüssel gesichert',
   'panel.weather.keyRemoved': 'API-Schlüssel entfernt',
   'panel.keys': 'Tastatur',
@@ -315,6 +322,7 @@ export const de: Catalog = {
   'panel.whatsNew': 'Neuigkeiten',
   'panel.whatsNew.unseen': 'Neu',
   'panel.rate': 'Tarn bewerten',
+  'whatsNew.v1_0_1.fixes': 'Fehlerbehebungen und Optimierungen.',
   'whatsNew.v1_0_0.wallpapers':
     'Sechzehn lebendige Hintergründe, jeder mit einer Anzeige, wie viel er deinem Computer abverlangt.',
   'whatsNew.v1_0_0.appearance':
@@ -348,6 +356,9 @@ export const de: Catalog = {
   'panel.examples.note':
     'Probier eine fertige Seite mit Beispielinhalten aus. Rückgängig holt deine Widgets zurück.',
   'panel.examples.shown': '{name} angezeigt',
+  'panel.examples.back': 'Zurück zu meinen Widgets',
+  'panel.examples.keep': 'Dieses Setup behalten',
+  'panel.examples.backDone': 'Deine Widgets sind zurück',
   'panel.examples.bookmarks': 'Nur Lesezeichen',
   'panel.examples.notes': 'Notizen und Aufgaben',
   'panel.examples.starter': 'Start',
@@ -417,6 +428,11 @@ export const de: Catalog = {
   'keys.help': 'Tastenkürzel zeigen',
   'keys.leave': 'Textfeld verlassen',
   'keys.or': 'oder',
+  'keys.ctrl': 'Strg',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Umschalt',
+  'keys.esc': 'Esc',
+  'page.newTab': 'Neuer Tab',
   'code.example.equalizer': 'Equalizer',
   'code.example.aurora': 'Polarlicht',
   'code.example.synthwave': 'Synthwave',

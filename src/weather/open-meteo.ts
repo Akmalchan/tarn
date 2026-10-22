@@ -79,9 +79,12 @@ export function parseOpenMeteo(
     }))
     .filter(h => h.time > now - 3_600_000 && Number.isFinite(h.temp))
     .slice(0, 24);
+  // Each day's time is its local midnight. Read the date at its noon: the
+  // offset is today's, and a daylight saving change later in the week
+  // moves midnight an hour, which would land on the day before.
   const days = daily.time
     .map((t, i) => ({
-      date: new Date(t * 1000 + offset).toISOString().slice(0, 10),
+      date: new Date((t + 43_200) * 1000 + offset).toISOString().slice(0, 10),
       min: daily.temperature_2m_min[i]!,
       max: daily.temperature_2m_max[i]!,
       condition: fromWmo(daily.weather_code[i]!),

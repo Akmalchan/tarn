@@ -15,15 +15,46 @@ const PERMISSION: Parameters<typeof browser.permissions.request>[0] = {
 };
 const STATE_KEY = 'takeover.v1';
 
-/** Words that new-tab extensions almost always use to describe themselves. */
-const NEW_TAB_HINT =
-  /new\s?tab|start\s?page|homepage|home page|dashboard|speed\s?dial/i;
+/**
+ * Chrome doesn't tell other extensions which one overrides the new tab
+ * (`management.ExtensionInfo` has no `chrome_url_overrides`), so Tarn goes
+ * by what an extension calls itself. Only phrases that name the page count,
+ * in English and in Tarn's languages (the browser reports names and
+ * descriptions in its own language), and not "open in a new tab", which
+ * link tools say. Broader words ("dashboard", "homepage") matched analytics
+ * and speed-test tools, so they are out.
+ */
+const NEW_TAB_HINT = new RegExp(
+  [
+    '(?<!\\bin (?:a )?)new\\s?tab',
+    'start\\s?page',
+    'speed\\s?dial',
+    '(?<!\\ben (?:una )?)nueva pestaña',
+    '(?<!\\bem (?:uma )?)nova (?:aba|guia)',
+    '(?<!\\bdans un )nouvel onglet',
+    '(?<!\\bin einem )neue[nr]?[\\s-]tab',
+    'нов\\S* вкладк(?!е)',
+    '新しいタブ(?!で)',
+    '(?<!在)新标签页',
+    '새 탭(?!에서)',
+    'yeni sekme(?!de)',
+  ].join('|'),
+  'iu',
+);
+
+/** Whether an extension's name or description says it is a new tab page. */
+export function looksLikeNewTab(name: string, description = ''): boolean {
+  return NEW_TAB_HINT.test(`${name} ${description}`);
+}
 
 export interface Rival {
   readonly id: string;
   readonly name: string;
   readonly iconUrl?: string;
-  /** Looks like it overrides the new tab page; preselected in the UI. */
+  /**
+   * Looks like it overrides the new tab page: listed and preselected. The
+   * others are only shown behind "Show all extensions", never preselected.
+   */
   readonly likelyNewTab: boolean;
 }
 
@@ -38,17 +69,26 @@ export function requestManagePermission(): Promise<boolean> {
   return browser.permissions.request(PERMISSION);
 }
 
-/** Enabled extensions other than Tarn, likely new-tab ones first. */
+/**
+ * Enabled extensions other than Tarn that the user may switch off, likely
+ * new-tab ones first.
+ */
 export async function listRivals(): Promise<Rival[]> {
   const self = browser.runtime.id;
   const all = await browser.management.getAll();
   return all
-    .filter(e => e.enabled && e.type === 'extension' && e.id !== self)
+    .filter(
+      e =>
+        e.enabled &&
+        e.type === 'extension' &&
+        e.id !== self &&
+        e.mayDisable !== false,
+    )
     .map(e => ({
       id: e.id,
       name: e.name,
       iconUrl: e.icons?.at(-1)?.url,
-      likelyNewTab: NEW_TAB_HINT.test(`${e.name} ${e.description}`),
+      likelyNewTab: looksLikeNewTab(e.name, e.description),
     }))
     .sort(
       (a, b) =>

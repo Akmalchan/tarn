@@ -5,6 +5,7 @@
 
 import {LitElement, css, html, nothing} from 'lit';
 import type {ClockStyle} from '../settings/schema';
+import {NEW_DAY, sameDay} from '../calendar/dates';
 import {clockText, clockTime, faceFilters, faceStyles} from './clock-faces';
 import {darkInk, lightInk} from '../ui/ink';
 import {LocaleController, locale} from '../i18n';
@@ -136,7 +137,9 @@ export class TarnClock extends LitElement {
   private tick = () => {
     clearTimeout(this.timer);
     this.previous = clockText(this.now);
+    const before = this.now;
     this.now = new Date();
+    if (!sameDay(before, this.now)) window.dispatchEvent(new Event(NEW_DAY));
     if (document.visibilityState !== 'visible') return;
     const untilNextMinute = 60_000 - (Date.now() % 60_000) + 20;
     this.timer = window.setTimeout(this.tick, untilNextMinute);

@@ -4,10 +4,10 @@
  */
 
 // Keeps the first-paint mirror current even when no Tarn tab is open, e.g.
-// when settings change on another synced device.
+// when settings change on another synced device. This document can't read
+// storage, so the settings come from the service worker (mirror-relay.ts).
 
 import {mirrorSettings} from '../../app/mirror';
-import {loadSettings, watchSettings} from '../../settings/store';
+import {followMirror} from '../../app/mirror-relay';
 
-void loadSettings().then(mirrorSettings);
-watchSettings(mirrorSettings);
+followMirror(mirrorSettings);

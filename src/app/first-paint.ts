@@ -24,8 +24,11 @@
 // sessionStorage (per tab, in memory, survives reload) for the ghost. Keep
 // this module dependency-free: it is bundled into the blocking script.
 
+import type {GhostFrame} from '../backdrop/renderer';
 import {fromBase64} from './codec';
-import {applyAppearance} from '../ui/appearance';
+import {applyAppearance, surfacesDark} from '../ui/appearance';
+import {AUTO_SCENE, sceneFor} from '../backdrop/scenes/ids';
+import {readText, writeText} from './web-storage';
 
 const SCENE_KEY = 'tarn.scene';
 const ENABLED_KEY = 'tarn.enabled';
@@ -96,7 +99,7 @@ export function prepareFirstPaint(): void {
     : START_COLORS.light;
   if (root.dataset.arrival === 'resume') {
     const ghost = rememberedGhost();
-    const base = ghost?.color ?? read(BASE_KEY);
+    const base = ghost?.color ?? readText(BASE_KEY);
     if (base) style.backgroundColor = base;
     if (ghost) {
       paintGhost(ghost);
@@ -106,20 +109,20 @@ export function prepareFirstPaint(): void {
       root.dataset.ghostClock = String(ghost.clock);
     }
   }
-  const tabIcon = read(TAB_ICON_KEY);
-  const custom = tabIcon === 'custom' ? read(CUSTOM_TAB_ICON_KEY) : null;
+  const tabIcon = readText(TAB_ICON_KEY);
+  const custom = tabIcon === 'custom' ? readText(CUSTOM_TAB_ICON_KEY) : null;
   if (tabIcon === 'none') {
     setFavicon(NO_ICON);
   } else if (custom) {
     setFavicon(custom);
   } else {
-    const cached = read(FAVICON_KEYS[scheme()]);
+    const cached = readText(FAVICON_KEYS[scheme()]);
     if (cached) setFavicon(cached);
   }
 }
 
 export function rememberTabIcon(icon: string): void {
-  write(TAB_ICON_KEY, icon);
+  writeText(TAB_ICON_KEY, icon);
 }
 
 /** The moment of the ghost this page painted on reload, if any. */
@@ -155,14 +158,14 @@ export interface Ghost {
 
 /** The ghost frame for the current scene in this tab, if one was saved. */
 export function rememberedGhost(): Ghost | null {
-  const raw = read(GHOST_KEY, sessionStore());
+  const raw = readText(GHOST_KEY, 'session');
   if (!raw) return null;
   try {
     const {scene, width, height, clock, color, data} = JSON.parse(raw) as {
       [key: string]: unknown;
     };
     const valid =
-      scene === rememberedScene() &&
+      scene === shownRememberedScene() &&
       isSide(width) &&
       isSide(height) &&
       typeof clock === 'number' &&
@@ -179,17 +182,9 @@ export function rememberedGhost(): Ghost | null {
   }
 }
 
-/** A ghost as captured by the renderer: pixels already base64-encoded. */
-export interface EncodedGhost {
-  readonly width: number;
-  readonly height: number;
-  readonly data: string;
-  readonly clock: number;
-  readonly color: string;
-}
-
-export function rememberGhost(scene: string, ghost: EncodedGhost): void {
-  write(GHOST_KEY, JSON.stringify({scene, ...ghost}), sessionStore());
+/** Keeps the renderer's ghost (pixels already base64) for this tab's reload. */
+export function rememberGhost(scene: string, ghost: GhostFrame): void {
+  writeText(GHOST_KEY, JSON.stringify({scene, ...ghost}), 'session');
 }
 
 /** Draws the ghost into a full-screen canvas, synchronously. */
@@ -232,30 +227,36 @@ function isSide(value: unknown): value is number {
 
 /** The scene shown last time, so the first frame is already the right one. */
 export function rememberedScene(): string | null {
-  return read(SCENE_KEY);
+  return readText(SCENE_KEY);
+}
+
+/** The remembered scene as shown: `auto` resolved for light or dark. */
+function shownRememberedScene(): string | null {
+  const scene = rememberedScene();
+  return scene === AUTO_SCENE ? sceneFor(scene, surfacesDark()) : scene;
 }
 
 export function rememberScene(id: string): void {
-  write(SCENE_KEY, id);
+  writeText(SCENE_KEY, id);
 }
 
 /** The scene's flat base color, the reload fallback when no ghost exists. */
 export function rememberBase(color: string): void {
-  write(BASE_KEY, color);
+  writeText(BASE_KEY, color);
 }
 
 /** True only if Tarn was explicitly switched off; unknown means on. */
 export function isRememberedOff(): boolean {
-  return read(ENABLED_KEY) === 'false';
+  return readText(ENABLED_KEY) === 'false';
 }
 
 export function rememberEnabled(enabled: boolean): void {
-  write(ENABLED_KEY, String(enabled));
+  writeText(ENABLED_KEY, String(enabled));
 }
 
 /** Saves the animation moment shown right now (seconds, wall time in ms). */
 export function rememberClock(clock: number, at = Date.now()): void {
-  write(CLOCK_KEY, JSON.stringify({clock, at}));
+  writeText(CLOCK_KEY, JSON.stringify({clock, at}));
 }
 
 /**
@@ -264,7 +265,7 @@ export function rememberClock(clock: number, at = Date.now()): void {
  * nothing recent was saved.
  */
 export function resumeClock(now = Date.now()): number | undefined {
-  const raw = read(CLOCK_KEY);
+  const raw = readText(CLOCK_KEY);
   if (!raw) return undefined;
   try {
     const {clock, at} = JSON.parse(raw) as {clock?: unknown; at?: unknown};
@@ -288,14 +289,14 @@ export async function refreshFavicon(icon: string): Promise<void> {
     setFavicon(NO_ICON);
     return;
   }
-  const custom = icon === 'custom' ? read(CUSTOM_TAB_ICON_KEY) : null;
+  const custom = icon === 'custom' ? readText(CUSTOM_TAB_ICON_KEY) : null;
   if (custom) {
     setFavicon(custom);
     return;
   }
   if (import.meta.env.FIREFOX) return;
   const current = scheme();
-  const cached = read(FAVICON_KEYS[current]);
+  const cached = readText(FAVICON_KEYS[current]);
   if (cached) {
     setFavicon(cached);
     return;
@@ -315,7 +316,7 @@ export async function refreshFavicon(icon: string): Promise<void> {
     const tinted = await blobToDataUrl(
       await canvas.convertToBlob({type: 'image/png'}),
     );
-    write(FAVICON_KEYS[current], tinted);
+    writeText(FAVICON_KEYS[current], tinted);
     setFavicon(tinted);
   } catch {
     // Keep whatever icon is showing.
@@ -342,29 +343,4 @@ function blobToDataUrl(blob: Blob): Promise<string> {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(blob);
   });
-}
-
-function sessionStore(): Storage | undefined {
-  try {
-    return sessionStorage;
-  } catch {
-    return undefined;
-  }
-}
-
-function read(key: string, store?: Storage): string | null {
-  try {
-    return (store ?? localStorage).getItem(key);
-  } catch {
-    // Storage can be unavailable (private mode, blocked site data). Not fatal.
-    return null;
-  }
-}
-
-function write(key: string, value: string, store?: Storage): void {
-  try {
-    (store ?? localStorage).setItem(key, value);
-  } catch {
-    // Unavailable or full; the next page just starts fresh.
-  }
 }

@@ -1,6 +1,6 @@
 # Tarn Privacy Policy
 
-_Last updated: 14 October 2026_
+_Last updated: 20 October 2026_
 
 Tarn is a free new tab page, with its source code public, for Chrome, other Chromium
 browsers and Firefox, made by [The Tarn Authors](AUTHORS). This policy
@@ -30,13 +30,21 @@ nothing, and never without you asking.
 | Automatic backups (your last 3 setups, saved before each update)         | This computer                    | No                                                                 |
 | The last weather forecast, so new tabs show it at once                   | This computer                    | No                                                                 |
 | Your Google API key, if you add one for weather                          | This computer                    | Only to Google's Weather API; never synced, never in a backup file |
+| Your own tab icon, if you pick one (Chromium)                            | This computer                    | No                                                                 |
+| Other extensions Tarn switched off for you, to turn them back on         | This computer                    | No                                                                 |
 
 Site icons for your bookmarks come from your browser's own icon cache;
 Tarn doesn't contact the sites to get them.
 
-**Removing Tarn deletes all of it.** You can also export your setup to a
-file in Settings > Advanced > Backup; that file goes only where you save
-it.
+**Removing Tarn deletes what it keeps on this computer.** Settings your
+browser synced to your account can stay there: Firefox keeps an
+extension's synced data on purpose, so a reinstall brings it back, and
+Chrome may too. To remove them, clear your synced data in your browser's
+sync settings. Extensions Tarn switched off for you stay off after Tarn
+is removed; turn them back on in your browser's extensions page.
+
+You can also export your setup to a file in Settings > Advanced > Backup;
+that file goes only where you save it.
 
 ## When something leaves your computer
 
@@ -58,13 +66,19 @@ A few details:
 - **Tarn never picks or changes your search engine.**
 - **Voice** starts only when you press the button, and your browser asks
   for the microphone the first time.
-- **Weather** asks for a forecast at most once every 30 minutes per place,
-  and only while a Tarn tab is visible. "Use my location" asks your
-  browser for your position once, with your permission, and keeps only the
-  rounded coordinates.
-- **Weather requests leave out cookies and the page they came from.** Like
-  any request on the internet, the weather service sees your IP address;
-  Tarn adds nothing that identifies you.
+- **Weather** asks for a forecast about once every 30 minutes per place,
+  and only while a Tarn tab is visible; sooner to try again after a
+  failed request, or right after you change its units or provider. "Use
+  my location" asks your browser for your position once, with your
+  permission, and keeps only the rounded coordinates.
+- **Weather requests leave out cookies.** The weather service can tell a
+  request came from Tarn (your browser names the extension that sent it)
+  and, like any request on the internet, sees your IP address; Tarn adds
+  nothing that identifies you. Your Google API key goes in a request
+  header, not in the address. In Google Cloud, restrict the key to the
+  Weather API.
+- **The Google key stays on each computer.** Choosing Google syncs, the
+  key doesn't: a computer without it gets weather from Open-Meteo.
 - **Search, Lens and AI Mode open in your tab** like any link you follow,
   so the site sees you the same way it would if you'd gone there yourself.
 - **Links** in Tarn (Privacy, Source code, Rate Tarn, Send feedback) open
@@ -94,16 +108,16 @@ requests.
 Your browser shows these when you install Tarn. Here is what each one is
 for.
 
-| Permission                      | Why Tarn needs it                                                                                                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Storage                         | Save your settings and widget content.                                                                                                                                       |
-| Side panel                      | Show settings next to your tab.                                                                                                                                              |
-| Offscreen (Chromium)            | Keep a copy of your settings ready so new tabs open instantly. Nothing leaves the browser.                                                                                   |
-| Favicon (Chromium)              | Show site icons for your bookmarks and the tab. Your browser calls this "Read the icons of the websites you visit"; Tarn only reads icons for sites you've added.            |
-| Bookmarks                       | Show your browser's bookmarks bar in a Bookmarks widget. Tarn only reads them. Your browser calls this "Read and change your bookmarks" because it has no read-only version. |
-| Search                          | Send your searches to your browser's own search engine.                                                                                                                      |
-| Management (optional, Chromium) | Asked for only if you ask Tarn to switch off another new-tab extension, and used only for that.                                                                              |
-| Geolocation (optional)          | Asked for only if you press "Use my location" in a Weather widget, and used only for that.                                                                                   |
+| Permission                      | Why Tarn needs it                                                                                                                                                                                                                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Storage                         | Save your settings and widget content.                                                                                                                                                                                                                                              |
+| Side panel (Chromium)           | Show settings next to your tab.                                                                                                                                                                                                                                                     |
+| Offscreen (Chromium)            | Keep a copy of your settings in the browser's local storage, up to date even with no Tarn tab open, so new tabs open instantly with your page. Nothing leaves the browser.                                                                                                          |
+| Favicon (Chromium)              | Show site icons for your bookmarks and the tab. Your browser calls this "Read the icons of the websites you visit"; Tarn only reads icons for sites you've added.                                                                                                                   |
+| Bookmarks                       | Show your browser's bookmarks bar in a Bookmarks widget, and suggest bookmarks as you type in the search box, on this computer. Tarn only reads them. Your browser calls this "Read and change your bookmarks" because it has no read-only version.                                 |
+| Search                          | Send your searches to your browser's own search engine.                                                                                                                                                                                                                             |
+| Management (optional, Chromium) | Asked for only if you ask Tarn to switch off another new-tab extension, and used only for that. Tarn lists the extensions that call themselves a new tab page and switches off only the ones you tick; any others stay hidden and unticked unless you choose "Show all extensions". |
+| Geolocation (optional, Firefox) | Asked for only if you press "Use my location" in a Weather widget, and used only for that. In Chrome, the browser asks the way it asks a website, at that moment.                                                                                                                   |
 
 ## Chrome Web Store disclosure
 
@@ -118,6 +132,10 @@ request, Tarn's listing discloses two kinds of data: **location** (a
 Weather widget's rounded coordinates) and **website content** (an image
 you give Google Lens). Neither reaches the Tarn Authors.
 
+In Firefox, Tarn declares the same in Firefox's own data consent, plus
+**search terms** (a question for AI Mode, and a place you search for in
+a Weather widget), which Firefox shows when you install it.
+
 ## Children
 
 Tarn is suitable for everyone and collects nothing from anyone, including
@@ -128,8 +146,8 @@ children under 13.
 If Tarn ever changes what it sends or stores, this page is updated first,
 with a new date at the top, and the change is noted in the
 [changelog](CHANGELOG.md). Any new feature that uses the internet is off
-until you turn it on. Every past version of this policy is in the
-[project history](https://github.com/Akmalchan/tarn/commits/main/PRIVACY.md).
+until you turn it on. Every version of this policy since Tarn 1.0.0 is in
+the [project history](https://github.com/Akmalchan/tarn/commits/main/PRIVACY.md).
 
 ## Contact
 

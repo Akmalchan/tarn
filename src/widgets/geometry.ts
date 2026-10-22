@@ -74,6 +74,37 @@ export function moveTo<T extends {id: string}>(
   return [...rest.slice(0, to), items[from]!, ...rest.slice(to)];
 }
 
+/**
+ * A new list arrived while `id` is held in `preview` (another computer's
+ * sync, a late save): the new list, with `id` where the preview has it.
+ * Null when `id` isn't in the new list: there is nothing left to hold.
+ */
+export function keepPlace<T extends {id: string}>(
+  items: readonly T[],
+  preview: readonly T[],
+  id: string,
+): T[] | null {
+  const index = preview.findIndex(item => item.id === id);
+  if (index < 0 || !items.some(item => item.id === id)) return null;
+  return moveTo(items, id, index);
+}
+
+/**
+ * The order tiles are kept in the page: the ones already there stay in
+ * place and new ones go at the end, so a move never takes a widget out of
+ * the page and puts it back (that runs its whole setup again). Where each
+ * tile shows is its transform.
+ */
+export function stableOrder(
+  previous: readonly string[],
+  ids: readonly string[],
+): string[] {
+  const now = new Set(ids);
+  const kept = previous.filter(id => now.has(id));
+  const known = new Set(kept);
+  return [...kept, ...ids.filter(id => !known.has(id))];
+}
+
 /** `items` with the two whose ids are `a` and `b` trading places. */
 export function swap<T extends {id: string}>(
   items: readonly T[],
@@ -143,41 +174,4 @@ export function nearestOrder<T extends LayoutItem>(
     }
   }
   return bestDistance + stickiness < distance(items) ? best : [...items];
-}
-
-/**
- * Like `nearestOrder`, but only moving the widget within the order: the
- * index it would land at. Kept for callers that only need a position.
- */
-export function nearestIndex(
-  items: readonly LayoutItem[],
-  id: string,
-  columns: number,
-  centerX: number,
-  centerY: number,
-  /** Keep the current slot unless another is closer by this much (px). */
-  stickiness = 0,
-): number {
-  const current = items.findIndex(item => item.id === id);
-  const distanceAt = (index: number) => {
-    const tile = placeTiles(moveTo(items, id, index), columns).tiles.find(
-      t => t.id === id,
-    );
-    if (!tile) return Infinity;
-    return Math.hypot(
-      tile.x + tile.width / 2 - centerX,
-      tile.y + tile.height / 2 - centerY,
-    );
-  };
-  let best = current;
-  let bestDistance = Infinity;
-  for (let index = 0; index < items.length; index++) {
-    const distance = distanceAt(index);
-    if (distance < bestDistance - 0.5) {
-      bestDistance = distance;
-      best = index;
-    }
-  }
-  if (best === current) return current;
-  return bestDistance + stickiness < distanceAt(current) ? best : current;
 }

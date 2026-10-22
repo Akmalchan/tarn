@@ -1,3 +1,6 @@
+// Copyright 2026 The Tarn Authors
+// SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
+
 // Google TypeScript Style (gts) rules, configured directly.
 import js from '@eslint/js';
 import {defineConfig} from 'eslint/config';

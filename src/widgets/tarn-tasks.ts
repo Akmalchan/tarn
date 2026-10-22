@@ -12,8 +12,10 @@ import {
   saveWidgetData,
   watchWidgetData,
 } from './data';
+import {mergeTasks} from './merge';
 import {widgetStyles} from './styles';
 import {LocaleController, t} from '../i18n';
+import {isComposing} from '../app/shortcuts';
 
 interface Task {
   readonly id: string;
@@ -31,11 +33,13 @@ function normalize(raw: unknown): Task[] {
   const seen = new Set<string>();
   for (const item of raw) {
     if (typeof item !== 'object' || item === null) continue;
-    const {id, text} = item as Record<string, unknown>;
-    if (typeof id !== 'string' || !id || seen.has(id)) continue;
-    if (typeof text !== 'string') continue;
+    const {id: storedId, text} = item as Record<string, unknown>;
+    if (typeof storedId !== 'string' || typeof text !== 'string') continue;
+    // Cut first: two long ids that start alike must not end up the same.
+    const id = storedId.slice(0, 20);
+    if (!id || seen.has(id)) continue;
     seen.add(id);
-    tasks.push({id: id.slice(0, 20), text: text.slice(0, MAX_LENGTH)});
+    tasks.push({id, text: text.slice(0, MAX_LENGTH)});
     if (tasks.length === MAX_TASKS) break;
   }
   return tasks;
@@ -220,8 +224,11 @@ export class TarnTasks extends LitElement {
   /** The add row is open (it also shows whenever the list is empty). */
   declare adding: boolean;
   private leaving = new Map<string, number>();
+  /** The list as last loaded or saved here: what edits started from. */
+  private base: Task[] = [];
   private unwatch: () => void = () => {};
   private save = debounce((tasks: Task[]) => {
+    this.base = tasks;
     void saveWidgetData(this.widgetId, tasks);
   }, 400);
 
@@ -239,14 +246,23 @@ export class TarnTasks extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.tasks = peekWidgetData(this.widgetId, normalize);
-    void loadWidgetData(this.widgetId, normalize).then(t => (this.tasks = t));
-    this.unwatch = watchWidgetData(this.widgetId, normalize, tasks => {
-      // Another tab edited the list; don't fight the user typing here.
-      if (!this.shadowRoot?.activeElement) this.tasks = tasks;
-    });
+    this.tasks = this.base = peekWidgetData(this.widgetId, normalize);
+    void loadWidgetData(this.widgetId, normalize).then(this.adopt);
+    this.unwatch = watchWidgetData(this.widgetId, normalize, this.adopt);
     window.addEventListener('pagehide', this.save.flush);
   }
+
+  /**
+   * Another tab's list (or what's stored). With no edit here since the
+   * last save it simply shows, focus or not; an edit not yet saved is
+   * merged with it, so neither side's tasks are lost.
+   */
+  private adopt = (stored: Task[]) => {
+    const next = mergeTasks(this.base, this.tasks, stored);
+    this.base = stored;
+    if (JSON.stringify(next) !== JSON.stringify(stored)) this.save(next);
+    this.tasks = next;
+  };
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -340,6 +356,7 @@ export class TarnTasks extends LitElement {
 
   /** Enter jumps to the new-task row; Backspace on an empty task removes it. */
   private onTaskKey(id: string, event: KeyboardEvent): void {
+    if (isComposing(event)) return;
     const input = event.target as HTMLInputElement;
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -361,6 +378,7 @@ export class TarnTasks extends LitElement {
 
   /** Enter adds and stays for the next one; Escape closes the row. */
   private onNewKey = (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     const input = event.target as HTMLInputElement;
     if (event.key === 'Escape') {
       input.value = '';

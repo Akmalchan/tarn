@@ -90,21 +90,25 @@ function folderTitle(value: unknown): string {
 }
 
 /** Only small raster images, so a stored value can't be anything else. */
-export function isIconData(value: string): boolean {
+function isIconData(value: string): boolean {
   return (
     value.length <= MAX_ICON &&
     /^data:image\/(png|webp|jpeg);base64,[a-z0-9+/=]+$/i.test(value)
   );
 }
 
-/** Accepts "example.com" or a full link; only http(s) pages. */
+/**
+ * Accepts "example.com", "localhost:3000/x" or a full link; only http(s)
+ * pages. A scheme needs "://": "example.com:8080" is a host and a port,
+ * while "mailto:" or "about:" (a name, a colon, no digit) is left out.
+ */
 export function toUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const text = value.trim();
-  if (!text) return null;
+  if (!text || /^[a-z][a-z0-9+.-]*:(?!\/\/|\d)/i.test(text)) return null;
   try {
     const url = new URL(
-      /^[a-z][a-z0-9+.-]*:/i.test(text) ? text : `https://${text}`,
+      /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`,
     );
     return url.protocol === 'https:' || url.protocol === 'http:'
       ? url.href
@@ -122,7 +126,7 @@ export function nameOf(url: string): string {
 }
 
 /** Folder titles are cut to the stored length. */
-export function cleanFolderTitle(title: string): string {
+function cleanFolderTitle(title: string): string {
   return folderTitle(title);
 }
 
@@ -351,45 +355,4 @@ function bookmarkSite(node: BookmarkNode): Site | null {
   // Only real links: toUrl adds https:// to bare text, so check the source.
   if (!url || !/^https?:/i.test(node.url ?? '')) return null;
   return normalizeSite({url, title: node.title});
-}
-
-/**
- * Adds imported items to what's there, skipping sites already present
- * anywhere. A folder with the same name as an existing one fills that one.
- */
-export function mergeImported(
-  items: readonly Item[],
-  imported: readonly Item[],
-): Item[] {
-  const known = new Set(allSites(items).map(site => site.url));
-  const fresh = (sites: readonly Site[]) =>
-    sites.filter(site => {
-      if (known.has(site.url)) return false;
-      known.add(site.url);
-      return true;
-    });
-  const next: Item[] = [...items];
-  for (const item of imported) {
-    if (!isFolder(item)) {
-      if (next.length < MAX_ITEMS && fresh([item]).length) next.push(item);
-      continue;
-    }
-    const same = next.findIndex(
-      other =>
-        isFolder(other) &&
-        other.title.toLowerCase() === item.title.toLowerCase(),
-    );
-    const sites = fresh(item.sites);
-    if (!sites.length) continue;
-    if (same >= 0) {
-      const folder = next[same] as Folder;
-      next[same] = {
-        ...folder,
-        sites: [...folder.sites, ...sites].slice(0, MAX_FOLDER_SITES),
-      };
-    } else if (next.length < MAX_ITEMS) {
-      next.push({title: item.title, sites});
-    }
-  }
-  return next;
 }

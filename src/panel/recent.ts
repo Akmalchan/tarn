@@ -10,6 +10,8 @@
  * tiles never jump under the pointer; a pick from "Show All" goes first.
  */
 
+import {readJson, writeJson} from '../app/web-storage';
+
 const KEYS = {scenes: 'tarn.recent.scenes', faces: 'tarn.recent.faces'};
 const KEEP = 8;
 
@@ -50,20 +52,13 @@ export function picks(
 }
 
 export function readRecent(list: RecentList): string[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(KEYS[list]) ?? '[]') as unknown;
-    return Array.isArray(raw)
-      ? raw.filter((id): id is string => typeof id === 'string').slice(0, KEEP)
-      : [];
-  } catch {
-    return [];
-  }
+  const raw = readJson(KEYS[list]);
+  return Array.isArray(raw)
+    ? raw.filter((id): id is string => typeof id === 'string').slice(0, KEEP)
+    : [];
 }
 
 export function writeRecent(list: RecentList, ids: readonly string[]): void {
-  try {
-    localStorage.setItem(KEYS[list], JSON.stringify(ids));
-  } catch {
-    // Blocked storage: the cards show the defaults.
-  }
+  // Blocked storage: the cards show the defaults.
+  writeJson(KEYS[list], ids);
 }

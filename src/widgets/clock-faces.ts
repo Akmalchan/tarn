@@ -7,6 +7,7 @@ import {css, html, nothing, svg} from 'lit';
 import {keyed} from 'lit/directives/keyed.js';
 import {locale} from '../i18n';
 import type {ClockColor, ClockStyle} from '../settings/schema';
+import {hexToRgb} from '../ui/color';
 
 /**
  * How each clock face draws the time, shared by the clock on the tab and
@@ -38,7 +39,7 @@ export function clockTime(
  * the new bottom half swings down after it and lands; `previous` is the
  * time shown before (the same as `time` when nothing should move).
  */
-export function flipTime(time: string, previous: string = time) {
+function flipTime(time: string, previous: string = time) {
   const [hours, minutes] = splitTime(time);
   const [oldHours, oldMinutes] = splitTime(previous);
   return html`${flipCard(hours, oldHours)}${flipCard(minutes, oldMinutes)}`;
@@ -108,7 +109,7 @@ const LCD = (() => {
  * faintly there as on a real display. A one-digit hour leaves the first
  * place dark.
  */
-export function lcdTime(time: string) {
+function lcdTime(time: string) {
   const [h = '', m = ''] = time.split(/\D+/);
   const places = [
     h.length < 2 ? '' : h[0]!,
@@ -143,7 +144,7 @@ export function lcdTime(time: string) {
  * minute ticks faint, two rounded hands. It reads the time from `now`
  * (or the text, for thumbnails), and moves once a minute like the rest.
  */
-export function analogTime(time: string, now?: Date) {
+function analogTime(time: string, now?: Date) {
   const [h = '0', m = '0'] = time.split(/\D+/);
   const hours = now ? now.getHours() : Number(h);
   const minutes = now ? now.getMinutes() : Number(m);
@@ -202,10 +203,8 @@ export function clockTone(
 }
 
 /** Perceived lightness of `#rrggbb`, 0 to 1 (sRGB luminance, gamma ~2). */
-export function lightness(hex: string): number {
-  const n = Number.parseInt(hex.slice(1), 16);
-  if (Number.isNaN(n)) return 1;
-  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map(c => (c / 255) ** 2);
+function lightness(hex: string): number {
+  const [r, g, b] = hexToRgb(hex).map(c => c ** 2);
   return Math.sqrt(0.2126 * r! + 0.7152 * g! + 0.0722 * b!);
 }
 
@@ -555,7 +554,7 @@ export function splitTime(time: string): [string, string] {
  * pixels a touch smaller than their cell, like a low-res screen. The separator
  * (":" or "." depending on the locale) becomes the two-dot colon.
  */
-export function pixelTime(time: string) {
+function pixelTime(time: string) {
   let d = '';
   let x = 0;
   for (const char of time) {

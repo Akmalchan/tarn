@@ -60,6 +60,7 @@ import {
 } from './site-icon';
 import {sheetStyles, widgetStyles} from './styles';
 import {LocaleController, t} from '../i18n';
+import {isComposing} from '../app/shortcuts';
 
 /** The site being edited: where it is (null for a new one) and where it goes. */
 interface Editor {
@@ -1324,6 +1325,7 @@ export class TarnFavorites extends LitElement {
   };
 
   private onTitleKey = (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     const input = event.target as HTMLInputElement;
     if (event.key === 'Enter') input.blur();
   };

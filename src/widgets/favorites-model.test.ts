@@ -10,7 +10,6 @@ import {
   dropInto,
   fromBookmarks,
   isFolder,
-  mergeImported,
   moveEntry,
   moveInFolder,
   normalizeItems,
@@ -18,6 +17,7 @@ import {
   removeAt,
   renameFolder,
   takeOut,
+  toUrl,
   type Item,
   type Site,
 } from './favorites-model';
@@ -238,22 +238,34 @@ describe('bookmarks', () => {
       {url: 'https://github.com/', title: 'Github'},
     ]);
   });
+});
 
-  it('adds only what is new, filling folders of the same name', () => {
-    const items: Item[] = [
-      {url: 'https://www.youtube.com/', title: 'Mine'},
-      {title: 'SFSU', sites: [{url: 'https://advising.sfsu.edu/', title: 'A'}]},
-    ];
-    expect(mergeImported(items, fromBookmarks(bar))).toEqual([
-      {url: 'https://www.youtube.com/', title: 'Mine'},
-      {
-        title: 'SFSU',
-        sites: [
-          {url: 'https://advising.sfsu.edu/', title: 'A'},
-          {url: 'https://bursar.sfsu.edu/', title: 'Bursar'},
-        ],
-      },
-      {url: 'https://github.com/', title: 'Github'},
-    ]);
+describe('toUrl', () => {
+  it.each([
+    ['example.com', 'https://example.com/'],
+    ['  https://example.com/x  ', 'https://example.com/x'],
+    ['http://example.com', 'http://example.com/'],
+    ['example.com:8080', 'https://example.com:8080/'],
+    ['localhost:3000/x', 'https://localhost:3000/x'],
+    ['192.168.1.1', 'https://192.168.1.1/'],
+    ['10.0.0.5:8443', 'https://10.0.0.5:8443/'],
+  ])('%s is %s', (text, url) => {
+    expect(toUrl(text)).toBe(url);
+  });
+
+  it.each([
+    '',
+    '   ',
+    'mailto:me@example.com',
+    'about:blank',
+    'javascript:alert(1)',
+    'chrome://settings',
+    'ftp://example.com',
+    'file:///etc/hosts',
+    'not a url',
+    42,
+    null,
+  ])('%s is not a page', value => {
+    expect(toUrl(value)).toBeNull();
   });
 });

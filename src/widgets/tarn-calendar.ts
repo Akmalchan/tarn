@@ -5,18 +5,19 @@
 
 import {LitElement, css, html, nothing, svg} from 'lit';
 import {
-  dayKey,
   firstWeekday,
   monthWeeks,
+  NEW_DAY,
   sameDay,
   startOfDay,
   untilMidnight,
   weekOf,
 } from '../calendar/dates';
-import {eventsIn, hasSources} from '../calendar/sources';
-import type {CalendarEvent} from '../calendar/types';
 import {LocaleController, locale, t} from '../i18n';
 import {widgetStyles} from './styles';
+
+/** A day can be missed while the computer sleeps: checked at least this often. */
+const HOUR_MS = 3_600_000;
 
 const CHEVRON_LEFT = svg`<path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;
 const CHEVRON_RIGHT = svg`<path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -24,8 +25,7 @@ const CHEVRON_RIGHT = svg`<path d="M9.5 6l6 6-6 6" fill="none" stroke="currentCo
 /**
  * The calendar: today (small), this week (medium) or the month (large),
  * in the language's own words and week start. Offline: dates only for now.
- * Events come from sources registered in calendar/sources.ts, so adding
- * one later (a calendar link) needs no change here. Wakes only at midnight.
+ * Wakes only at midnight.
  */
 export class TarnCalendar extends LitElement {
   static override properties = {
@@ -33,7 +33,6 @@ export class TarnCalendar extends LitElement {
     heading: {attribute: false},
     today: {state: true},
     shown: {state: true},
-    events: {state: true},
     tall: {state: true},
   };
 
@@ -147,17 +146,6 @@ export class TarnCalendar extends LitElement {
         text-shadow: none;
       }
 
-      .day.busy::after {
-        content: '';
-        position: absolute;
-        bottom: 2px;
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: currentColor;
-        opacity: 0.7;
-      }
-
       /* Small: today, big. */
       .single {
         display: none;
@@ -240,7 +228,6 @@ export class TarnCalendar extends LitElement {
   declare today: Date;
   /** The month the large calendar shows (its 1st). */
   declare shown: Date;
-  declare events: readonly CalendarEvent[];
   /** A large tile (two rows): it shows the month instead of the week. */
   declare tall: boolean;
   private timer = 0;
@@ -256,13 +243,16 @@ export class TarnCalendar extends LitElement {
     this.heading = t('widget.calendar');
     this.today = startOfDay(new Date());
     this.shown = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
-    this.events = [];
     this.tall = false;
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
     document.addEventListener('visibilitychange', this.onVisibility);
+    // After the computer sleeps, the midnight timer runs late: the clock's
+    // minute tick, coming back to the window, or the hourly check catch up.
+    window.addEventListener(NEW_DAY, this.tick);
+    window.addEventListener('focus', this.tick);
     this.sizes.observe(this);
     this.tick();
   }
@@ -270,6 +260,8 @@ export class TarnCalendar extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     document.removeEventListener('visibilitychange', this.onVisibility);
+    window.removeEventListener(NEW_DAY, this.tick);
+    window.removeEventListener('focus', this.tick);
     this.sizes.disconnect();
     clearTimeout(this.timer);
   }
@@ -280,7 +272,6 @@ export class TarnCalendar extends LitElement {
     const weeks = this.tall
       ? monthWeeks(tall.getFullYear(), tall.getMonth(), first)
       : [weekOf(this.today, first)];
-    const busy = new Set(this.events.flatMap(eventDays));
     const narrow = new Intl.DateTimeFormat(locale(), {weekday: 'narrow'});
     const monthName = this.tall
       ? monthLabel(tall, this.today)
@@ -331,7 +322,6 @@ export class TarnCalendar extends LitElement {
               'day',
               today ? 'today' : '',
               other ? 'other' : '',
-              busy.has(dayKey(day)) ? 'busy' : '',
             ].join(' ');
             return html`<span
               class=${classes}
@@ -346,18 +336,15 @@ export class TarnCalendar extends LitElement {
     `;
   }
 
-  /** The small tile: weekday, date, and the next event when there is one. */
+  /** The small tile: weekday, date and month. */
   private renderSingle() {
     const weekday = new Intl.DateTimeFormat(locale(), {weekday: 'long'});
     const month = new Intl.DateTimeFormat(locale(), {month: 'long'});
-    const next = this.events.find(event => event.end > Date.now());
     return html`
       <div class="single">
         <span class="weekday-name">${weekday.format(this.today)}</span>
         <span class="date">${this.today.getDate()}</span>
-        <span class="next"
-          >${next ? next.title : capitalize(month.format(this.today))}</span
-        >
+        <span class="next">${capitalize(month.format(this.today))}</span>
       </div>
     `;
   }
@@ -371,7 +358,6 @@ export class TarnCalendar extends LitElement {
 
   private showToday = () => {
     this.shown = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
-    void this.loadEvents();
   };
 
   /** Another month; stepping back to this one shows today again. */
@@ -381,10 +367,9 @@ export class TarnCalendar extends LitElement {
       this.shown.getMonth() + months,
       1,
     );
-    void this.loadEvents();
   }
 
-  /** At midnight "today" moves on; nothing runs in between. */
+  /** At midnight "today" moves on; in between, a check once an hour. */
   private tick = () => {
     clearTimeout(this.timer);
     const now = new Date();
@@ -396,31 +381,17 @@ export class TarnCalendar extends LitElement {
       }
       this.today = today;
     }
-    void this.loadEvents();
     if (document.visibilityState !== 'visible') return;
-    this.timer = window.setTimeout(this.tick, untilMidnight(now) + 1000);
+    this.timer = window.setTimeout(
+      this.tick,
+      Math.min(untilMidnight(now) + 1000, HOUR_MS),
+    );
   };
 
   private onVisibility = () => {
     if (document.visibilityState === 'visible') this.tick();
     else clearTimeout(this.timer);
   };
-
-  /** Events for what's on screen, from any registered source. */
-  private async loadEvents(): Promise<void> {
-    if (!hasSources()) return;
-    const from = new Date(
-      this.shown.getFullYear(),
-      this.shown.getMonth() - 1,
-      20,
-    );
-    const to = new Date(
-      this.shown.getFullYear(),
-      this.shown.getMonth() + 1,
-      15,
-    );
-    this.events = await eventsIn({from: from.getTime(), to: to.getTime()});
-  }
 }
 
 /** "October", or "October 2027" for another year. */
@@ -443,18 +414,6 @@ function weekLabel(week: readonly Date[], today: Date): string {
 /** A month name as a label: "октябрь" becomes "Октябрь". */
 function capitalize(text: string): string {
   return text.charAt(0).toLocaleUpperCase(locale()) + text.slice(1);
-}
-
-/** The local days an event covers, as day keys. */
-function eventDays(event: CalendarEvent): string[] {
-  const days: string[] = [];
-  const day = startOfDay(new Date(event.start));
-  const last = event.allDay ? event.end - 1 : event.end;
-  while (day.getTime() <= last && days.length < 62) {
-    days.push(dayKey(day));
-    day.setDate(day.getDate() + 1);
-  }
-  return days;
 }
 
 customElements.define('tarn-calendar', TarnCalendar);

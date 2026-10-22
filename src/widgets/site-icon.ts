@@ -7,6 +7,8 @@
 // network request. When Chrome has no icon for a page it returns a generic
 // globe; Tarn recognizes that globe and shows a letter tile instead.
 
+import {readJson, writeJson} from '../app/web-storage';
+
 const iconUrl = (pageUrl: string) =>
   `/_favicon/?pageUrl=${encodeURIComponent(pageUrl)}&size=64`;
 
@@ -27,13 +29,10 @@ let lastFound: KnownIcons | null = null;
 
 function knownIcons(): KnownIcons {
   if (lastFound) return lastFound;
-  let icons: KnownIcons = {};
-  try {
-    const raw = JSON.parse(localStorage.getItem(KNOWN_KEY) ?? '{}') as unknown;
-    if (typeof raw === 'object' && raw !== null) icons = raw as KnownIcons;
-  } catch {
-    // Unreadable: start fresh.
-  }
+  // Unreadable: start fresh.
+  const raw = readJson(KNOWN_KEY);
+  const icons =
+    typeof raw === 'object' && raw !== null ? (raw as KnownIcons) : {};
   lastFound = icons;
   return icons;
 }
@@ -58,11 +57,8 @@ function rememberIcon(pageUrl: string, icon: FoundIcon | null): void {
   const value = icon && {src: icon.src, light: icon.light};
   if (JSON.stringify(icons[pageUrl]) === JSON.stringify(value)) return;
   icons[pageUrl] = value;
-  try {
-    localStorage.setItem(KNOWN_KEY, JSON.stringify(icons));
-  } catch {
-    // Blocked storage: icons just appear a few ms later.
-  }
+  // Blocked storage: icons just appear a few ms later.
+  writeJson(KNOWN_KEY, icons);
 }
 
 /** The globe Chrome returns for a page it knows nothing about. */
@@ -152,7 +148,7 @@ function pixels(
  * laid over white, are (nearly) all white too. A white logo on clear
  * (GitHub, ChatGPT) is; a logo on its own white square isn't.
  */
-export function isLight(image: CanvasImageSource): boolean {
+function isLight(image: CanvasImageSource): boolean {
   const data = pixels(image, 32);
   return data ? lightPixels(data) : false;
 }

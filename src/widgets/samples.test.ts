@@ -3,10 +3,19 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
-import {describe, expect, it} from 'vitest';
+import {beforeEach, describe, expect, it} from 'vitest';
+import {fakeBrowser} from 'wxt/testing/fake-browser';
 import {layoutBands} from '../layout/bands';
-import {WIDGET_SIZE_OPTIONS} from '../settings/schema';
-import {EXAMPLES} from './samples';
+import {WIDGET_SIZE_OPTIONS, type WidgetEntry} from '../settings/schema';
+import {SETTINGS_KEY} from '../settings/store';
+import {
+  EXAMPLES,
+  buildExample,
+  forgetOwnWidgets,
+  ownWidgets,
+  pruneSamples,
+  rememberOwnWidgets,
+} from './samples';
 
 describe('example setups', () => {
   for (const example of EXAMPLES) {
@@ -40,4 +49,89 @@ describe('example setups', () => {
       });
     });
   }
+});
+
+describe("the user's own widgets while trying examples", () => {
+  beforeEach(() => fakeBrowser.reset());
+
+  const MINE: WidgetEntry[] = [
+    {id: 'notes-a', kind: 'notes', size: 'm', name: 'Plans'},
+    {id: 'tasks-b', kind: 'tasks', size: 'l'},
+  ];
+  const EXAMPLE: WidgetEntry[] = [
+    {id: 'favorites-x', kind: 'favorites', size: 'l'},
+  ];
+
+  it('keeps the list from before the first example, through later ones', async () => {
+    expect(await ownWidgets()).toBeNull();
+    await rememberOwnWidgets(MINE);
+    // A second example: what's shown now is the first example, not theirs.
+    await rememberOwnWidgets(EXAMPLE);
+    expect(await ownWidgets()).toEqual(MINE);
+  });
+
+  it('keeps an empty list, the user\'s own "none"', async () => {
+    await rememberOwnWidgets([]);
+    expect(await ownWidgets()).toEqual([]);
+  });
+
+  it('forgets it once they keep an example or go back', async () => {
+    await rememberOwnWidgets(MINE);
+    await forgetOwnWidgets();
+    expect(await ownWidgets()).toBeNull();
+    await rememberOwnWidgets(EXAMPLE);
+    expect(await ownWidgets()).toEqual(EXAMPLE);
+  });
+
+  it('never trusts what is stored', async () => {
+    await fakeBrowser.storage.local.set({
+      'examples.own': [{id: 'notes-a', kind: 'notes', size: 'm'}, 'junk', {}],
+    });
+    expect(await ownWidgets()).toEqual([
+      {id: 'notes-a', kind: 'notes', size: 'm'},
+    ]);
+    await fakeBrowser.storage.local.set({'examples.own': 'junk'});
+    expect(await ownWidgets()).toBeNull();
+  });
+});
+
+describe("examples' sample content", () => {
+  beforeEach(() => fakeBrowser.reset());
+
+  const content = async (id: string) =>
+    (await fakeBrowser.storage.local.get(`widget.${id}`))[`widget.${id}`];
+
+  it('goes once its widgets are gone, unless it was changed', async () => {
+    const [favorites, notes, tasks] = await buildExample(EXAMPLES[1]!.widgets);
+    expect(await content(notes!.id)).toBeTypeOf('string');
+    await fakeBrowser.storage.local.set({[`widget.${tasks!.id}`]: ['Mine']});
+    await pruneSamples([]);
+    expect(await content(favorites!.id)).toBeUndefined();
+    expect(await content(notes!.id)).toBeUndefined();
+    // Changed: the user's now, kept like any removed widget's content.
+    expect(await content(tasks!.id)).toEqual(['Mine']);
+  });
+
+  it('stays while anything could still show it', async () => {
+    const shown = await buildExample(EXAMPLES[0]!.widgets);
+    const undo = await buildExample(EXAMPLES[1]!.widgets);
+    const kept = await buildExample(EXAMPLES[2]!.widgets);
+    const stored = await buildExample(EXAMPLES[3]!.widgets);
+    await rememberOwnWidgets(kept);
+    await fakeBrowser.storage.sync.set({[SETTINGS_KEY]: {widgets: stored}});
+    // The panel shows `shown`; its Undo would bring back `undo`.
+    await pruneSamples([...shown, ...undo]);
+    for (const widget of [...shown, ...undo, ...kept, ...stored]) {
+      if (widget.kind === 'notes') {
+        expect(await content(widget.id)).toBeTypeOf('string');
+      }
+    }
+  });
+
+  it("never touches the user's own content", async () => {
+    await fakeBrowser.storage.local.set({'widget.notes-mine': 'Plans'});
+    await buildExample(EXAMPLES[1]!.widgets);
+    await pruneSamples([]);
+    expect(await content('notes-mine')).toBe('Plans');
+  });
 });

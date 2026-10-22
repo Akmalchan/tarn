@@ -12,6 +12,11 @@ export const es: Catalog = {
   'common.remove': 'Quitar',
   'common.settings': 'Ajustes',
   'common.openSettings': 'Abrir ajustes',
+  'saving.failed':
+    'No se pudo guardar tu último cambio. Inténtalo de nuevo en un momento.',
+  'saving.stale':
+    'Tarn se actualizó. Recarga para seguir guardando los cambios.',
+  'saving.reload': 'Recargar',
   'tip.title': 'Hazlo tuyo',
   'tip.body':
     'Aquí están los fondos, las esferas del reloj y los widgets. Con los ajustes abiertos, arrastra los widgets para moverlos.',
@@ -23,14 +28,13 @@ export const es: Catalog = {
   'tip.step': 'Paso {n} de {count}',
   'tip.footer.title': 'Oculta el pie de Chrome',
   'tip.footer.body':
-    'Chrome añade una barra al final de esta página. Haz clic derecho en ella y elige ocultar el pie de página.',
+    'Chrome añade una barra al pie de esta página. Haz clic en Personalizar Chrome y desactiva el pie de página al final del panel.',
   'tip.pin.title': 'Quítalo de la barra',
   'tip.pin.body':
     'Chrome fijó Tarn junto a la barra de direcciones. ¿No lo necesitas ahí? Haz clic derecho en su icono y elige dejar de fijarlo.',
   'tip.bookmarks.title': 'Tu barra de marcadores',
   'tip.bookmarks.body':
     'Chrome la oculta en las pestañas nuevas. Pulsa {keys} para verla en todas las páginas.',
-  'tip.art.hideFooter': 'Ocultar pie de página',
   'tip.art.unpin': 'No fijar',
   'widget.favorites': 'Marcadores',
   'widget.notes': 'Notas',
@@ -76,10 +80,6 @@ export const es: Catalog = {
   'favorites.namePlaceholder': 'Se muestra bajo el icono',
   'favorites.address': 'Dirección',
   'favorites.badAddress': 'Eso no parece una dirección web.',
-  'favorites.useBookmarks': 'Usar mis marcadores',
-  'favorites.useBookmarksHint': 'Copiar los sitios de tu barra de marcadores',
-  'favorites.noBookmarks': 'Tu barra de marcadores está vacía',
-  'favorites.imported': 'Se añadió tu barra de marcadores.',
   'favorites.more': 'Más',
   'favorites.icon': 'Icono',
   'favorites.chooseIcon': 'Elegir una imagen',
@@ -158,6 +158,11 @@ export const es: Catalog = {
   'takeover.chooseBody':
     'Las que parecen extensiones de nueva pestaña ya están seleccionadas. Si luego desactivas Tarn, se vuelven a activar.',
   'takeover.newTabTag': 'Nueva pestaña',
+  'takeover.noneTitle': 'No se encontró otra nueva pestaña',
+  'takeover.noneBody':
+    'Ninguna de tus extensiones parece una página de nueva pestaña. Si alguna sigue tomando el control, muestra todas las extensiones y elígela.',
+  'takeover.showAll': 'Mostrar todas las extensiones',
+  'takeover.showNewTabs': 'Mostrar solo nuevas pestañas',
   'takeover.switchOff': 'Desactivar y usar Tarn',
   'panel.search': 'Buscar',
   'panel.searchSettings': 'Buscar en ajustes',
@@ -258,13 +263,16 @@ export const es: Catalog = {
   'panel.weather.providerLabel': 'Proveedor del tiempo',
   'panel.weather.apiKey': 'Clave de API',
   'panel.weather.pasteKey': 'Pega la clave',
-  'panel.weather.units': 'Unidades',
   'panel.weather.unitsLabel': 'Unidades de temperatura',
   'panel.weather.auto': 'Automático',
   'panel.weather.noteOpenMeteo':
     'Gratis, sin clave. El tiempo solo se consulta para los widgets de Tiempo que añadas, más o menos cada 30 minutos con una pestaña abierta.',
   'panel.weather.noteGoogle':
     'Las solicitudes se cobran al proyecto de Google Cloud de tu clave, que debe tener activada la Weather API. La clave se queda en este ordenador.',
+  'panel.weather.restrictKey':
+    'En Google Cloud, restringe la clave a la Weather API.',
+  'panel.weather.noKeyHere':
+    'Este ordenador aún no tiene clave, así que el tiempo viene de Open-Meteo.',
   'panel.weather.keySaved': 'Clave de API guardada',
   'panel.weather.keyRemoved': 'Clave de API eliminada',
   'panel.keys': 'Teclado',
@@ -311,6 +319,7 @@ export const es: Catalog = {
   'panel.whatsNew': 'Novedades',
   'panel.whatsNew.unseen': 'Nuevo',
   'panel.rate': 'Valorar Tarn',
+  'whatsNew.v1_0_1.fixes': 'Corrección de errores y optimizaciones.',
   'whatsNew.v1_0_0.wallpapers':
     'Dieciséis fondos animados, cada uno con un indicador de cuánto exige a tu ordenador.',
   'whatsNew.v1_0_0.appearance':
@@ -343,6 +352,9 @@ export const es: Catalog = {
   'panel.examples.note':
     'Prueba una página lista con contenido de ejemplo. Deshacer recupera tus widgets.',
   'panel.examples.shown': '{name} mostrado',
+  'panel.examples.back': 'Volver a mis widgets',
+  'panel.examples.keep': 'Quedarme con esta configuración',
+  'panel.examples.backDone': 'Tus widgets han vuelto',
   'panel.examples.bookmarks': 'Solo marcadores',
   'panel.examples.notes': 'Notas y tareas',
   'panel.examples.starter': 'Inicial',
@@ -412,6 +424,11 @@ export const es: Catalog = {
   'keys.help': 'Ver atajos',
   'keys.leave': 'Salir de un campo de texto',
   'keys.or': 'o',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Mayús',
+  'keys.esc': 'Esc',
+  'page.newTab': 'Nueva pestaña',
   'code.example.equalizer': 'Ecualizador',
   'code.example.aurora': 'Aurora',
   'code.example.synthwave': 'Synthwave',

@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
-import {sceneById} from '../backdrop/scenes';
+import {sceneById, shownSceneId} from '../backdrop/scenes';
 import type {Settings} from '../settings/schema';
 import {rememberAppearance} from '../ui/appearance';
+import {readJson, writeJson} from './web-storage';
 import {
   rememberBase,
   rememberEnabled,
@@ -18,19 +19,15 @@ const HOME_KEY = 'tarn.home';
 /** Mirrors everything first paint depends on from the synced settings. */
 export function mirrorSettings(settings: Settings): void {
   rememberScene(settings.scene);
-  rememberBase(sceneById(settings.scene).base);
+  rememberBase(
+    sceneById(shownSceneId(settings.scene, settings.appearance)).base,
+  );
   rememberEnabled(settings.enabled);
   rememberTabIcon(settings.tabIcon);
   rememberAppearance(settings.appearance);
-  try {
-    const {clock, clockColor, clockHex, widgets, search} = settings;
-    localStorage.setItem(
-      HOME_KEY,
-      JSON.stringify({clock, clockColor, clockHex, widgets, search}),
-    );
-  } catch {
-    // Blocked storage: the page waits for synced settings instead.
-  }
+  // Blocked storage: the page waits for synced settings instead.
+  const {clock, clockColor, clockHex, widgets, search} = settings;
+  writeJson(HOME_KEY, {clock, clockColor, clockHex, widgets, search});
 }
 
 /**
@@ -39,10 +36,6 @@ export function mirrorSettings(settings: Settings): void {
  * normalize it, like anything read from storage.
  */
 export function rememberedHome(): Partial<Settings> {
-  try {
-    const raw = JSON.parse(localStorage.getItem(HOME_KEY) ?? 'null') as unknown;
-    return typeof raw === 'object' && raw !== null ? raw : {};
-  } catch {
-    return {};
-  }
+  const raw = readJson(HOME_KEY);
+  return typeof raw === 'object' && raw !== null ? raw : {};
 }

@@ -49,6 +49,13 @@ export function firstWeekday(tag: string): Weekday {
   }
 }
 
+/**
+ * Sent on `window` by the clock when its minute tick finds a new day. A
+ * timer set for midnight runs late after the computer sleeps (its clock
+ * pauses meanwhile); the clock's next tick is at most a minute away.
+ */
+export const NEW_DAY = 'tarn-new-day';
+
 /** Local midnight of the day `date` falls on. */
 export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -60,12 +67,6 @@ export function sameDay(a: Date, b: Date): boolean {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
-}
-
-/** "2026-10-13", in local time: a key for a day. */
-export function dayKey(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 /** The days of the week `date` is in, from the week's first day. */

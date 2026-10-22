@@ -6,6 +6,8 @@
 import '../../styles/global.css';
 import '../../takeover/tarn-takeover';
 import {applyAppearance} from '../../ui/appearance';
+import {localizeTitle} from '../../i18n';
 
 // The remembered light or dark mode at once; settings confirm it.
 applyAppearance();
+localizeTitle('takeover.permissionTitle');

@@ -35,6 +35,17 @@ const UPGRADE_AFTER = 14;
 const PROBATION = 4;
 /** Gaps longer than this are pauses (hidden tab, busy system), not load. */
 const IGNORE_OVER_MS = 250;
+/**
+ * At the lowest level, this much frame time of windows in a row that would
+ * have stepped down means the device can't keep up at all: the page shows
+ * the scene's still picture instead of a scene that keeps stuttering.
+ */
+const GIVE_UP_AFTER_MS = 10_000;
+/**
+ * Frame time not counted toward giving up after the loop (re)starts: the
+ * arrival, a scene switch, a resize, a tab shown again.
+ */
+const GIVE_UP_GRACE_MS = 5_000;
 
 /** Where to start, from cheap hardware hints, before any frame is measured. */
 export function initialQualityLevel(hints: {
@@ -54,6 +65,12 @@ export class QualityGovernor {
   private probation = 0;
   /** Best (lowest) level this device has proven it can sustain. */
   private ceiling = 0;
+  /** Frame time still to pass before giving up can be counted. */
+  private graceMs = GIVE_UP_GRACE_MS;
+  /** Counted frame time in the current window. */
+  private windowMs = 0;
+  /** Late windows in a row at the lowest level, in frame time. */
+  private struggleMs = 0;
 
   constructor(private current = 0) {}
 
@@ -69,16 +86,41 @@ export class QualityGovernor {
     return 1000 / this.level.fps;
   }
 
+  /**
+   * True once the lowest level has run late for GIVE_UP_AFTER_MS straight
+   * (after the grace): even the cheapest live scene is choppy here.
+   */
+  get cantKeepUp(): boolean {
+    return this.struggleMs >= GIVE_UP_AFTER_MS;
+  }
+
+  /**
+   * Starts the watch toward {@link cantKeepUp} afresh, with its grace: call
+   * when the loop starts, the scene changes or the size changes, whose
+   * first frames are slower for reasons of their own.
+   */
+  restartWatch(): void {
+    this.graceMs = GIVE_UP_GRACE_MS;
+    this.windowMs = 0;
+    this.struggleMs = 0;
+  }
+
   /** Records the time between two drawn frames. Returns true on a change. */
   record(intervalMs: number): boolean {
     if (intervalMs > IGNORE_OVER_MS) return false;
     this.frames++;
     if (intervalMs > this.frameIntervalMs * LATE_FACTOR) this.late++;
+    if (this.graceMs > 0) this.graceMs -= intervalMs;
+    else this.windowMs += intervalMs;
     if (this.frames < WINDOW) return false;
 
     const ratio = this.late / this.frames;
+    const bottom = this.current === QUALITY_LEVELS.length - 1;
+    this.struggleMs =
+      bottom && ratio > DOWNGRADE_RATIO ? this.struggleMs + this.windowMs : 0;
     this.frames = 0;
     this.late = 0;
+    this.windowMs = 0;
     if (this.probation > 0) this.probation--;
 
     if (ratio > DOWNGRADE_RATIO && this.current < QUALITY_LEVELS.length - 1) {

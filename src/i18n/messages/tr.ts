@@ -12,6 +12,10 @@ export const tr: Catalog = {
   'common.remove': 'Kaldır',
   'common.settings': 'Ayarlar',
   'common.openSettings': 'Ayarları aç',
+  'saving.failed': 'Son değişikliğiniz kaydedilemedi. Birazdan tekrar deneyin.',
+  'saving.stale':
+    'Tarn güncellendi. Değişikliklerin kaydedilmesi için sayfayı yeniden yükleyin.',
+  'saving.reload': 'Yeniden yükle',
   'tip.title': 'Kendinize göre ayarlayın',
   'tip.body':
     'Duvar kâğıtları, saat yüzleri ve widget’lar burada. Ayarlar açıkken widget’ları sürükleyerek taşıyabilirsiniz.',
@@ -23,14 +27,13 @@ export const tr: Catalog = {
   'tip.step': 'Adım {n}/{count}',
   'tip.footer.title': 'Chrome alt bilgisini gizleyin',
   'tip.footer.body':
-    'Chrome bu sayfanın altına bir çubuk ekler. Çubuğa sağ tıklayıp alt bilgiyi gizlemeyi seçin.',
+    "Chrome bu sayfanın altına bir çubuk ekler. Oradaki Chrome'u özelleştir düğmesine tıklayın, ardından panelin en altında alt bilgiyi kapatın.",
   'tip.pin.title': 'Araç çubuğundan kaldırın',
   'tip.pin.body':
     'Chrome, Tarn’ı adres çubuğunun yanına sabitledi. Orada gerekmiyorsa simgesine sağ tıklayıp sabitlemeyi kaldırın.',
   'tip.bookmarks.title': 'Yer işareti çubuğunuz',
   'tip.bookmarks.body':
     'Chrome bunu yeni sekmelerde gizler. Her sayfada görmek için {keys} tuşlarına basın.',
-  'tip.art.hideFooter': 'Alt bilgiyi gizle',
   'tip.art.unpin': 'Sabitlemeyi kaldır',
   'widget.favorites': 'Yer imleri',
   'widget.notes': 'Notlar',
@@ -76,10 +79,6 @@ export const tr: Catalog = {
   'favorites.namePlaceholder': 'Simgenin altında görünür',
   'favorites.address': 'Adres',
   'favorites.badAddress': 'Bu bir web adresine benzemiyor.',
-  'favorites.useBookmarks': 'Yer imlerimi kullan',
-  'favorites.useBookmarksHint': 'Yer imleri çubuğundaki siteleri kopyala',
-  'favorites.noBookmarks': 'Yer imleri çubuğun boş',
-  'favorites.imported': 'Yer imleri çubuğun eklendi.',
   'favorites.more': 'Diğer',
   'favorites.icon': 'Simge',
   'favorites.chooseIcon': 'Görsel seç',
@@ -158,6 +157,11 @@ export const tr: Catalog = {
   'takeover.chooseBody':
     "Yeni sekme uzantısına benzeyenler zaten seçili. Tarn'ı daha sonra kapatırsanız yeniden açılırlar.",
   'takeover.newTabTag': 'Yeni sekme',
+  'takeover.noneTitle': 'Başka yeni sekme bulunamadı',
+  'takeover.noneBody':
+    'Uzantılarınızın hiçbiri yeni sekme sayfasına benzemiyor. Yine de biri devralıyorsa tüm uzantıları gösterip onu seçin.',
+  'takeover.showAll': 'Tüm uzantıları göster',
+  'takeover.showNewTabs': 'Yalnızca yeni sekmeleri göster',
   'takeover.switchOff': "Kapat ve Tarn'ı kullan",
   'panel.search': 'Ara',
   'panel.searchSettings': 'Ayarlarda ara',
@@ -258,13 +262,16 @@ export const tr: Catalog = {
   'panel.weather.providerLabel': 'Hava durumu sağlayıcısı',
   'panel.weather.apiKey': 'API anahtarı',
   'panel.weather.pasteKey': 'Anahtarı yapıştırın',
-  'panel.weather.units': 'Birimler',
   'panel.weather.unitsLabel': 'Sıcaklık birimi',
   'panel.weather.auto': 'Otomatik',
   'panel.weather.noteOpenMeteo':
     "Ücretsiz, anahtar gerekmez. Hava durumu yalnızca eklediğiniz Hava durumu widget'ları için, bir sekme açıkken yaklaşık 30 dakikada bir alınır.",
   'panel.weather.noteGoogle':
     'İstekler, anahtarınızın Google Cloud projesine faturalandırılır; bu projede Weather API açık olmalıdır. Anahtar bu bilgisayarda kalır.',
+  'panel.weather.restrictKey':
+    'Google Cloud’da anahtarı yalnızca Weather API ile sınırlayın.',
+  'panel.weather.noKeyHere':
+    'Bu bilgisayarda henüz anahtar yok, bu yüzden hava durumu Open-Meteo’dan gelir.',
   'panel.weather.keySaved': 'API anahtarı kaydedildi',
   'panel.weather.keyRemoved': 'API anahtarı kaldırıldı',
   'panel.keys': 'Klavye',
@@ -312,6 +319,7 @@ export const tr: Catalog = {
   'panel.whatsNew': 'Yenilikler',
   'panel.whatsNew.unseen': 'Yeni',
   'panel.rate': 'Tarn’ı değerlendir',
+  'whatsNew.v1_0_1.fixes': 'Hata düzeltmeleri ve iyileştirmeler.',
   'whatsNew.v1_0_0.wallpapers':
     'On altı canlı duvar kâğıdı; her birinin bilgisayarınızı ne kadar yorduğunu gösteren bir göstergesi var.',
   'whatsNew.v1_0_0.appearance':
@@ -344,6 +352,9 @@ export const tr: Catalog = {
   'panel.examples.note':
     'Örnek içerikli hazır bir sayfayı dene. Geri al, kendi widget’larını geri getirir.',
   'panel.examples.shown': '{name} gösteriliyor',
+  'panel.examples.back': 'Kendi widget’larıma dön',
+  'panel.examples.keep': 'Bu düzeni koru',
+  'panel.examples.backDone': 'Widget’ların geri geldi',
   'panel.examples.bookmarks': 'Yalnızca yer imleri',
   'panel.examples.notes': 'Notlar ve görevler',
   'panel.examples.starter': 'Başlangıç',
@@ -413,6 +424,11 @@ export const tr: Catalog = {
   'keys.help': 'Kısayolları göster',
   'keys.leave': 'Metin alanından çık',
   'keys.or': 'veya',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Shift',
+  'keys.esc': 'Esc',
+  'page.newTab': 'Yeni Sekme',
   'code.example.equalizer': 'Ekolayzer',
   'code.example.aurora': 'Kutup ışıkları',
   'code.example.synthwave': 'Synthwave',

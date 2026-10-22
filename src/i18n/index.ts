@@ -9,6 +9,7 @@ import {
   type Language,
   type LanguageSetting,
 } from './languages';
+import {removeKey, readJson, writeJson} from '../app/web-storage';
 import {en, type Catalog, type MessageKey} from './messages/en';
 
 export {LANGUAGES, LANGUAGE_SETTINGS, resolveLanguage} from './languages';
@@ -17,8 +18,8 @@ export type {MessageKey} from './messages/en';
 
 // Every word Tarn shows goes through t(). English is built in; another
 // language loads on demand, and the one in use is kept in localStorage so
-// a new tab paints its first frame in the right language (see Arrival in
-// AGENTS.md).
+// a new tab paints its first frame in the right language (see "Arrival in
+// detail" in docs/architecture.md).
 
 const MIRROR_KEY = 'tarn.i18n';
 
@@ -40,11 +41,22 @@ interface Current {
   readonly messages: Readonly<Partial<Record<MessageKey, string>>>;
 }
 
-let current: Current = readMirror() ?? {lang: 'en', messages: en};
+// Read on first use, not at import: a module with no work at load is left
+// out of bundles that never call t(), like the service worker's (which
+// otherwise carried every catalog, 2026-10-20).
+let state: Current | null = null;
 /** The catalog was loaded fresh in this page (the mirror may be older). */
-let loaded = current.lang === 'en';
+let loaded = false;
 const listeners = new Set<() => void>();
-applyDocumentLanguage();
+
+function current(): Current {
+  if (!state) {
+    state = readMirror() ?? {lang: 'en', messages: en};
+    loaded = state.lang === 'en';
+    applyDocumentLanguage();
+  }
+  return state;
+}
 
 /**
  * The text for `key` in the current language, with `{name}` placeholders
@@ -54,7 +66,7 @@ export function t(
   key: MessageKey,
   params?: Readonly<Record<string, string | number>>,
 ): string {
-  const text = current.messages[key] ?? en[key];
+  const text = current().messages[key] ?? en[key];
   return params
     ? text.replace(/\{(\w+)\}/g, (match, name: string) =>
         name in params ? String(params[name]) : match,
@@ -68,7 +80,7 @@ export function t(
  * 24-hour clock and day-month order), otherwise the language in use.
  */
 export function locale(): string {
-  const lang = current.lang;
+  const lang = current().lang;
   const base = lang.split('-')[0]!;
   const preferred =
     typeof navigator === 'undefined' ? [] : (navigator.languages ?? []);
@@ -88,7 +100,7 @@ let generation = 0;
 
 export async function useLanguage(setting: LanguageSetting): Promise<void> {
   const lang = resolveLanguage(setting);
-  if (lang === current.lang && loaded) return;
+  if (lang === current().lang && loaded) return;
   // Quick changes (one language, then another): only the last one counts.
   const mine = ++generation;
   let messages: Catalog;
@@ -100,9 +112,9 @@ export async function useLanguage(setting: LanguageSetting): Promise<void> {
   }
   if (mine !== generation) return;
   const changed =
-    lang !== current.lang ||
-    JSON.stringify(messages) !== JSON.stringify(current.messages);
-  current = {lang, messages};
+    lang !== current().lang ||
+    JSON.stringify(messages) !== JSON.stringify(current().messages);
+  state = {lang, messages};
   loaded = true;
   writeMirror();
   if (!changed) return;
@@ -127,37 +139,44 @@ export class LocaleController implements ReactiveController {
   }
 }
 
+/** The page's own title, kept in the current language (null: left as is). */
+let titleKey: MessageKey | null = null;
+
+/**
+ * Gives the page a title from the catalog, now and after every language
+ * change. Called at startup, it is already right in the first frame (the
+ * catalog is mirrored), so the tab strip never shows the English.
+ */
+export function localizeTitle(key: MessageKey): void {
+  titleKey = key;
+  applyDocumentLanguage();
+}
+
 function applyDocumentLanguage(): void {
   if (typeof document !== 'undefined') {
-    document.documentElement.lang = current.lang;
+    document.documentElement.lang = current().lang;
+    if (titleKey) document.title = t(titleKey);
   }
 }
 
 function readMirror(): Current | null {
-  try {
-    if (typeof localStorage === 'undefined') return null;
-    const raw: unknown = JSON.parse(localStorage.getItem(MIRROR_KEY) ?? 'null');
-    if (typeof raw !== 'object' || raw === null) return null;
-    const {lang, messages} = raw as {lang?: unknown; messages?: unknown};
-    if (typeof lang !== 'string' || !(lang in LOADERS)) return null;
-    if (typeof messages !== 'object' || messages === null) return null;
-    const clean: Partial<Record<MessageKey, string>> = {};
-    for (const [key, value] of Object.entries(messages)) {
-      if (key in en && typeof value === 'string') {
-        clean[key as MessageKey] = value;
-      }
+  const raw = readJson(MIRROR_KEY);
+  if (typeof raw !== 'object' || raw === null) return null;
+  const {lang, messages} = raw as {lang?: unknown; messages?: unknown};
+  if (typeof lang !== 'string' || !(lang in LOADERS)) return null;
+  if (typeof messages !== 'object' || messages === null) return null;
+  const clean: Partial<Record<MessageKey, string>> = {};
+  for (const [key, value] of Object.entries(messages)) {
+    if (key in en && typeof value === 'string') {
+      clean[key as MessageKey] = value;
     }
-    return {lang: lang as Language, messages: clean};
-  } catch {
-    return null;
   }
+  return {lang: lang as Language, messages: clean};
 }
 
 function writeMirror(): void {
-  try {
-    if (current.lang === 'en') localStorage.removeItem(MIRROR_KEY);
-    else localStorage.setItem(MIRROR_KEY, JSON.stringify(current));
-  } catch {
-    // Blocked storage: the first frame shows English, then the language.
-  }
+  // Blocked storage: the first frame shows English, then the language.
+  const now = current();
+  if (now.lang === 'en') removeKey(MIRROR_KEY);
+  else writeJson(MIRROR_KEY, now);
 }

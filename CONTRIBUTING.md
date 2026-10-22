@@ -11,7 +11,8 @@ npm run dev
 ```
 
 Before opening a pull request, run `npm run check`. It type-checks, lints,
-runs the tests and builds, which is the same as CI.
+runs the tests and builds. CI runs it too, plus the Firefox build
+(`npm run build:firefox`).
 
 ## How the code is organized
 

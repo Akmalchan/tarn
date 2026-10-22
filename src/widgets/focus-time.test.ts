@@ -4,7 +4,13 @@
  */
 
 import {describe, expect, it} from 'vitest';
-import {MAX_MS, cleanDuration, format, parseDuration} from './focus-time';
+import {
+  MAX_MS,
+  cleanDuration,
+  format,
+  nextTickMs,
+  parseDuration,
+} from './focus-time';
 
 describe('parseDuration', () => {
   it.each([
@@ -54,5 +60,18 @@ describe('format', () => {
     expect(format(25 * 60_000)).toBe('25:00');
     expect(format(MAX_MS)).toBe('9:00:00');
     expect(format(61_500)).toBe('1:02');
+  });
+});
+
+describe('nextTickMs', () => {
+  it('ticks when the time shown changes, not on the wall clock', () => {
+    // 61.5 s left shows 1:02; it becomes 1:01 in 500 ms.
+    expect(format(61_500)).toBe('1:02');
+    expect(format(61_500 - nextTickMs(61_500))).toBe('1:01');
+    expect(nextTickMs(61_500)).toBe(505);
+    // Exactly on a second: a whole second to the next change.
+    expect(nextTickMs(60_000)).toBe(1005);
+    // The end: the tick lands just after zero.
+    expect(400 - nextTickMs(400)).toBeLessThan(0);
   });
 });

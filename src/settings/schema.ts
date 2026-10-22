@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
  */
 
-import {DEFAULT_SCENE_ID, SCENES} from '../backdrop/scenes';
+import {AUTO_SCENE, SCENE_IDS} from '../backdrop/scenes/ids';
 import {isPhotoId} from '../wallpapers/store';
 import {WIDGET_SIZES, type WidgetSize} from '../layout/bands';
 import {LANGUAGE_SETTINGS, type LanguageSetting} from '../i18n/languages';
@@ -50,12 +50,7 @@ export type ClockStyle =
  * uses `clockHex` (behind an arrow in settings, owner 2026-10-14).
  */
 export type ClockColor = 'auto' | 'light' | 'dark' | 'custom';
-export const CLOCK_COLORS: readonly ClockColor[] = [
-  'auto',
-  'light',
-  'dark',
-  'custom',
-];
+const CLOCK_COLORS: readonly ClockColor[] = ['auto', 'light', 'dark', 'custom'];
 const HEX = /^#[0-9a-f]{6}$/i;
 
 /** In the order settings shows them. */
@@ -134,14 +129,6 @@ export function fitWidgetSize(kind: WidgetKind, size: WidgetSize): WidgetSize {
   );
 }
 
-/** The fields of a widget entry this version knows; others are kept as-is. */
-export const WIDGET_ENTRY_FIELDS: readonly string[] = [
-  'id',
-  'kind',
-  'size',
-  'name',
-];
-
 /** A widget id as stored: lowercase letters, digits and dashes. */
 export const WIDGET_ID = /^[a-z0-9-]{1,40}$/;
 
@@ -185,13 +172,22 @@ export interface WeatherSettings {
  * Each opens the service's own site with the question; Tarn has no AI.
  */
 export type SearchAi = 'off' | 'google' | 'chatgpt' | 'claude' | 'perplexity';
-export const SEARCH_AIS: readonly SearchAi[] = [
+const SEARCH_AIS: readonly SearchAi[] = [
   'off',
   'google',
   'chatgpt',
   'claude',
   'perplexity',
 ];
+
+/**
+ * Whether the search box offers AI Mode. Only Google's exists; another
+ * value (stored for later, or by a newer Tarn on another computer) counts
+ * as off here, so no question goes to a service the user didn't pick.
+ */
+export function aiModeOn(search: {readonly ai: SearchAi}): boolean {
+  return search.ai === 'google';
+}
 
 /**
  * The search box under the clock, shaped like the browser's own. Searches
@@ -255,7 +251,7 @@ export const START_WIDGETS: readonly WidgetEntry[] = [
 
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
-  scene: DEFAULT_SCENE_ID,
+  scene: AUTO_SCENE,
   tabIcon: 'chrome',
   appearance: 'auto',
   clock: 'center',
@@ -301,7 +297,7 @@ export function normalizeSettings(raw: unknown): Settings {
       : value.scene;
   const scene =
     typeof wanted === 'string' &&
-    (SCENES.some(s => s.id === wanted) || isPhotoId(wanted))
+    (SCENE_IDS.includes(wanted) || isPhotoId(wanted) || wanted === AUTO_SCENE)
       ? wanted
       : DEFAULT_SETTINGS.scene;
   const enabled =

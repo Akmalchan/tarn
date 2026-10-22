@@ -5,8 +5,7 @@
 
 import {LitElement, css, html, nothing} from 'lit';
 import {browser} from 'wxt/browser';
-import '../backdrop/tarn-backdrop';
-import type {TarnBackdrop} from '../backdrop/tarn-backdrop';
+import {startsStill, type TarnBackdrop} from '../backdrop/tarn-backdrop';
 import './tarn-settings-button';
 import '../widgets/tarn-board';
 import '../widgets/tarn-clock';
@@ -17,7 +16,7 @@ import type {
   TarnBoard,
   TilesDetail,
 } from '../widgets/tarn-board';
-import {sceneById, sceneTone} from '../backdrop/scenes';
+import {sceneById, sceneTone, shownSceneId} from '../backdrop/scenes';
 import {
   DEFAULT_SETTINGS,
   MAX_WIDGETS,
@@ -26,6 +25,7 @@ import {
   type WidgetKind,
 } from '../settings/schema';
 import {loadSettings, saveSettings, watchSettings} from '../settings/store';
+import {watchSaveProblems, type SaveProblem} from '../settings/problems';
 import {
   CUSTOM_TAB_ICON_KEY,
   arrival,
@@ -38,7 +38,12 @@ import {watchSidePanel} from './side-panel';
 import {mirrorSettings, rememberedHome} from './mirror';
 import {rememberTiles} from './tile-memory';
 import {useLanguage} from '../i18n';
-import {draggedKind, draggedSize, droppedCode} from '../widgets/drag-new';
+import {
+  draggedKind,
+  draggedSize,
+  droppedCode,
+  fromPanel,
+} from '../widgets/drag-new';
 import {saveWidgetData} from '../widgets/data';
 import {setCodeScene} from '../widgets/code/stage';
 import {darkInk, lightInk, surface} from '../ui/ink';
@@ -57,6 +62,7 @@ export class TarnApp extends LitElement {
     incoming: {state: true},
     showKeys: {state: true},
     scrolling: {state: true},
+    stale: {state: true},
   };
 
   static override styles = css`
@@ -161,17 +167,76 @@ export class TarnApp extends LitElement {
       }
     }
 
-    /* The ? sheet: a solid card over a faint veil, in the page's ink. */
+    /* Tarn was updated while this tab stayed open: one quiet line at the
+       bottom, on a solid surface, until the tab is reloaded. */
+    .stale {
+      ${surface}
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: calc(100% - 32px);
+      padding: 8px 8px 8px 16px;
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--tile-line);
+      border-radius: 12px;
+      box-shadow: var(--surface-shadow);
+      transform: translateX(-50%);
+      animation: controls-in 200ms ease-out both;
+    }
+
+    .stale button {
+      flex: none;
+      padding: 5px 12px;
+      font: 600 13px var(--font-sans);
+      color: var(--ink);
+      background: var(--chip);
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .stale button:hover {
+      background: var(--chip-hover);
+    }
+
+    .stale button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    /* The ? sheet: a solid card over a faint veil, in the page's ink. A
+       modal dialog the size of the page, so it takes focus, keeps it and
+       gives it back. */
     .keys-veil {
       position: fixed;
       inset: 0;
-      display: grid;
-      place-items: center;
+      box-sizing: border-box;
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      margin: 0;
       padding: 24px;
+      color: inherit;
+      border: 0;
       background: rgb(0 0 0 / 0.32);
       /* Only while the sheet is open, so it costs nothing otherwise. */
       backdrop-filter: blur(14px);
       animation: controls-in 160ms ease-out both;
+    }
+
+    .keys-veil[open] {
+      display: grid;
+      place-items: center;
+    }
+
+    .keys-veil::backdrop {
+      background: none;
     }
 
     /* The shortcuts sheet: the system's light or dark mode (ui/ink.ts). */
@@ -191,6 +256,16 @@ export class TarnApp extends LitElement {
       from {
         opacity: 0;
         transform: translateY(6px) scale(0.98);
+      }
+    }
+
+    .keys:focus {
+      outline: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .keys {
+        animation-name: controls-in;
       }
     }
 
@@ -263,6 +338,8 @@ export class TarnApp extends LitElement {
    * frame behind and visibly lagged and jumped under the tiles.
    */
   declare scrolling: boolean;
+  /** Tarn was updated since this tab opened: changes can't be saved here. */
+  declare stale: boolean;
   private scrollEnd = 0;
   /** The scene's frost is off (set before, cleared before `scrolling`). */
   private frostPaused = false;
@@ -272,6 +349,7 @@ export class TarnApp extends LitElement {
   private schemeQuery = matchMedia('(prefers-color-scheme: dark)');
   private unwatch: () => void = () => {};
   private unwatchPanel: () => void = () => {};
+  private unwatchProblems: () => void = () => {};
 
   constructor() {
     super();
@@ -282,6 +360,7 @@ export class TarnApp extends LitElement {
       ...rememberedHome(),
       scene: rememberedScene(),
     });
+    this.resumedStill = this.resumed && startsStill(this.shownScene());
     this.revealed = null;
     this.settled = null;
     this.handingOff = canHandOff && isRememberedOff();
@@ -289,6 +368,7 @@ export class TarnApp extends LitElement {
     this.incoming = null;
     this.showKeys = false;
     this.scrolling = false;
+    this.stale = false;
   }
 
   override connectedCallback(): void {
@@ -306,6 +386,7 @@ export class TarnApp extends LitElement {
       if (!settings.enabled) void handOffToBrowserNewTab();
     });
     this.unwatch = watchSettings(this.applySettings);
+    this.unwatchProblems = watchSaveProblems(this.onSaveProblem);
     this.unwatchPanel = watchSidePanel(open => (this.editing = open));
     window.addEventListener('dragover', this.onDragOver);
     window.addEventListener('storage', this.onStorage);
@@ -318,6 +399,7 @@ export class TarnApp extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.unwatch();
+    this.unwatchProblems();
     this.unwatchPanel();
     window.removeEventListener('dragover', this.onDragOver);
     window.removeEventListener('storage', this.onStorage);
@@ -329,7 +411,7 @@ export class TarnApp extends LitElement {
 
   override render() {
     if (this.handingOff) return nothing;
-    const current = this.settings.scene;
+    const current = this.shownScene();
     return html`
       <tarn-backdrop
         remember
@@ -347,19 +429,35 @@ export class TarnApp extends LitElement {
           : nothing
       }
       ${this.showKeys ? this.renderKeys() : nothing}
+      ${
+        this.stale
+          ? html`<div class="stale" role="status">
+              <span>${t('saving.stale')}</span>
+              <button @click=${() => location.reload()}>
+                ${t('saving.reload')}
+              </button>
+            </div>`
+          : nothing
+      }
     `;
   }
 
   /** The ? sheet: every shortcut, over the page. */
   private renderKeys() {
-    return html`<div
+    return html`<dialog
       class="keys-veil"
+      aria-labelledby="keys-title"
       @click=${(event: MouseEvent) => {
-        if (event.target === event.currentTarget) this.showKeys = false;
+        if (event.target === event.currentTarget) this.closeKeys();
+      }}
+      @close=${() => (this.showKeys = false)}
+      @keydown=${(event: KeyboardEvent) => {
+        // Nothing in the sheet to tab to: focus stays on it.
+        if (event.key === 'Tab') event.preventDefault();
       }}
     >
-      <div class="keys" role="dialog" aria-label=${t('keys.title')}>
-        <h2>${t('keys.title')}</h2>
+      <div class="keys" tabindex="-1">
+        <h2 id="keys-title">${t('keys.title')}</h2>
         <dl>
           ${shortcutList().map(
             row => html`
@@ -369,7 +467,15 @@ export class TarnApp extends LitElement {
           )}
         </dl>
       </div>
-    </div>`;
+    </dialog>`;
+  }
+
+  /** Closes the ? sheet; the dialog gives focus back to where it was. */
+  private closeKeys(): void {
+    const dialog =
+      this.renderRoot.querySelector<HTMLDialogElement>('dialog.keys-veil');
+    if (dialog?.open) dialog.close();
+    else this.showKeys = false;
   }
 
   private renderPage() {
@@ -384,7 +490,7 @@ export class TarnApp extends LitElement {
                   face=${clock}
                   tone=${clockTone(
                     this.settings.clockColor,
-                    sceneTone(sceneById(this.settings.scene)),
+                    sceneTone(sceneById(this.shownScene())),
                     this.settings.clockHex,
                   )}
                   style=${clockInk(
@@ -397,6 +503,8 @@ export class TarnApp extends LitElement {
             search.show
               ? html`<tarn-search
                   .settings=${search}
+                  ?editing=${this.editing}
+                  @tarn-remove-search=${this.onRemoveSearch}
                   glass=${
                     this.liveScene && widgets.length && !this.scrolling
                       ? 'shader'
@@ -423,7 +531,7 @@ export class TarnApp extends LitElement {
   }
 
   override willUpdate(): void {
-    const scene = sceneById(this.settings.scene);
+    const scene = sceneById(this.shownScene());
     const tone = sceneTone(scene);
     this.setAttribute('tone', tone);
     // Custom widgets draw with the wallpaper's colors and ink.
@@ -433,6 +541,13 @@ export class TarnApp extends LitElement {
   private lastSearchLook = '';
 
   override updated(): void {
+    // The ? sheet opens as a modal: focus moves in and stays until it closes.
+    const keys =
+      this.renderRoot.querySelector<HTMLDialogElement>('dialog.keys-veil');
+    if (keys && !keys.open) {
+      keys.showModal();
+      keys.querySelector<HTMLElement>('.keys')?.focus();
+    }
     // The search box became glass, or stopped being it: redraw the frost.
     const {show, style} = this.settings.search;
     const look = `${show}:${style}`;
@@ -448,10 +563,17 @@ export class TarnApp extends LitElement {
    * them in at once, with the scene's first frame.
    */
   private readonly resumed = arrival() === 'resume';
+  /**
+   * A reload of a scene this computer can't keep up with: it shows its
+   * still picture, so widgets use CSS glass from the first frame.
+   */
+  private readonly resumedStill: boolean;
 
   /** Whether the live scene (and its shader glass) is on screen. */
   private get liveScene(): boolean {
-    return this.settled ? this.settled.live : this.resumed;
+    return this.settled
+      ? this.settled.live
+      : this.resumed && !this.resumedStill;
   }
 
   /** Widgets moved: the backdrop frosts the scene behind them. */
@@ -504,7 +626,7 @@ export class TarnApp extends LitElement {
   private onKey = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return;
     if (event.key === 'Escape') {
-      if (this.showKeys) this.showKeys = false;
+      if (this.showKeys) this.closeKeys();
       else if (isTyping(event)) {
         (event.composedPath()[0] as HTMLElement).blur();
       }
@@ -533,7 +655,8 @@ export class TarnApp extends LitElement {
         done = widget('tarn-favorites')?.openNumber(shortcut.number) ?? false;
         break;
       case 'help':
-        this.showKeys = !this.showKeys;
+        if (this.showKeys) this.closeKeys();
+        else this.showKeys = true;
         break;
     }
     // Only a key that did something is kept from the page.
@@ -574,6 +697,12 @@ export class TarnApp extends LitElement {
     if (!draggedKind(event.dataTransfer) || !this.incoming) return;
     event.preventDefault();
     clearTimeout(this.incomingTimer);
+    // Only Tarn's own panel adds widgets; a web page's look-alike drag
+    // is let go.
+    if (!fromPanel(event.dataTransfer, this.incoming)) {
+      this.endIncoming();
+      return;
+    }
     // A custom widget from an example brings its code: stored before the
     // widget appears, so it starts with it.
     const code =
@@ -625,10 +754,20 @@ export class TarnApp extends LitElement {
   /** The tab icon's tint depends on light or dark mode. */
   private onSchemeChange = () => {
     void refreshFavicon(this.settings.tabIcon);
+    // The default wallpaper follows light and dark (`auto`).
+    this.requestUpdate();
   };
+
+  /** The wallpaper on screen: the setting, with `auto` resolved. */
+  private shownScene(): string {
+    return shownSceneId(this.settings.scene, this.settings.appearance);
+  }
 
   private onSettled = (event: CustomEvent<{live: boolean}>) => {
     this.settled = event.detail;
+    // The live scene can stop, or come back, after widgets are up (a shader
+    // failed, the GPU context was lost): its frost goes or comes with it.
+    this.sendTiles();
   };
 
   private onRevealed = (
@@ -636,6 +775,20 @@ export class TarnApp extends LitElement {
   ) => {
     if (!this.revealed) keepTarnWarm();
     this.revealed = event.detail;
+  };
+
+  /**
+   * A change wasn't stored: show what is (the panel says why), or, in a
+   * tab older than the installed Tarn, ask for a reload.
+   */
+  private onSaveProblem = (problem: SaveProblem) => {
+    if (problem === 'stale') this.stale = true;
+    else void loadSettings().then(this.applySettings, () => {});
+  };
+
+  /** The search box's Remove, in edit mode: hidden until Settings > Search. */
+  private onRemoveSearch = () => {
+    void saveSettings({search: {...this.settings.search, show: false}});
   };
 
   private applySettings = (settings: Settings) => {

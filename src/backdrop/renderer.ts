@@ -4,13 +4,14 @@
  */
 
 import {toBase64} from '../app/codec';
+import {averageHex, hexToRgb} from '../ui/color';
 import {GLASS_FRAGMENT, GLASS_VERTEX, MAX_TILES} from './glass';
 import {createNoiseTexture} from './noise-texture';
 import {QualityGovernor, initialQualityLevel} from './quality';
 import {VERTEX_SHADER, fragmentSource} from './scenes/glsl';
-import {getWallpaperImage} from '../wallpapers/store';
+import {DISPLAY_EDGE, getWallpaperImage} from '../wallpapers/store';
 import {DEFAULT_SCENE_ID, sceneById, sceneTone} from './scenes';
-import type {Hex, Scene} from './scenes/types';
+import type {Scene} from './scenes/types';
 
 export type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
 
@@ -40,8 +41,20 @@ export interface RendererEvents {
   onFirstFrame?: () => void;
   /** A frame of this scene is on screen (a photo may take a moment). */
   onSceneShown?: (id: string) => void;
-  /** WebGL2 is unavailable (disabled or blocked GPU); nothing will draw. */
+  /**
+   * Nothing will draw: WebGL2 is unavailable (disabled or blocked GPU), or
+   * the scene's or the glass pass's shader failed to compile on this GPU.
+   */
   onUnavailable?: () => void;
+  /**
+   * Even the lowest quality level kept missing frames (see
+   * `QualityGovernor.cantKeepUp`): the loop stopped, and this scene stays
+   * still until it is given again (`setScene`).
+   */
+  onCantKeepUp?: (id: string) => void;
+  /** The GPU context was lost; it may come back (`onContextRestored`). */
+  onContextLost?: () => void;
+  onContextRestored?: () => void;
   /**
    * The animation clock: sent when it starts or stops, and every second
    * while running. `at` is the wall time (ms) the clock value was read;
@@ -66,11 +79,12 @@ const FALLBACK_INTERVAL_MS = 1000 / 30;
 const TIME_PERIOD_S = 7200;
 
 /**
- * Width of the ghost frame: a small still that covers the single frame
- * between a reload's old and new page. Wide enough to keep fine detail
- * (Wave's light lines); stored raw (~190 KB) in per-tab sessionStorage.
+ * Longer side of the ghost frame: a small still that covers the single
+ * frame between a reload's old and new page. Wide enough to keep fine
+ * detail (Wave's light lines); stored raw in per-tab sessionStorage (192 KB
+ * of pixels at 320x200, 256 K characters as base64).
  */
-const GHOST_WIDTH = 320;
+const GHOST_SIDE = 320;
 
 /**
  * Animation time beyond which a hidden tab quietly wraps its clock: float32
@@ -88,7 +102,7 @@ const WAKE_EARLY_MS = 12;
  * when nobody has for a while (1 min). It never stops.
  */
 export type Pace = 'active' | 'calm';
-export const PACES: readonly Pace[] = ['active', 'calm'];
+const PACES: readonly Pace[] = ['active', 'calm'];
 
 /** Animation speed at each pace, relative to the scene's own speed. */
 const PACE_RATE: Readonly<Record<Pace, number>> = {active: 1, calm: 0.4};
@@ -164,6 +178,15 @@ const cancelFrame: (id: number) => void =
 export class Renderer {
   private gl: WebGL2RenderingContext | null = null;
   private compiled = new Map<string, CompiledScene>();
+  /**
+   * Scenes whose shader failed to compile or link here. Never retried: a
+   * failure would otherwise recompile (and log) every frame.
+   */
+  private failed = new Set<string>();
+  private glassFailed = false;
+  /** The device couldn't keep up with this scene: no loop until setScene. */
+  private gaveUp = false;
+  private maxTextureSize = 4096;
   private scene: Scene;
   private cssWidth = 1;
   private cssHeight = 1;
@@ -173,6 +196,8 @@ export class Renderer {
   /** The loop is running (waiting for a frame callback or on its timer). */
   private looping = false;
   private waitTimer: ReturnType<typeof setTimeout> | 0 = 0;
+  /** When the sleep timer last asked for a frame (performance.now()). */
+  private wokeAt = 0;
   private lastFrameAt = 0;
   /** Trades resolution and frame rate for smoothness on weak devices. */
   private governor = new QualityGovernor(
@@ -208,6 +233,8 @@ export class Renderer {
   private photoLoading: string | null = null;
   /** The scene whose frame is on screen, for `onSceneShown`. */
   private shownSceneId: string | null = null;
+  /** Ghost captures waiting for the next drawn frame (false: none came). */
+  private ghostWaiters: ((drawn: boolean) => void)[] = [];
 
   /**
    * @param startClock Animation time to start from, e.g. where the previous
@@ -233,9 +260,13 @@ export class Renderer {
       this.frame = null;
       this.photo = null;
       this.photoLoading = null;
+      // Report the scene again once a frame is back on screen.
+      this.shownSceneId = null;
+      this.events.onContextLost?.();
     });
     canvas.addEventListener('webglcontextrestored', () => {
       this.initContext();
+      if (this.gl) this.events.onContextRestored?.();
       this.refresh();
     });
     this.initContext();
@@ -243,6 +274,12 @@ export class Renderer {
 
   setScene(scene: Scene): void {
     this.scene = scene;
+    // Given again (another scene, or the same one picked again): try live.
+    this.gaveUp = false;
+    this.governor.restartWatch();
+    // The page waits for this scene's first frame, even if it was already
+    // on screen (switched away and back before the switch went through).
+    this.shownSceneId = null;
     if (!scene.photo) this.freePhoto();
     this.applySize();
     this.refresh();
@@ -252,12 +289,13 @@ export class Renderer {
     this.cssWidth = Math.max(1, cssWidth);
     this.cssHeight = Math.max(1, cssHeight);
     this.sized = true;
+    this.governor.restartWatch();
     this.applySize();
     // A window grown past what the photo was decoded for: decode it again.
     if (
       this.scene.photo &&
       this.photo &&
-      this.photo.width < this.photoWidth() * 0.9
+      this.photo.width < this.photoSize().width * 0.9
     ) {
       this.loadPhoto(this.scene.id);
     }
@@ -283,7 +321,7 @@ export class Renderer {
     this.tiles.set(rects.slice(0, this.tileCount * 4));
     this.glassStrength = Math.min(1, Math.max(0, strength));
     this.glassRadius = radius;
-    if (!this.visible || !this.sized) return;
+    if (!this.visible || !this.sized || !this.drawable()) return;
     // While the scene animates, the next frame picks the tiles up (at most
     // one draw per display frame, however many updates arrive). Otherwise
     // nothing else would draw, so draw now.
@@ -300,6 +338,15 @@ export class Renderer {
     }
   }
 
+  /**
+   * Stops drawing until the next {@link setScene}: the page shows the
+   * scene's still picture instead (this computer couldn't keep up with it).
+   */
+  hold(): void {
+    this.gaveUp = true;
+    this.stopLoop();
+  }
+
   /** Eases the animation toward a new pace; see {@link Pace}. */
   setPace(pace: Pace): void {
     if (pace === this.pace || !PACES.includes(pace)) return;
@@ -312,19 +359,24 @@ export class Renderer {
   }
 
   /**
-   * Draws the current moment and returns it as raw RGB pixels at GHOST_WIDTH.
-   * Raw, so the next page can paint it synchronously with no image decode.
+   * Returns the current moment as raw RGB pixels, GHOST_SIDE on the longer
+   * side. Raw, so the next page can paint it synchronously with no decode.
    */
   async ghost(): Promise<GhostFrame | null> {
-    if (!this.gl || !this.sized || !this.ready()) return null;
-    // Capture in the same task as the draw, before the buffer is presented.
-    this.draw();
+    if (!this.sized || !this.ready() || !this.drawable()) return null;
+    // Capture in the same task as a draw, before the buffer is presented:
+    // while the scene animates, right after its next frame (no extra draw);
+    // a stopped scene draws once now.
+    if (this.looping) {
+      const drawn = await new Promise<boolean>(resolve =>
+        this.ghostWaiters.push(resolve),
+      );
+      if (!drawn) return null;
+    } else {
+      this.draw();
+    }
     const clock = this.clock;
-    const width = GHOST_WIDTH;
-    const height = Math.max(
-      1,
-      Math.round((GHOST_WIDTH * this.canvas.height) / this.canvas.width),
-    );
+    const {width, height} = ghostSize(this.canvas.width, this.canvas.height);
     // Shrink on the GPU (halving blits, so each step averages 2x2 pixels)
     // and read back only the small result: reading the full frame back
     // and scaling it on the CPU was most of the worker's time.
@@ -346,7 +398,7 @@ export class Renderer {
       height,
       data: toBase64(pixels),
       clock,
-      color: averageColor(rgba),
+      color: averageHex(rgba),
     };
   }
 
@@ -502,6 +554,16 @@ export class Renderer {
     this.gl = null;
   }
 
+  /** Whether anything can draw: a context, and shaders that compiled. */
+  private drawable(): boolean {
+    return (
+      this.gl !== null &&
+      !this.glassFailed &&
+      !this.failed.has(this.scene.id) &&
+      !this.gaveUp
+    );
+  }
+
   private initContext(): void {
     const gl = this.canvas.getContext('webgl2', {
       alpha: true,
@@ -516,6 +578,7 @@ export class Renderer {
       return;
     }
     this.gl = gl;
+    this.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
     // WebGL2 needs a bound VAO to draw, even with no attributes.
     gl.bindVertexArray(gl.createVertexArray());
     // Bound once to unit 0 for the lifetime of the context.
@@ -533,7 +596,8 @@ export class Renderer {
   /** Reconciles the loop with visibility and motion preferences. */
   private refresh(): void {
     if (!this.sized) return;
-    if (!this.visible) {
+    // Hidden, or nothing can draw (context lost, a shader failed): no loop.
+    if (!this.visible || !this.drawable()) {
       this.stopLoop();
       return;
     }
@@ -548,8 +612,11 @@ export class Renderer {
       return;
     }
     this.draw();
+    // Its shader just failed: the page shows the still instead.
+    if (!this.drawable()) return;
     if (!this.looping) {
       this.looping = true;
+      this.governor.restartWatch();
       this.clockAt = performance.now();
       this.frameId = requestFrame(this.tick);
       this.reportClock(true);
@@ -566,6 +633,7 @@ export class Renderer {
     if (delayMs > WAKE_EARLY_MS * 2) {
       this.waitTimer = setTimeout(() => {
         this.waitTimer = 0;
+        this.wokeAt = performance.now();
         if (this.looping) this.frameId = requestFrame(this.tick);
       }, delayMs - WAKE_EARLY_MS);
     } else {
@@ -582,12 +650,23 @@ export class Renderer {
     // 60% as far as at full speed, and settling down never looks choppier.
     const fps = 2 / 3 + (Math.max(this.rate, 0.4) - 0.4) * (1 / 1.8);
     const interval = this.governor.frameIntervalMs / fps;
-    const sinceLastFrame = now - this.lastFrameAt;
+    const due = this.lastFrameAt + interval;
+    // After a longer sleep (calm, or a fast display) the first callback
+    // can carry an old time: with no frames to make, the display delivers
+    // its last frame time at once. A frame drawn now still shows at the
+    // next display frame, the one due (the timer wakes less than a frame
+    // early at 60 Hz), so draw it as that frame instead of waking again.
+    const frameAt = now < this.wokeAt && now < due ? due : now;
+    const sinceLastFrame = frameAt - this.lastFrameAt;
     if (this.tilesMoved && sinceLastFrame < interval - 2) {
       // Tiles are gliding: redraw now so the frost keeps up with them, but
       // leave the animation clock and the quality governor alone.
       this.tilesMoved = false;
       this.draw();
+      if (!this.drawable()) {
+        this.stopLoop();
+        return;
+      }
       this.scheduleNext(interval - sinceLastFrame);
       return;
     }
@@ -596,20 +675,32 @@ export class Renderer {
       return;
     }
     this.tilesMoved = false;
-    this.lastFrameAt = now;
+    this.lastFrameAt = frameAt;
     // Only full-speed frames tell the governor how the device is coping.
     if (this.rate > 0.98 && this.governor.record(sinceLastFrame)) {
       this.applySize();
     }
-    const step = Math.min(Math.max(now - this.clockAt, 0), MAX_STEP_MS) / 1000;
-    this.clockAt = now;
+    if (this.governor.cantKeepUp) {
+      // Still choppy at the lowest quality: stop here, and the page shows
+      // the scene's still picture instead.
+      this.hold();
+      this.events.onCantKeepUp?.(this.scene.id);
+      return;
+    }
+    const step =
+      Math.min(Math.max(frameAt - this.clockAt, 0), MAX_STEP_MS) / 1000;
+    this.clockAt = frameAt;
     const ease = target < this.rate ? EASE_DOWN_S : EASE_UP_S;
     this.rate += (target - this.rate) * (1 - Math.exp(-step / ease));
     if (Math.abs(target - this.rate) < 0.002) this.rate = target;
     this.clock += step * this.rate;
     this.draw();
+    if (!this.drawable()) {
+      this.stopLoop();
+      return;
+    }
     if (now - this.clockReportedAt > 1000) this.reportClock(true);
-    this.scheduleNext(interval);
+    this.scheduleNext(frameAt + interval - performance.now());
   };
 
   private reportClock(running: boolean): void {
@@ -632,6 +723,13 @@ export class Renderer {
     this.looping = false;
     this.frameId = 0;
     this.waitTimer = 0;
+    this.releaseGhostWaiters(false);
+  }
+
+  private releaseGhostWaiters(drawn: boolean): void {
+    const waiters = this.ghostWaiters;
+    this.ghostWaiters = [];
+    for (const resolve of waiters) resolve(drawn);
   }
 
   private draw(): void {
@@ -677,6 +775,8 @@ export class Renderer {
       this.shownSceneId = this.scene.id;
       this.events.onSceneShown?.(this.scene.id);
     }
+    // Waiting ghosts read this frame back, still in this task.
+    this.releaseGhostWaiters(true);
   }
 
   /** Whether the current scene can draw: a photo needs its image. */
@@ -684,15 +784,11 @@ export class Renderer {
     return !this.scene.photo || this.photo?.id === this.scene.id;
   }
 
-  /** The width a photo needs to cover the canvas without upscaling. */
-  private photoWidth(): number {
+  /** The size to decode the current photo at; see {@link photoDecodeSize}. */
+  private photoSize(): {width: number; height: number} {
     const size = this.scene.photo;
-    if (!size) return 0;
-    const cover = Math.max(
-      this.canvas.width / size.width,
-      this.canvas.height / size.height,
-    );
-    return Math.ceil(size.width * Math.min(1, cover));
+    if (!size) return {width: 0, height: 0};
+    return photoDecodeSize(size, this.canvas, this.maxTextureSize);
   }
 
   /**
@@ -704,8 +800,7 @@ export class Renderer {
     const size = this.scene.photo;
     if (!size || this.photoLoading === id || !this.sized) return;
     this.photoLoading = id;
-    const width = this.photoWidth();
-    const height = Math.ceil((width * size.height) / size.width);
+    const {width, height} = this.photoSize();
     void getWallpaperImage(id)
       .then(blob =>
         blob
@@ -847,9 +942,16 @@ export class Renderer {
   }
 
   private glassProgram(gl: WebGL2RenderingContext): GlassProgram | null {
-    if (this.glass) return this.glass;
+    if (this.glass || this.glassFailed) return this.glass;
     const program = linkProgram(gl, GLASS_VERTEX, GLASS_FRAGMENT);
-    if (!program) return null;
+    if (!program) {
+      // Widgets can't be frosted: the page shows the still and CSS glass.
+      if (!gl.isContextLost()) {
+        this.glassFailed = true;
+        this.events.onUnavailable?.();
+      }
+      return null;
+    }
     const u = (name: string) => gl.getUniformLocation(program, name);
     this.glass = {
       program,
@@ -872,14 +974,22 @@ export class Renderer {
     scene: Scene,
   ): CompiledScene | null {
     const cached = this.compiled.get(scene.id);
-    if (cached) return cached;
+    if (cached || this.failed.has(scene.id)) return cached ?? null;
 
     const program = linkProgram(
       gl,
       VERTEX_SHADER,
       fragmentSource(scene.fragment),
     );
-    if (!program) return null;
+    if (!program) {
+      // Not this scene on this GPU: the page shows its still instead. (A
+      // lost context fails everything; it is retried once restored.)
+      if (!gl.isContextLost()) {
+        this.failed.add(scene.id);
+        this.events.onUnavailable?.();
+      }
+      return null;
+    }
     const compiled: CompiledScene = {
       program,
       uResolution: gl.getUniformLocation(program, 'uResolution'),
@@ -903,8 +1013,13 @@ function linkProgram(
 ): WebGLProgram | null {
   const vertex = compileShader(gl, gl.VERTEX_SHADER, vertexSource);
   const fragment = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
-  const program = gl.createProgram();
-  if (!vertex || !fragment || !program) return null;
+  const program = vertex && fragment ? gl.createProgram() : null;
+  if (!vertex || !fragment || !program) {
+    // Free what was made, so a failure leaks nothing.
+    if (vertex) gl.deleteShader(vertex);
+    if (fragment) gl.deleteShader(fragment);
+    return null;
+  }
 
   gl.attachShader(program, vertex);
   gl.attachShader(program, fragment);
@@ -940,25 +1055,36 @@ function compileShader(
   return shader;
 }
 
-/** Mean color of RGBA pixels, as #rrggbb. */
-export function averageColor(pixels: ArrayLike<number>): string {
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  const count = pixels.length / 4;
-  for (let i = 0; i < pixels.length; i += 4) {
-    r += pixels[i]!;
-    g += pixels[i + 1]!;
-    b += pixels[i + 2]!;
-  }
-  const hex = (v: number) =>
-    Math.round(v / count)
-      .toString(16)
-      .padStart(2, '0');
-  return `#${hex(r)}${hex(g)}${hex(b)}`;
+/** The ghost's size for a canvas: GHOST_SIDE on the longer side, never more. */
+export function ghostSize(
+  width: number,
+  height: number,
+): {width: number; height: number} {
+  const scale = Math.min(1, GHOST_SIDE / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
 }
 
-export function hexToRgb(hex: Hex): [number, number, number] {
-  const n = Number.parseInt(hex.slice(1), 16);
-  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+/**
+ * The size to decode a photo at: enough to cover the canvas, but never more
+ * than the display copy that is decoded (at most DISPLAY_EDGE on its long
+ * side, so never upscaled) or the GPU's largest texture.
+ * @param photo The original's size.
+ */
+export function photoDecodeSize(
+  photo: {readonly width: number; readonly height: number},
+  canvas: {readonly width: number; readonly height: number},
+  maxTextureSize: number,
+): {width: number; height: number} {
+  const edge = Math.min(DISPLAY_EDGE, maxTextureSize);
+  const cover = Math.max(
+    canvas.width / photo.width,
+    canvas.height / photo.height,
+  );
+  const scale = Math.min(1, cover, edge / Math.max(photo.width, photo.height));
+  const side = (value: number) =>
+    Math.max(1, Math.min(edge, Math.round(value * scale)));
+  return {width: side(photo.width), height: side(photo.height)};
 }

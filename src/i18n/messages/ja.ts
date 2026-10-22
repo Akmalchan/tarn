@@ -12,6 +12,11 @@ export const ja: Catalog = {
   'common.remove': '削除',
   'common.settings': '設定',
   'common.openSettings': '設定を開く',
+  'saving.failed':
+    '最後の変更を保存できませんでした。少ししてからもう一度お試しください。',
+  'saving.stale':
+    'Tarn がアップデートされました。変更を保存するには再読み込みしてください。',
+  'saving.reload': '再読み込み',
   'tip.title': '自分好みに',
   'tip.body':
     '壁紙、時計のデザイン、ウィジェットはここで変更できます。設定を開いている間は、ウィジェットをドラッグして移動できます。',
@@ -23,14 +28,13 @@ export const ja: Catalog = {
   'tip.step': 'ステップ {n}/{count}',
   'tip.footer.title': 'Chrome のフッターを非表示',
   'tip.footer.body':
-    'Chrome はこのページの下にバーを追加します。バーを右クリックして、フッターを非表示にしてください。',
+    'Chrome はこのページの下部にバーを追加します。そこで［Chrome をカスタマイズ］をクリックし、パネルの一番下でフッターをオフにします。',
   'tip.pin.title': 'ツールバーから固定を外す',
   'tip.pin.body':
     'Chrome が Tarn をアドレスバーの横に固定しました。不要な場合は、アイコンを右クリックして固定を解除してください。',
   'tip.bookmarks.title': 'ブックマーク バー',
   'tip.bookmarks.body':
     'Chrome は新しいタブでブックマーク バーを隠します。{keys} を押すと、すべてのページに表示されます。',
-  'tip.art.hideFooter': 'フッターを非表示',
   'tip.art.unpin': '固定を解除',
   'widget.favorites': 'ブックマーク',
   'widget.notes': 'メモ',
@@ -75,10 +79,6 @@ export const ja: Catalog = {
   'favorites.namePlaceholder': 'アイコンの下に表示されます',
   'favorites.address': 'アドレス',
   'favorites.badAddress': 'ウェブアドレスではないようです。',
-  'favorites.useBookmarks': 'ブックマークを使う',
-  'favorites.useBookmarksHint': 'ブックマークバーのサイトをコピーします',
-  'favorites.noBookmarks': 'ブックマークバーは空です',
-  'favorites.imported': 'ブックマークバーを追加しました。',
   'favorites.more': 'その他',
   'favorites.icon': 'アイコン',
   'favorites.chooseIcon': '画像を選ぶ',
@@ -157,6 +157,11 @@ export const ja: Catalog = {
   'takeover.chooseBody':
     '新しいタブの拡張機能らしきものは選択済みです。あとで Tarn をオフにすると、元どおりオンになります。',
   'takeover.newTabTag': '新しいタブ',
+  'takeover.noneTitle': 'ほかの新しいタブは見つかりません',
+  'takeover.noneBody':
+    '新しいタブページらしき拡張機能はありません。それでもほかのページが表示される場合は、すべての拡張機能を表示して選んでください。',
+  'takeover.showAll': 'すべての拡張機能を表示',
+  'takeover.showNewTabs': '新しいタブだけを表示',
   'takeover.switchOff': 'オフにして Tarn を使う',
   'panel.search': '検索',
   'panel.searchSettings': '設定を検索',
@@ -257,13 +262,16 @@ export const ja: Catalog = {
   'panel.weather.providerLabel': '天気の提供元',
   'panel.weather.apiKey': 'API キー',
   'panel.weather.pasteKey': 'キーを貼り付け',
-  'panel.weather.units': '単位',
   'panel.weather.unitsLabel': '温度の単位',
   'panel.weather.auto': '自動',
   'panel.weather.noteOpenMeteo':
     '無料で、キーは不要です。天気を取得するのは追加した天気ウィジェットだけで、タブを開いている間、約 30 分ごとです。',
   'panel.weather.noteGoogle':
     'リクエストはキーの Google Cloud プロジェクトに課金されます。そのプロジェクトで Weather API を有効にしてください。キーはこのコンピュータに保存されます。',
+  'panel.weather.restrictKey':
+    'Google Cloud で、キーを Weather API だけに制限してください。',
+  'panel.weather.noKeyHere':
+    'このコンピュータにはまだキーがないため、天気は Open-Meteo から取得します。',
   'panel.weather.keySaved': 'API キーを保存しました',
   'panel.weather.keyRemoved': 'API キーを削除しました',
   'panel.keys': 'キーボード',
@@ -310,6 +318,7 @@ export const ja: Catalog = {
   'panel.whatsNew': '新機能',
   'panel.whatsNew.unseen': '新着',
   'panel.rate': 'Tarn を評価',
+  'whatsNew.v1_0_1.fixes': '不具合の修正と最適化。',
   'whatsNew.v1_0_0.wallpapers':
     '16 種類の動く壁紙。それぞれパソコンへの負荷が一目でわかります。',
   'whatsNew.v1_0_0.appearance':
@@ -342,6 +351,9 @@ export const ja: Catalog = {
   'panel.examples.note':
     'サンプル入りのページを試せます。「元に戻す」で自分のウィジェットに戻ります。',
   'panel.examples.shown': '「{name}」を表示しました',
+  'panel.examples.back': '自分のウィジェットに戻す',
+  'panel.examples.keep': 'このセットアップを使う',
+  'panel.examples.backDone': '自分のウィジェットに戻しました',
   'panel.examples.bookmarks': 'ブックマークだけ',
   'panel.examples.notes': 'メモとタスク',
   'panel.examples.starter': 'スターター',
@@ -411,6 +423,11 @@ export const ja: Catalog = {
   'keys.help': 'ショートカットを表示',
   'keys.leave': '入力欄から出る',
   'keys.or': 'または',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Shift',
+  'keys.esc': 'Esc',
+  'page.newTab': '新しいタブ',
   'code.example.equalizer': 'イコライザー',
   'code.example.aurora': 'オーロラ',
   'code.example.synthwave': 'シンセウェイブ',

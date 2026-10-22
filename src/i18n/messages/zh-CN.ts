@@ -12,6 +12,9 @@ export const zhCN: Catalog = {
   'common.remove': '移除',
   'common.settings': '设置',
   'common.openSettings': '打开设置',
+  'saving.failed': '无法保存你的上一次更改，请稍后再试。',
+  'saving.stale': 'Tarn 已更新。请重新加载，以便继续保存更改。',
+  'saving.reload': '重新加载',
   'tip.title': '打造你的专属页面',
   'tip.body':
     '壁纸、表盘和小组件都在这里。打开设置时，可以拖动小组件来移动它们。',
@@ -23,14 +26,13 @@ export const zhCN: Catalog = {
   'tip.step': '第 {n} 步，共 {count} 步',
   'tip.footer.title': '隐藏 Chrome 的页脚',
   'tip.footer.body':
-    'Chrome 会在此页面底部添加一个栏。右键点击它，选择隐藏页脚。',
+    'Chrome 会在此页面底部添加一个栏。点击其中的“自定义 Chrome”，然后在面板最下方关闭页脚。',
   'tip.pin.title': '从工具栏取消固定',
   'tip.pin.body':
     'Chrome 已将 Tarn 固定在地址栏旁边。不需要的话，右键点击它的图标并取消固定。',
   'tip.bookmarks.title': '你的书签栏',
   'tip.bookmarks.body':
     'Chrome 会在新标签页中隐藏书签栏。按 {keys} 可让它显示在每个页面上。',
-  'tip.art.hideFooter': '隐藏页脚',
   'tip.art.unpin': '取消固定',
   'widget.favorites': '书签',
   'widget.notes': '便签',
@@ -75,10 +77,6 @@ export const zhCN: Catalog = {
   'favorites.namePlaceholder': '显示在图标下方',
   'favorites.address': '网址',
   'favorites.badAddress': '这看起来不像网址。',
-  'favorites.useBookmarks': '使用我的书签',
-  'favorites.useBookmarksHint': '从书签栏复制网站',
-  'favorites.noBookmarks': '书签栏是空的',
-  'favorites.imported': '已添加书签栏。',
   'favorites.more': '更多',
   'favorites.icon': '图标',
   'favorites.chooseIcon': '选择图片',
@@ -154,6 +152,11 @@ export const zhCN: Catalog = {
   'takeover.chooseBody':
     '看起来是新标签页扩展的已为你选好。之后关闭 Tarn 会重新开启它们。',
   'takeover.newTabTag': '新标签页',
+  'takeover.noneTitle': '没有找到其他新标签页',
+  'takeover.noneBody':
+    '你的扩展里没有看起来像新标签页的。如果仍有扩展接管新标签页，请显示所有扩展并选中它。',
+  'takeover.showAll': '显示所有扩展',
+  'takeover.showNewTabs': '只显示新标签页',
   'takeover.switchOff': '关闭并使用 Tarn',
   'panel.search': '搜索',
   'panel.searchSettings': '搜索设置',
@@ -252,13 +255,16 @@ export const zhCN: Catalog = {
   'panel.weather.providerLabel': '天气数据来源',
   'panel.weather.apiKey': 'API 密钥',
   'panel.weather.pasteKey': '粘贴密钥',
-  'panel.weather.units': '单位',
   'panel.weather.unitsLabel': '温度单位',
   'panel.weather.auto': '自动',
   'panel.weather.noteOpenMeteo':
     '免费，无需密钥。只会为你添加的天气小组件获取天气，在标签页打开时大约每 30 分钟一次。',
   'panel.weather.noteGoogle':
     '请求费用计入密钥所属的 Google Cloud 项目，该项目需开启 Weather API。密钥只保存在这台电脑上。',
+  'panel.weather.restrictKey':
+    '请在 Google Cloud 中将密钥限制为仅用于 Weather API。',
+  'panel.weather.noKeyHere':
+    '这台电脑还没有密钥，因此天气数据来自 Open-Meteo。',
   'panel.weather.keySaved': '已保存 API 密钥',
   'panel.weather.keyRemoved': '已移除 API 密钥',
   'panel.keys': '键盘',
@@ -303,6 +309,7 @@ export const zhCN: Catalog = {
   'panel.whatsNew': '新功能',
   'panel.whatsNew.unseen': '新',
   'panel.rate': '为 Tarn 评分',
+  'whatsNew.v1_0_1.fixes': '错误修复和性能优化。',
   'whatsNew.v1_0_0.wallpapers': '十六款动态壁纸，每款都标出对电脑的负担。',
   'whatsNew.v1_0_0.appearance':
     '浅色或深色：设置、菜单和弹出面板跟随系统，也可在“高级”中选择。',
@@ -332,6 +339,9 @@ export const zhCN: Catalog = {
   'panel.examples.note':
     '试试带示例内容的现成页面。点“撤销”即可恢复你的小组件。',
   'panel.examples.shown': '已显示“{name}”',
+  'panel.examples.back': '恢复我的小组件',
+  'panel.examples.keep': '保留这个布局',
+  'panel.examples.backDone': '已恢复你的小组件',
   'panel.examples.bookmarks': '只有书签',
   'panel.examples.notes': '笔记和任务',
   'panel.examples.starter': '入门',
@@ -399,6 +409,11 @@ export const zhCN: Catalog = {
   'keys.help': '显示快捷键',
   'keys.leave': '离开文本框',
   'keys.or': '或',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Shift',
+  'keys.esc': 'Esc',
+  'page.newTab': '新标签页',
   'code.example.equalizer': '均衡器',
   'code.example.aurora': '极光',
   'code.example.synthwave': '合成波',

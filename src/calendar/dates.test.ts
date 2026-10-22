@@ -4,7 +4,13 @@
  */
 
 import {describe, expect, it} from 'vitest';
-import {dayKey, firstWeekday, monthWeeks, untilMidnight, weekOf} from './dates';
+import {firstWeekday, monthWeeks, untilMidnight, weekOf} from './dates';
+
+/** "2026-10-13", in local time. */
+function dayKey(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
 describe('calendar dates', () => {
   it('starts the week where the language region does', () => {

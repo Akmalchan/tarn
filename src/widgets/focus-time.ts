@@ -21,6 +21,15 @@ export function format(ms: number): string {
 }
 
 /**
+ * How long until the time shown next changes, with `left` ms to go: it
+ * rounds up, so at the next whole second left (and a few ms after, so the
+ * tick never lands just before it).
+ */
+export function nextTickMs(left: number): number {
+  return (left % 1000 || 1000) + 5;
+}
+
+/**
  * What the user typed as a length: "45" is minutes, "12:30" minutes and
  * seconds, "1:30:00" hours too; leading zeros are fine ("0009" is 9
  * minutes). Longer than 9 hours becomes 9 hours, shorter than 10 seconds

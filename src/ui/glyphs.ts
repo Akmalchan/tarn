@@ -36,7 +36,6 @@ export const GLYPHS = {
   timer: svg`<path fill-rule="evenodd" d="M9.5 1.5h5v2h-5zM12 4.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5zM11 8v6h2V8z"/>`,
   plus: svg`<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1 5v4H7v2h4v4h2v-4h4v-2h-4V7z"/>`,
   minus: svg`<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zM7 11v2h10v-2z"/>`,
-  up: svg`<path d="M12 7.6l6.2 6.2-1.5 1.5L12 10.6l-4.7 4.7-1.5-1.5z"/>`,
   down: svg`<path d="M12 16.4l-6.2-6.2 1.5-1.5 4.7 4.7 4.7-4.7 1.5 1.5z"/>`,
   chevron: svg`<path d="M9 5.6l6.4 6.4L9 18.4l-1.5-1.5 4.9-4.9-4.9-4.9z"/>`,
   back: svg`<path d="M15 5.6L8.6 12l6.4 6.4 1.5-1.5-4.9-4.9 4.9-4.9z"/>`,

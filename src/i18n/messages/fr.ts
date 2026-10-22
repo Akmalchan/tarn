@@ -12,6 +12,11 @@ export const fr: Catalog = {
   'common.remove': 'Retirer',
   'common.settings': 'Réglages',
   'common.openSettings': 'Ouvrir les réglages',
+  'saving.failed':
+    'Votre dernière modification n’a pas pu être enregistrée. Réessayez dans un instant.',
+  'saving.stale':
+    'Tarn a été mis à jour. Rechargez pour continuer à enregistrer vos modifications.',
+  'saving.reload': 'Recharger',
   'tip.title': 'Personnalisez votre page',
   'tip.body':
     'Fonds d’écran, cadrans et widgets se trouvent ici. Quand les réglages sont ouverts, faites glisser les widgets pour les déplacer.',
@@ -23,14 +28,13 @@ export const fr: Catalog = {
   'tip.step': 'Étape {n} sur {count}',
   'tip.footer.title': 'Masquez le pied de page de Chrome',
   'tip.footer.body':
-    'Chrome ajoute une barre en bas de cette page. Faites un clic droit dessus et choisissez de masquer le pied de page.',
+    'Chrome ajoute une barre en bas de cette page. Cliquez sur Personnaliser Chrome, puis désactivez le pied de page en bas du panneau.',
   'tip.pin.title': 'Retirez-le de la barre d’outils',
   'tip.pin.body':
     'Chrome a épinglé Tarn à côté de la barre d’adresse. Inutile à cet endroit ? Faites un clic droit sur son icône et retirez l’épingle.',
   'tip.bookmarks.title': 'Votre barre de favoris',
   'tip.bookmarks.body':
     'Chrome la masque dans les nouveaux onglets. Appuyez sur {keys} pour la garder sur toutes les pages.',
-  'tip.art.hideFooter': 'Masquer le pied de page',
   'tip.art.unpin': 'Retirer l’épingle',
   'widget.favorites': 'Signets',
   'widget.notes': 'Notes',
@@ -76,10 +80,6 @@ export const fr: Catalog = {
   'favorites.namePlaceholder': 'Affiché sous l’icône',
   'favorites.address': 'Adresse',
   'favorites.badAddress': 'Cela ne ressemble pas à une adresse web.',
-  'favorites.useBookmarks': 'Utiliser mes favoris',
-  'favorites.useBookmarksHint': 'Copier les sites de votre barre de favoris',
-  'favorites.noBookmarks': 'Votre barre de favoris est vide',
-  'favorites.imported': 'Votre barre de favoris a été ajoutée.',
   'favorites.more': 'Plus',
   'favorites.icon': 'Icône',
   'favorites.chooseIcon': 'Choisir une image',
@@ -160,6 +160,11 @@ export const fr: Catalog = {
   'takeover.chooseBody':
     'Celles qui ressemblent à des extensions de nouvel onglet sont déjà sélectionnées. Désactiver Tarn plus tard les réactive.',
   'takeover.newTabTag': 'Nouvel onglet',
+  'takeover.noneTitle': 'Aucun autre nouvel onglet trouvé',
+  'takeover.noneBody':
+    'Aucune de vos extensions ne ressemble à une page de nouvel onglet. Si l’une d’elles prend encore le dessus, affichez toutes les extensions et choisissez-la.',
+  'takeover.showAll': 'Afficher toutes les extensions',
+  'takeover.showNewTabs': 'Afficher seulement les nouveaux onglets',
   'takeover.switchOff': 'Désactiver et utiliser Tarn',
   'panel.search': 'Rechercher',
   'panel.searchSettings': 'Rechercher dans les réglages',
@@ -260,13 +265,16 @@ export const fr: Catalog = {
   'panel.weather.providerLabel': 'Fournisseur météo',
   'panel.weather.apiKey': 'Clé API',
   'panel.weather.pasteKey': 'Collez la clé',
-  'panel.weather.units': 'Unités',
   'panel.weather.unitsLabel': 'Unités de température',
   'panel.weather.auto': 'Auto',
   'panel.weather.noteOpenMeteo':
     'Gratuit, sans clé. La météo n’est récupérée que pour les widgets Météo que vous ajoutez, environ toutes les 30 minutes quand un onglet est ouvert.',
   'panel.weather.noteGoogle':
     'Les requêtes sont facturées au projet Google Cloud de votre clé, où la Weather API doit être activée. La clé reste sur cet ordinateur.',
+  'panel.weather.restrictKey':
+    'Dans Google Cloud, limitez la clé à la Weather API.',
+  'panel.weather.noKeyHere':
+    'Cet ordinateur n’a pas encore de clé : la météo vient donc d’Open-Meteo.',
   'panel.weather.keySaved': 'Clé API enregistrée',
   'panel.weather.keyRemoved': 'Clé API supprimée',
   'panel.keys': 'Clavier',
@@ -313,6 +321,7 @@ export const fr: Catalog = {
   'panel.whatsNew': 'Nouveautés',
   'panel.whatsNew.unseen': 'Nouveau',
   'panel.rate': 'Noter Tarn',
+  'whatsNew.v1_0_1.fixes': 'Corrections de bugs et optimisations.',
   'whatsNew.v1_0_0.wallpapers':
     'Seize fonds d’écran animés, chacun avec une jauge de ce qu’il demande à votre ordinateur.',
   'whatsNew.v1_0_0.appearance':
@@ -346,6 +355,9 @@ export const fr: Catalog = {
   'panel.examples.note':
     'Essayez une page toute prête avec du contenu d’exemple. Annuler rétablit vos widgets.',
   'panel.examples.shown': '{name} affiché',
+  'panel.examples.back': 'Revenir à mes widgets',
+  'panel.examples.keep': 'Garder cette configuration',
+  'panel.examples.backDone': 'Vos widgets sont de retour',
   'panel.examples.bookmarks': 'Juste des signets',
   'panel.examples.notes': 'Notes et tâches',
   'panel.examples.starter': 'Démarrage',
@@ -415,6 +427,11 @@ export const fr: Catalog = {
   'keys.help': 'Voir les raccourcis',
   'keys.leave': 'Quitter un champ de texte',
   'keys.or': 'ou',
+  'keys.ctrl': 'Ctrl',
+  'keys.alt': 'Alt',
+  'keys.shift': 'Maj',
+  'keys.esc': 'Échap',
+  'page.newTab': 'Nouvel onglet',
   'code.example.equalizer': 'Égaliseur',
   'code.example.aurora': 'Aurore',
   'code.example.synthwave': 'Synthwave',
